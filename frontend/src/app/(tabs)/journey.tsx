@@ -78,6 +78,7 @@ export default function JourneyScreen() {
             <DepartureRow
               key={o.trainId}
               etaSec={o.waitSec}
+              atSec={o.departSec}
               source={o.source}
               note={`${t('journey.leaves', { time: fmtClock(o.departSec, lang) })} · ${t('journey.arrives', { time: fmtClock(o.arriveSec, lang), dur: fmtDuration(o.durationSec, lang) })}`}
               trailing={o.fareBdt != null ? fmtTaka(o.fareBdt, lang) : undefined}

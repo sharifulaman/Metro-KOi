@@ -1,7 +1,7 @@
 import { Pressable, View } from 'react-native';
 
 import { useT } from '@/i18n';
-import { fmtEta } from '@/lib/fmt';
+import { fmtEtaAt } from '@/lib/fmt';
 import { useTheme } from '@/theme/useTheme';
 
 import { StatusBadge } from '../../ui/StatusBadge';
@@ -10,10 +10,10 @@ import { Text } from '../../ui/Text';
 import type { DepartureRowProps } from './types';
 
 /** One upcoming train. Shows LIVE / Estimated automatically from `source`. */
-export function DepartureRow({ etaSec, source, trainId, note, trailing, onPress, divider, testID }: DepartureRowProps) {
+export function DepartureRow({ etaSec, atSec, source, trainId, note, trailing, onPress, divider, testID }: DepartureRowProps) {
   const { c, space, size } = useTheme();
   const { lang, t } = useT();
-  const eta = fmtEta(etaSec, source, lang);
+  const eta = fmtEtaAt(etaSec, atSec, source, lang);
   return (
     <Pressable
       testID={testID}

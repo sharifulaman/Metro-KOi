@@ -11,6 +11,23 @@ export interface Transaction {
   amountBdt: number;
   /** true for demo rows — always labelled as samples in the UI. */
   sample: boolean;
+  /** 'card' when read from the MRT / Rapid Pass by NFC (hour precision) */
+  source?: 'card' | 'manual';
+}
+
+export type CardType = 'rapid_pass' | 'mrt_pass';
+
+/** Last successful NFC read, kept on the phone. */
+export interface CardSnapshot {
+  balanceBdt: number | null;
+  /** when the phone read the card, ms epoch */
+  readAt: number;
+  /** newest transaction on the card, ms epoch (hour precision) */
+  lastTapAt: number | null;
+  /** last 4 hex digits of the card's IDm */
+  cardTail: string;
+  cardType: CardType;
+  partial: boolean;
 }
 
 export type BalanceSource = 'card' | 'local';

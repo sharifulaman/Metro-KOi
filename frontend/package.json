@@ -23,6 +23,7 @@
     "react-native": "0.88.1",
     "react-native-gesture-handler": "~3.3.0",
     "react-native-mmkv": "^4.3.2",
+    "react-native-nfc-manager": "^4.2.0",
     "react-native-reanimated": "4.7.1",
     "react-native-safe-area-context": "~5.11.1",
     "react-native-screens": "~4.30.1",
@@ -42,7 +43,7 @@
     "ios": "expo start --ios",
     "web": "expo start --web",
     "typecheck": "tsc --noEmit",
-    "test": "node --test src/lib/__tests__/schedule.test.ts",
+    "test": "node --test src/lib/__tests__/schedule.test.ts src/lib/__tests__/felica.test.ts",
     "check:ui": "node scripts/check-ui-rules.mjs",
     "verify": "npm run typecheck && npm test && npm run check:ui"
   },

@@ -33,7 +33,15 @@
     "plugins": [
       "expo-router",
       "expo-status-bar",
-      "expo-font"
+      "expo-font",
+      [
+        "react-native-nfc-manager",
+        {
+          "nfcPermission": "Metro Koi reads your MRT Pass or Rapid Pass by NFC to show its balance and recent trips. Nothing is written to the card.",
+          "systemCodes": ["90E3"],
+          "includeNdefEntitlement": false
+        }
+      ]
     ],
     "scheme": "metrokoi",
     "experiments": {

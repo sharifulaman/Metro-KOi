@@ -13,8 +13,10 @@
         "NSLocationWhenInUseUsageDescription": "Metro Koi uses your location only while you share a metro ride, to show the train live for other riders.",
         "NSLocationAlwaysAndWhenInUseUsageDescription": "While you share a ride, Metro Koi keeps reading your position when the screen is locked. Sharing stops when the ride ends.",
         "UIBackgroundModes": [
+          "location",
           "location"
-        ]
+        ],
+        "ITSAppUsesNonExemptEncryption": false
       }
     },
     "android": {
@@ -25,7 +27,10 @@
         "monochromeImage": "./assets/android-icon-monochrome.png"
       },
       "predictiveBackGestureEnabled": false,
-      "package": "com.metrokoi.app"
+      "package": "com.metrokoi.app",
+      "permissions": [
+        "android.permission.NFC"
+      ]
     },
     "web": {
       "favicon": "./assets/favicon.png"
@@ -38,7 +43,9 @@
         "react-native-nfc-manager",
         {
           "nfcPermission": "Metro Koi reads your MRT Pass or Rapid Pass by NFC to show its balance and recent trips. Nothing is written to the card.",
-          "systemCodes": ["90E3"],
+          "systemCodes": [
+            "90E3"
+          ],
           "includeNdefEntitlement": false
         }
       ]
@@ -46,6 +53,16 @@
     "scheme": "metrokoi",
     "experiments": {
       "typedRoutes": false
+    },
+    "extra": {
+      "router": {
+        "asyncRoutes": {
+          "web": true
+        }
+      },
+      "eas": {
+        "projectId": "473f5563-5b6a-492d-a85d-b7e9babe657b"
+      }
     }
   }
 }

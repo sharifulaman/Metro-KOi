@@ -2,16 +2,31 @@
 // lib/felica.ts; this file only moves bytes between the card and the decoder.
 // react-native-nfc-manager is a native module: it is missing in Expo Go and on
 // web, so it is required lazily and the app falls back to history-only.
-import { Platform } from 'react-native';
+import { NativeModules, Platform, TurboModuleRegistry } from 'react-native';
 
 import { hexToBytes, readCard, type CardRead, type Transceive } from '@/lib/felica';
 
 type NfcModule = typeof import('react-native-nfc-manager');
 
+/**
+ * Is the native side in this binary? Checked BEFORE requiring the library:
+ * its module body throws when the native module is missing, and in dev Metro
+ * reports that as a fatal red screen even inside a try/catch.
+ */
+function hasNativeModule(): boolean {
+  try {
+    const g = globalThis as { RN$Bridgeless?: boolean; __turboModuleProxy?: unknown };
+    const turbo = g.RN$Bridgeless === true || g.__turboModuleProxy != null;
+    return (turbo ? TurboModuleRegistry.get('NfcManager') : NativeModules.NfcManager) != null;
+  } catch {
+    return false;
+  }
+}
+
 let cached: NfcModule | null | undefined;
 function nfcModule(): NfcModule | null {
   if (cached !== undefined) return cached;
-  if (Platform.OS === 'web') return (cached = null);
+  if (Platform.OS === 'web' || !hasNativeModule()) return (cached = null); // web / Expo Go
   try {
     // eslint-disable-next-line @typescript-eslint/no-require-imports
     const mod = require('react-native-nfc-manager') as NfcModule;

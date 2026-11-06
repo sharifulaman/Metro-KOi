@@ -1,0 +1,176 @@
+{
+ "source": "Order/names: dhakametrorail.org (spec §1.4). Coordinates + chainage: OpenStreetMap relation 15060935, base 2026-11-06T09:52:35Z, © OpenStreetMap contributors (ODbL).",
+ "geometry": "osm",
+ "stations": [
+  {
+   "id": "uttara-north",
+   "order": 1,
+   "nameBn": "উত্তরা উত্তর",
+   "nameEn": "Uttara North",
+   "lat": 23.869085,
+   "lng": 90.367682,
+   "chainageM": 0,
+   "status": "open"
+  },
+  {
+   "id": "uttara-center",
+   "order": 2,
+   "nameBn": "উত্তরা সেন্টার",
+   "nameEn": "Uttara Center",
+   "lat": 23.859709,
+   "lng": 90.365127,
+   "chainageM": 1087.9,
+   "status": "open"
+  },
+  {
+   "id": "uttara-south",
+   "order": 3,
+   "nameBn": "উত্তরা দক্ষিণ",
+   "nameEn": "Uttara South",
+   "lat": 23.845911,
+   "lng": 90.363084,
+   "chainageM": 2631.8,
+   "status": "open"
+  },
+  {
+   "id": "pallabi",
+   "order": 4,
+   "nameBn": "পল্লবী",
+   "nameEn": "Pallabi",
+   "lat": 23.826157,
+   "lng": 90.364212,
+   "chainageM": 4843.9,
+   "status": "open"
+  },
+  {
+   "id": "mirpur-11",
+   "order": 5,
+   "nameBn": "মিরপুর-১১",
+   "nameEn": "Mirpur-11",
+   "lat": 23.819103,
+   "lng": 90.365308,
+   "chainageM": 5637.9,
+   "status": "open"
+  },
+  {
+   "id": "mirpur-10",
+   "order": 6,
+   "nameBn": "মিরপুর-১০",
+   "nameEn": "Mirpur-10",
+   "lat": 23.808368,
+   "lng": 90.368279,
+   "chainageM": 6865.4,
+   "status": "open"
+  },
+  {
+   "id": "kazipara",
+   "order": 7,
+   "nameBn": "কাজীপাড়া",
+   "nameEn": "Kazipara",
+   "lat": 23.799249,
+   "lng": 90.372019,
+   "chainageM": 7947.2,
+   "status": "open"
+  },
+  {
+   "id": "shewrapara",
+   "order": 8,
+   "nameBn": "শেওড়াপাড়া",
+   "nameEn": "Shewrapara",
+   "lat": 23.790972,
+   "lng": 90.375542,
+   "chainageM": 8932.1,
+   "status": "open"
+  },
+  {
+   "id": "agargaon",
+   "order": 9,
+   "nameBn": "আগারগাঁও",
+   "nameEn": "Agargaon",
+   "lat": 23.778448,
+   "lng": 90.380161,
+   "chainageM": 10399.3,
+   "status": "open"
+  },
+  {
+   "id": "bijoy-sarani",
+   "order": 10,
+   "nameBn": "বিজয় সরণি",
+   "nameEn": "Bijoy Sarani",
+   "lat": 23.766391,
+   "lng": 90.383121,
+   "chainageM": 11771.1,
+   "status": "open"
+  },
+  {
+   "id": "farmgate",
+   "order": 11,
+   "nameBn": "ফার্মগেট",
+   "nameEn": "Farmgate",
+   "lat": 23.759078,
+   "lng": 90.387078,
+   "chainageM": 12936.9,
+   "status": "open"
+  },
+  {
+   "id": "karwan-bazar",
+   "order": 12,
+   "nameBn": "কারওয়ান বাজার",
+   "nameEn": "Karwan Bazar",
+   "lat": 23.751304,
+   "lng": 90.392815,
+   "chainageM": 14087.9,
+   "status": "open"
+  },
+  {
+   "id": "shahbagh",
+   "order": 13,
+   "nameBn": "শাহবাগ",
+   "nameEn": "Shahbagh",
+   "lat": 23.740056,
+   "lng": 90.396155,
+   "chainageM": 15386.6,
+   "status": "open"
+  },
+  {
+   "id": "dhaka-university",
+   "order": 14,
+   "nameBn": "ঢাকা বিশ্ববিদ্যালয়",
+   "nameEn": "Dhaka University",
+   "lat": 23.731698,
+   "lng": 90.396843,
+   "chainageM": 16357.2,
+   "status": "open"
+  },
+  {
+   "id": "bangladesh-secretariat",
+   "order": 15,
+   "nameBn": "বাংলাদেশ সচিবালয়",
+   "nameEn": "Bangladesh Secretariat",
+   "lat": 23.730042,
+   "lng": 90.407559,
+   "chainageM": 17683.7,
+   "status": "open"
+  },
+  {
+   "id": "motijheel",
+   "order": 16,
+   "nameBn": "মতিঝিল",
+   "nameEn": "Motijheel",
+   "lat": 23.728084,
+   "lng": 90.419071,
+   "chainageM": 18927.5,
+   "status": "open"
+  },
+  {
+   "id": "kamalapur",
+   "order": 17,
+   "nameBn": "কমলাপুর",
+   "nameEn": "Kamalapur",
+   "lat": null,
+   "lng": null,
+   "chainageM": null,
+   "status": "planned"
+  }
+ ]
+}

@@ -1,0 +1,43 @@
+{
+  "expo": {
+    "name": "Metro Koi",
+    "slug": "metro-koi",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "icon": "./assets/icon.png",
+    "userInterfaceStyle": "automatic",
+    "ios": {
+      "supportsTablet": true,
+      "bundleIdentifier": "com.metrokoi.app",
+      "infoPlist": {
+        "NSLocationWhenInUseUsageDescription": "Metro Koi uses your location only while you share a metro ride, to show the train live for other riders.",
+        "NSLocationAlwaysAndWhenInUseUsageDescription": "While you share a ride, Metro Koi keeps reading your position when the screen is locked. Sharing stops when the ride ends.",
+        "UIBackgroundModes": [
+          "location"
+        ]
+      }
+    },
+    "android": {
+      "adaptiveIcon": {
+        "backgroundColor": "#0E9F6E",
+        "foregroundImage": "./assets/android-icon-foreground.png",
+        "backgroundImage": "./assets/android-icon-background.png",
+        "monochromeImage": "./assets/android-icon-monochrome.png"
+      },
+      "predictiveBackGestureEnabled": false,
+      "package": "com.metrokoi.app"
+    },
+    "web": {
+      "favicon": "./assets/favicon.png"
+    },
+    "plugins": [
+      "expo-router",
+      "expo-status-bar",
+      "expo-font"
+    ],
+    "scheme": "metrokoi",
+    "experiments": {
+      "typedRoutes": false
+    }
+  }
+}

@@ -1,0 +1,79 @@
+// Number/time formatting with Bangla digits (spec §9.0 rule 6, §12 i18n).
+import type { Lang, Source } from '../models';
+
+const BN_DIGITS = '০১২৩৪৫৬৭৮৯';
+
+export function toBnDigits(s: string): string {
+  return s.replace(/[0-9]/g, (d) => BN_DIGITS[Number(d)]);
+}
+
+export function fmtNum(n: number | string, lang: Lang): string {
+  const s = typeof n === 'number' ? String(n) : n;
+  return lang === 'bn' ? toBnDigits(s) : s;
+}
+
+/** Period words for Bangla clock times. */
+export function bnPeriod(hour: number): string {
+  if (hour >= 5 && hour < 12) return 'সকাল';
+  if (hour >= 12 && hour < 15) return 'দুপুর';
+  if (hour >= 15 && hour < 18) return 'বিকাল';
+  if (hour >= 18 && hour < 20) return 'সন্ধ্যা';
+  return 'রাত';
+}
+
+/** Seconds after midnight → "সকাল ৬:৩০" / "6:30 AM". */
+export function fmtClock(secOfDay: number, lang: Lang): string {
+  const s = ((Math.floor(secOfDay) % 86400) + 86400) % 86400;
+  const h = Math.floor(s / 3600);
+  const m = Math.floor((s % 3600) / 60);
+  const h12 = h % 12 === 0 ? 12 : h % 12;
+  const mm = String(m).padStart(2, '0');
+  if (lang === 'bn') return `${bnPeriod(h)} ${toBnDigits(`${h12}:${mm}`)}`;
+  return `${h12}:${mm} ${h < 12 ? 'AM' : 'PM'}`;
+}
+
+/** 24-hour "08:11" for band rows. */
+export function fmtHHMM(hhmm: string, lang: Lang): string {
+  return fmtNum(hhmm, lang);
+}
+
+/** "3 min" for live, "~3 min" for schedule (spec §6.5). */
+export function fmtEta(sec: number, source: Source, lang: Lang): string {
+  if (sec < 30) return lang === 'bn' ? 'এখন' : 'Now';
+  const min = Math.round(sec / 60);
+  const prefix = source === 'schedule' ? '~' : '';
+  return lang === 'bn' ? `${prefix}${toBnDigits(String(min))} মিনিট` : `${prefix}${min} min`;
+}
+
+export function fmtDuration(sec: number, lang: Lang): string {
+  const min = Math.round(sec / 60);
+  if (min < 60) return lang === 'bn' ? `${toBnDigits(String(min))} মিনিট` : `${min} min`;
+  const h = Math.floor(min / 60);
+  const r = min % 60;
+  return lang === 'bn' ? `${toBnDigits(String(h))} ঘ. ${toBnDigits(String(r))} মি.` : `${h} h ${r} min`;
+}
+
+export function fmtTaka(n: number, lang: Lang): string {
+  return `৳${fmtNum(n.toLocaleString('en-US'), lang)}`;
+}
+
+export function fmtDistance(m: number, lang: Lang): string {
+  if (m < 1000) return lang === 'bn' ? `${toBnDigits(String(Math.round(m)))} মি. দূরে` : `${Math.round(m)} m away`;
+  const km = (m / 1000).toFixed(1);
+  return lang === 'bn' ? `${toBnDigits(km)} কি.মি. দূরে` : `${km} km away`;
+}
+
+const BN_MONTHS = ['জানুয়ারি', 'ফেব্রুয়ারি', 'মার্চ', 'এপ্রিল', 'মে', 'জুন', 'জুলাই', 'আগস্ট', 'সেপ্টেম্বর', 'অক্টোবর', 'নভেম্বর', 'ডিসেম্বর'];
+const EN_MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+
+/** Dhaka-local date "৬ নভেম্বর" / "6 Nov". */
+export function fmtDate(ms: number, lang: Lang): string {
+  const d = new Date(ms + 6 * 3600 * 1000);
+  const day = d.getUTCDate();
+  return lang === 'bn' ? `${toBnDigits(String(day))} ${BN_MONTHS[d.getUTCMonth()]}` : `${day} ${EN_MONTHS[d.getUTCMonth()]}`;
+}
+
+export function secOfDayFromMs(ms: number): number {
+  const d = new Date(ms + 6 * 3600 * 1000);
+  return d.getUTCHours() * 3600 + d.getUTCMinutes() * 60 + d.getUTCSeconds();
+}

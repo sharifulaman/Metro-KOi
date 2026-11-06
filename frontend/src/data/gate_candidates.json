@@ -1,0 +1,42 @@
+{
+ "candidates": [
+  {
+   "stationId": "shahbagh",
+   "osmId": 4892566480,
+   "lat": 23.737965,
+   "lng": 90.395402,
+   "distanceM": 245
+  },
+  {
+   "stationId": "mirpur-10",
+   "osmId": 14353788694,
+   "lat": 23.807398,
+   "lng": 90.368338,
+   "distanceM": 108
+  },
+  {
+   "stationId": "mirpur-10",
+   "osmId": 14353788695,
+   "lat": 23.807619,
+   "lng": 90.36826,
+   "distanceM": 83
+  },
+  {
+   "stationId": "mirpur-10",
+   "osmId": 14353788699,
+   "lat": 23.807483,
+   "lng": 90.36863,
+   "ref": "B",
+   "distanceM": 105
+  },
+  {
+   "stationId": "mirpur-10",
+   "osmId": 14353802721,
+   "lat": 23.807705,
+   "lng": 90.368564,
+   "ref": "B",
+   "distanceM": 79
+  }
+ ],
+ "source": "OSM railway=subway_entrance within 300 m; assign letters after a field survey"
+}

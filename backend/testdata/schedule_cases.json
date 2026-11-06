@@ -1,0 +1,147 @@
+{
+ "description": "Golden vectors for the schedule engine (spec \u00a714). Generated independently in Python from timetable.json; shared by frontend (node --test) and backend (go test).",
+ "cases": [
+  {
+   "dayType": "sun_thu",
+   "direction": "SB",
+   "count": 136,
+   "first": "06:30",
+   "last": "21:31",
+   "sample": [
+    "06:30",
+    "06:50",
+    "07:10",
+    "07:11"
+   ]
+  },
+  {
+   "dayType": "sun_thu",
+   "direction": "NB",
+   "count": 123,
+   "first": "07:15",
+   "last": "22:11",
+   "sample": [
+    "07:15",
+    "07:25",
+    "07:35",
+    "07:45"
+   ]
+  },
+  {
+   "dayType": "fri",
+   "direction": "SB",
+   "count": 54,
+   "first": "15:00",
+   "last": "21:31",
+   "sample": [
+    "15:00",
+    "15:08",
+    "15:16",
+    "15:24"
+   ]
+  },
+  {
+   "dayType": "fri",
+   "direction": "NB",
+   "count": 55,
+   "first": "15:20",
+   "last": "22:11",
+   "sample": [
+    "15:20",
+    "15:28",
+    "15:36",
+    "15:44"
+   ]
+  },
+  {
+   "dayType": "sat",
+   "direction": "SB",
+   "count": 101,
+   "first": "06:30",
+   "last": "21:31",
+   "sample": [
+    "06:30",
+    "06:50",
+    "07:10",
+    "07:26"
+   ]
+  },
+  {
+   "dayType": "sat",
+   "direction": "NB",
+   "count": 105,
+   "first": "07:15",
+   "last": "22:11",
+   "sample": [
+    "07:15",
+    "07:27",
+    "07:39",
+    "07:51"
+   ]
+  }
+ ],
+ "mustContain": {
+  "sun_thu/SB": [
+   "06:30",
+   "06:50",
+   "07:10",
+   "07:11",
+   "07:21",
+   "08:11",
+   "09:56",
+   "21:31"
+  ],
+  "fri/SB": [
+   "15:00"
+  ],
+  "sat/NB": [
+   "07:15"
+  ]
+ },
+ "mustNotContain": {
+  "sun_thu/SB": [
+   "06:29",
+   "07:30",
+   "10:00",
+   "22:00"
+  ],
+  "fri/SB": [
+   "06:30",
+   "14:52"
+  ]
+ },
+ "peakSunThuSB": [
+  "08:11",
+  "08:16",
+  "08:21",
+  "08:26",
+  "08:31",
+  "08:36",
+  "08:41",
+  "08:46",
+  "08:51",
+  "08:56",
+  "09:01",
+  "09:06",
+  "09:11",
+  "09:16",
+  "09:21",
+  "09:26",
+  "09:31",
+  "09:36",
+  "09:41",
+  "09:46",
+  "09:51",
+  "09:56"
+ ],
+ "runModel": {
+  "endToEndMin": 40,
+  "dwellSec": 30,
+  "stations": 16,
+  "note": "evenly spaced until OSM chainage exists",
+  "expect": {
+   "arriveLastSec": 2400,
+   "departFirstSec": 0
+  }
+ }
+}

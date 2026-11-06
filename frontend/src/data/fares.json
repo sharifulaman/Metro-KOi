@@ -1,0 +1,7 @@
+{
+  "source": "TO FETCH: official DMTCL fare chart (spec §4.5). Rapid Pass discount from rapidpass.com.bd/metro-schedule.",
+  "status": "TO_FETCH",
+  "currency": "BDT",
+  "rapidPassMultiplier": 0.9,
+  "amounts": null
+}

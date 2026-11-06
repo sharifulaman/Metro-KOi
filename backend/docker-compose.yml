@@ -1,0 +1,56 @@
+# Production-like stack (spec §3.2): PostGIS + Redis + migrations + API.
+#   docker compose up -d --build
+#   docker compose run --rm admin seed      # first time only
+services:
+  db:
+    image: postgis/postgis:16-3.4
+    environment:
+      POSTGRES_USER: metrokoi
+      POSTGRES_PASSWORD: metrokoi
+      POSTGRES_DB: metrokoi
+    volumes: [pgdata:/var/lib/postgresql/data]
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U metrokoi"]
+      interval: 5s
+      retries: 10
+
+  redis:
+    image: redis:7-alpine
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+
+  migrate:
+    image: migrate/migrate:v4.17.1
+    volumes: [./migrations:/migrations:ro]
+    command: ["-path", "/migrations", "-database", "postgres://metrokoi:metrokoi@db:5432/metrokoi?sslmode=disable", "up"]
+    depends_on:
+      db: { condition: service_healthy }
+
+  admin:
+    build: .
+    entrypoint: ["/admin"]
+    environment:
+      DATABASE_URL: postgres://metrokoi:metrokoi@db:5432/metrokoi?sslmode=disable
+    depends_on:
+      migrate: { condition: service_completed_successfully }
+    profiles: [tools]
+
+  api:
+    build: .
+    environment:
+      PORT: "8080"
+      DATABASE_URL: postgres://metrokoi:metrokoi@db:5432/metrokoi?sslmode=disable
+      REDIS_URL: redis://redis:6379/0
+      END_TO_END_MIN: "40"
+      DWELL_SEC: "30"
+      HOLIDAY_AS: fri
+      ALLOWED_ORIGINS: "*"
+    ports: ["8080:8080"]
+    depends_on:
+      migrate: { condition: service_completed_successfully }
+      redis: { condition: service_healthy }
+    restart: unless-stopped
+
+volumes:
+  pgdata:

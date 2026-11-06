@@ -1,0 +1,5 @@
+*.exe
+/api
+/admin
+/simulator
+/fetch-osm

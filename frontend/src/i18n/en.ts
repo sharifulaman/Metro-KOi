@@ -226,6 +226,13 @@ export const en = {
     notFound: 'Not found',
   },
   gallery: { title: 'Component gallery' },
+  sim: {
+    title: 'Station to station (3D)',
+    open: 'Watch this trip in 3D',
+    more: 'Station-to-station 3D simulation',
+    moreSub: 'Ride any two stations in 3D: doors, gates and the way inside.',
+    error: 'Could not load the 3D view. Check your internet connection and try again.',
+  },
 };
 
 export type Dict = typeof en;

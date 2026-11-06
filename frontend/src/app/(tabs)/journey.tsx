@@ -88,6 +88,9 @@ export default function JourneyScreen() {
       )}
       {!faresAvailable ? <InfoNote icon="ticket" text={t('journey.fareUnavailable')} /> : null}
       {options.length > 0 ? <Button label={t('journey.shareEta')} icon="share" variant="secondary" fullWidth onPress={shareEta} /> : null}
+      {from && to && from !== to ? (
+        <Button label={t('sim.open')} icon="box" variant="secondary" fullWidth onPress={() => router.push(`/simulation?from=${from}&to=${to}`)} testID="journey-sim" />
+      ) : null}
     </Screen>
   );
 }

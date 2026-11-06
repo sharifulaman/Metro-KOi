@@ -4,6 +4,8 @@ import { useSettings } from '@/store/settings';
 import { fontFamily } from '@/theme/fonts';
 import { useTheme } from '@/theme/useTheme';
 
+import { svgPress } from '../svgPress';
+
 export interface StationPinProps {
   x: number;
   y: number;
@@ -18,7 +20,7 @@ export function StationPin({ x, y, label, side = 'left', highlighted, onPress }:
   const { c } = useTheme();
   const lang = useSettings((s) => s.lang);
   return (
-    <G onPress={onPress}>
+    <G {...svgPress(onPress)}>
       {/* enlarged invisible hit target (≥ 48 px) */}
       <Circle cx={x} cy={y} r={20} fill="transparent" />
       <Circle cx={x} cy={y} r={highlighted ? 9 : 6.5} fill={c.surface} stroke={highlighted ? c.brandDeep : c.brand} strokeWidth={highlighted ? 4 : 3} />

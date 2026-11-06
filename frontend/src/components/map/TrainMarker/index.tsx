@@ -3,6 +3,8 @@ import { Circle, G, Path } from 'react-native-svg';
 import type { Direction, TrainState } from '@/models';
 import { useTheme } from '@/theme/useTheme';
 
+import { svgPress } from '../svgPress';
+
 export interface TrainMarkerProps {
   x: number;
   y: number;
@@ -28,7 +30,7 @@ export function TrainMarker({ x, y, bearing, dir, state, selected, offset = 9, o
   const heading = dir === 'SB' ? bearing : bearing + 180;
   const dashed = state !== 'LIVE';
   return (
-    <G onPress={onPress} transform={`translate(${ox},${oy})`}>
+    <G {...svgPress(onPress)} transform={`translate(${ox},${oy})`}>
       <Circle r={22} fill="transparent" />
       {state === 'LIVE' && <Circle r={15} fill={c.live} opacity={0.25} />}
       {selected && <Circle r={17} fill="none" stroke={c.ink} strokeWidth={2} />}

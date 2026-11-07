@@ -6,7 +6,7 @@ import { useNow } from '@/features/common/useNow';
 import { useRunModel, useTimetable } from '@/features/timetable/useTimetable';
 import { stationAltName, stationName, useStations } from '@/features/stations/useStations';
 import { useT } from '@/i18n';
-import { fmtEta, fmtNum } from '@/lib/fmt';
+import { fmtEtaAt, fmtNum } from '@/lib/fmt';
 import { stationDepartures } from '@/lib/schedule';
 import { useSettings } from '@/store/settings';
 
@@ -34,7 +34,7 @@ export default function StationsScreen() {
               leading={<IconTile icon={favourites.includes(s.id) ? 'star' : 'train'} letter={favourites.includes(s.id) ? undefined : fmtNum(s.order, lang)} tone={favourites.includes(s.id) ? 'live' : 'brand'} />}
               title={stationName(s, lang)}
               subtitle={stationAltName(s, lang)}
-              trailing={next ? <Chip label={`${t('stations.next')} ${fmtEta(next.etaSec, next.source, lang)}`} tone="neutral" /> : undefined}
+              trailing={next ? <Chip label={`${t('stations.next')} ${fmtEtaAt(next.etaSec, next.atSec, next.source, lang)}`} tone="neutral" /> : undefined}
               chevron
               divider={i < ordered.length - 1}
               onPress={() => router.push(`/station/${s.id}`)}

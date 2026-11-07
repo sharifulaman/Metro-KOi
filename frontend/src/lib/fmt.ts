@@ -32,6 +32,20 @@ export function fmtClock(secOfDay: number, lang: Lang): string {
   return `${h12}:${mm} ${h < 12 ? 'AM' : 'PM'}`;
 }
 
+/** "সকাল ৬:৩০ – ৭:১০" / "6:30 – 7:10 AM": the period word is shown once when both ends share it. */
+export function fmtClockRange(fromSec: number, toSec: number, lang: Lang): string {
+  const a = fmtClock(fromSec, lang);
+  const b = fmtClock(toSec, lang);
+  if (lang === 'bn') {
+    const [pa] = a.split(' ');
+    const [pb, tb] = b.split(' ');
+    return pa === pb ? `${a} – ${tb}` : `${a} – ${b}`;
+  }
+  const [ta, sa] = a.split(' ');
+  const [, sb] = b.split(' ');
+  return sa === sb ? `${ta} – ${b}` : `${a} – ${b}`;
+}
+
 /** 24-hour "08:11" for band rows. */
 export function fmtHHMM(hhmm: string, lang: Lang): string {
   return fmtNum(hhmm, lang);
@@ -43,6 +57,18 @@ export function fmtEta(sec: number, source: Source, lang: Lang): string {
   const min = Math.round(sec / 60);
   const prefix = source === 'schedule' ? '~' : '';
   return lang === 'bn' ? `${prefix}${toBnDigits(String(min))} মিনিট` : `${prefix}${min} min`;
+}
+
+/** Like fmtEta, but a train an hour or more away shows its clock time ("সকাল ৬:৩০"). */
+export function fmtEtaAt(sec: number, atSec: number | undefined, source: Source, lang: Lang): string {
+  if (sec >= 3600 && atSec != null) return fmtClock(atSec, lang);
+  return fmtEta(sec, source, lang);
+}
+
+/** Speed m/s → "58 km/h". */
+export function fmtSpeed(mps: number, lang: Lang): string {
+  const k = Math.round(Math.abs(mps) * 3.6);
+  return lang === 'bn' ? `${toBnDigits(String(k))} কিমি/ঘ` : `${k} km/h`;
 }
 
 export function fmtDuration(sec: number, lang: Lang): string {

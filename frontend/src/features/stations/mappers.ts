@@ -15,6 +15,7 @@ export function toDepartureRows(deps: Departure[], onPress?: (trainId: string) =
   return deps.map((d) => ({
     key: `${d.trainId ?? 'x'}-${d.atSec}-${d.source}`,
     etaSec: d.etaSec,
+    atSec: d.source === 'schedule' ? d.atSec : undefined,
     source: d.source,
     trainId: d.source === 'live' ? d.trainId : undefined,
     onPress: d.trainId && onPress ? () => onPress(d.trainId as string) : undefined,

@@ -7,14 +7,17 @@ import { test } from 'node:test';
 import { fileURLToPath } from 'node:url';
 
 import type { DayType, Direction, Station, TimetableFile } from '../../models/index.ts';
-import { fmtClock, fmtEta, fmtNum } from '../fmt.ts';
+import { fmtClock, fmtClockRange, fmtEta, fmtEtaAt, fmtNum } from '../fmt.ts';
 import {
   buildRunModel,
   dayTypeFor,
   dhakaClock,
   estimatedTrains,
   journeyOptions,
+  nextServiceStart,
+  parseScheduledId,
   positionAt,
+  runStops,
   secToHHMM,
   stationDepartures,
   terminalDepartures,
@@ -115,4 +118,32 @@ test('fmt: Bangla digits and schedule tilde', () => {
   assert.equal(fmtEta(180, 'schedule', 'bn'), '~৩ মিনিট');
   assert.equal(fmtClock(6 * 3600 + 30 * 60, 'bn'), 'সকাল ৬:৩০');
   assert.equal(fmtClock(22 * 3600 + 30 * 60, 'en'), '10:30 PM');
+});
+
+test('playback: next service start when the line is closed', () => {
+  const m = buildRunModel(stations, 40, 30);
+  const satMidnight = Date.parse('2026-11-06T18:03:00Z'); // Sat 00:03 Dhaka
+  assert.equal(nextServiceStart(tt, m, satMidnight), Date.parse('2026-11-07T00:30:00Z')); // Sat 06:30
+  const friMorning = Date.parse('2026-11-06T04:00:00Z'); // Fri 10:00 Dhaka
+  assert.equal(nextServiceStart(tt, m, friMorning), Date.parse('2026-11-06T09:00:00Z')); // Fri 15:00
+  assert.equal(nextServiceStart(tt, m, SUN_0820), null); // trains are running
+});
+
+test('scheduled run: id parsing and stop times', () => {
+  const m = buildRunModel(stations, 40, 30);
+  assert.deepEqual(parseScheduledId('SB-0710'), { dir: 'SB', departSec: 7 * 3600 + 600 });
+  assert.equal(parseScheduledId('T-17'), null);
+  const sb = runStops(m, 'SB', 7 * 3600);
+  assert.equal(sb[0].stationId, m.stationIds[0]);
+  assert.equal(sb[0].departSec, 7 * 3600);
+  assert.equal(sb[sb.length - 1].arriveSec, 7 * 3600 + 2400);
+  const nb = runStops(m, 'NB', 7 * 3600);
+  assert.equal(nb[0].stationId, m.stationIds[m.stationIds.length - 1]);
+});
+
+test('fmt: far-off trains show a clock time; ranges share the period word', () => {
+  assert.equal(fmtEtaAt(600, 7 * 3600, 'schedule', 'en'), '~10 min');
+  assert.equal(fmtEtaAt(6 * 3600, 6 * 3600 + 30 * 60, 'schedule', 'bn'), 'সকাল ৬:৩০');
+  assert.equal(fmtClockRange(6 * 3600 + 1800, 7 * 3600 + 600, 'bn'), 'সকাল ৬:৩০ – ৭:১০');
+  assert.equal(fmtClockRange(10 * 3600, 15 * 3600 + 1200, 'en'), '10:00 AM – 3:20 PM');
 });

@@ -5,6 +5,8 @@ import { useSettings } from '@/store/settings';
 import { fontFamily } from '@/theme/fonts';
 import { useTheme } from '@/theme/useTheme';
 
+import { svgPress } from '../svgPress';
+
 export interface TrainMarkerProps {
   x: number;
   y: number;
@@ -43,7 +45,7 @@ export function TrainMarker({ x, y, bearing, dir, state, selected, label, k = 1,
   const live = state === 'LIVE';
   const tagW = label ? label.length * 7 + 20 : 0;
   return (
-    <G onPress={onPress} transform={`translate(${ox},${oy}) scale(${k})`}>
+    <G {...svgPress(onPress)} transform={`translate(${ox},${oy}) scale(${k})`}>
       <Circle r={L / 2 + 6} fill="transparent" />
       {live && <Circle r={L / 2 + 2} fill="none" stroke={c.live} strokeWidth={2.5} opacity={0.65} />}
       {selected && <Circle r={L / 2 + 5} fill="none" stroke={c.ink} strokeWidth={2} />}

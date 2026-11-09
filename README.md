@@ -80,5 +80,5 @@ Its values were generated independently of either engine.
 | 9–10 | Estimated trains, fusion engine + simulator | done |
 | 11 | Rider mode on device | flow, permissions, streaming done; background location and battery need real-device field tests |
 | 12 | Station 3D scene (three.js / r3f) | **not built**: the screen and panel exist, and the scene area uses the 2D cross-section fallback |
-| 13 | NFC | feasibility-gated (§18.4): local trip-history path only |
+| 13 | NFC | balance + last ~20 trips read from MRT / Rapid Pass (FeliCa, read-only) — see `NFC_CARD_READING.md`. Needs a dev/store build (not Expo Go); decoder unit-tested, **not yet tested on a real card** |
 | 14–15 | Polish, push alerts, store release | not started |

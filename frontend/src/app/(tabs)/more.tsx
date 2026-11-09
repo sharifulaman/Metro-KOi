@@ -33,6 +33,7 @@ export default function MoreScreen() {
       <Card padding={3}>
         <SwitchRow label={t('more.notifications')} value={notifications} onValueChange={setNotifications} divider />
         <ListRow title={t('more.timetable')} leading={<IconTile icon="calendar" tone="neutral" />} chevron divider onPress={() => router.push('/timetable')} />
+        <ListRow title={t('sim.more')} subtitle={t('sim.moreSub')} leading={<IconTile icon="box" tone="neutral" />} chevron divider onPress={() => router.push('/simulation')} testID="more-sim" />
         <ListRow title={t('more.privacy')} leading={<IconTile icon="shield" tone="neutral" />} subtitle={t('rider.explain3')} divider />
         <ListRow title={t('more.about')} leading={<IconTile icon="info" tone="neutral" />} chevron divider onPress={() => setShowCredits((v) => !v)} />
         {showCredits ? <Text variant="label" tone="muted">{t('more.credits')}</Text> : null}

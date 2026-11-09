@@ -44,6 +44,9 @@ import {
   Wallet,
   WifiOff,
   X,
+  Play,
+  ZoomIn,
+  ZoomOut,
   type LucideIcon,
 } from 'lucide-react-native';
 
@@ -97,6 +100,9 @@ const MAP: Record<IconName, LucideIcon> = {
   receipt: Receipt,
   dot: CircleDot,
   accessibility: Accessibility,
+  zoomIn: ZoomIn,
+  zoomOut: ZoomOut,
+  play: Play,
 };
 
 export function Icon({ name, size = 20, tone = 'ink', color, strokeWidth = 2, testID }: IconProps) {

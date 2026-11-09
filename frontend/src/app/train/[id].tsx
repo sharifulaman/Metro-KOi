@@ -1,49 +1,131 @@
 import { useLocalSearchParams, useRouter } from 'expo-router';
 
-import { EmptyState, LineDiagram, ScreenHeader, TrainCard, TrainIllustration } from '@/components/metro';
-import { Card, Screen, StatusBadge, Text } from '@/components/ui';
-import { stationPos, useTrains } from '@/features/map/useTrains';
-import { platformTitle } from '@/features/stations/mappers';
+import { EmptyState, ScreenHeader, SegmentProgress, TrainTimeline, type TimelineStop } from '@/components/metro';
+import { Card, Chip, Screen, Stack, StatusBadge, Text } from '@/components/ui';
+import { useTrainRun } from '@/features/map/useTrainRun';
 import { stationName, useStations } from '@/features/stations/useStations';
 import { useT } from '@/i18n';
-import { fmtNum } from '@/lib/fmt';
+import { config } from '@/lib/config';
+import { fmtClock, fmtEta, fmtEtaAt, fmtNum, fmtSpeed } from '@/lib/fmt';
+import { useSettings } from '@/store/settings';
 
-/** Train detail (spec §10.3, board 3). */
+/** Train detail (spec §10.3, board 3): where the train is and every stop on its run. */
 export default function TrainScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const { t, lang } = useT();
   const router = useRouter();
-  const { list, byId, first, last } = useStations();
-  const { trains, model } = useTrains(1000);
-  const train = trains.find((x) => x.id === id);
-  if (!train) {
+  const { byId, first, last } = useStations();
+  const mine = useSettings((s) => s.favourites[0]) ?? config.defaultStationId;
+  const run = useTrainRun(id);
+  const name = (sid: string) => (byId[sid] ? stationName(byId[sid], lang) : sid);
+
+  if (run.phase === 'unknown' || !run.dir) {
     return (
       <Screen>
-        <ScreenHeader title={t('train.title', { id })} onBack={() => router.back()} />
-        <EmptyState icon="train" title={t('train.departed')} />
+        <ScreenHeader title={t('train.title', { id })} onBack={() => router.back()} backLabel={t('common.back')} />
+        <EmptyState icon="train" title={t('train.unknown')} />
       </Screen>
     );
   }
-  const live = train.state !== 'ESTIMATED';
-  const next = train.nextStation ? byId[train.nextStation] : undefined;
+
+  const { train, segment, stops, dir } = run;
+  const live = train != null && train.state !== 'ESTIMATED';
+  const source = live ? 'live' : 'schedule';
+  const from = dir === 'SB' ? first : last;
+  const to = dir === 'SB' ? last : first;
+  const next = stops.find((s) => !s.passed);
+  const firstStop = stops[0];
+  const lastStop = stops[stops.length - 1];
+
+  const timeline: TimelineStop[] = stops.map((s) => ({
+    key: s.stationId,
+    label: name(s.stationId),
+    state: s.passed ? 'passed' : 'upcoming',
+    tag: s.stationId === mine ? t('train.yourStation') : undefined,
+    right: s.passed
+      ? s.departSec != null
+        ? fmtClock(s.departSec, lang)
+        : t('train.passed')
+      : s.here
+        ? t('train.now')
+        : s.etaSec != null
+          ? run.phase === 'before'
+            ? fmtClock(s.arriveSec ?? 0, lang)
+            : fmtEtaAt(s.etaSec, s.arriveSec ?? undefined, source, lang)
+          : undefined,
+    rightSub: s.passed && s.departSec != null ? t('train.passed') : !s.passed && run.phase === 'running' && s.arriveSec != null && s.etaSec != null && s.etaSec < 3600 ? fmtClock(s.arriveSec, lang) : undefined,
+  }));
+
   return (
     <Screen scroll gap={4}>
-      <ScreenHeader title={t('train.title', { id: train.id })} onBack={() => router.back()} backLabel={t('common.back')} right={<StatusBadge kind={live ? 'live' : 'estimated'} />} />
-      <TrainIllustration direction={train.dir} width={320} />
-      <TrainCard
-        platform={train.dir === 'SB' ? 1 : 2}
-        title={platformTitle(train.dir, first, last, lang, t)}
-        eta={train.etaSec != null ? { sec: train.etaSec } : undefined}
-        source={live ? 'live' : 'schedule'}
-        trainId={train.id}
-        detail={[next ? t('train.next', { name: stationName(next, lang) }) : null, live ? t('train.riders', { count: fmtNum(train.riders, lang) }) : t('train.noRiders')].filter(Boolean).join(' · ')}
-        labels={{ atStation: t('train.atStation'), departed: t('train.departed') }}
+      <ScreenHeader
+        title={t('train.title', { id })}
+        subtitle={t('train.route', { from: stationName(from, lang), to: stationName(to, lang) })}
+        onBack={() => router.back()}
+        backLabel={t('common.back')}
+        right={<StatusBadge kind={live ? 'live' : 'estimated'} />}
       />
+
+      <Card tone="brand" radius="hero" padding={5} gap={3}>
+        {run.phase === 'running' && next ? (
+          <>
+            <Text variant="label" tone="onBrand">
+              {segment?.atStation ? t('train.standing', { name: name(stops.find((s) => s.here)?.stationId ?? next.stationId) }) : t('train.nextStation')}
+            </Text>
+            <Stack direction="row" justify="between" align="center" gap={3}>
+              <Text variant="display" tone="onBrand" numberOfLines={1}>
+                {name(next.stationId)}
+              </Text>
+              <Text variant="display" tone="onBrand" numeric>
+                {next.etaSec != null ? fmtEta(next.etaSec, source, lang) : '—'}
+              </Text>
+            </Stack>
+            <Stack direction="row" gap={2} wrap>
+              {train && Math.abs(train.v) > 0.5 ? <Chip label={t('train.speed', { v: fmtSpeed(train.v, lang) })} /> : null}
+              <Chip label={live ? t('train.riders', { count: fmtNum(train?.riders ?? 0, lang) }) : t('train.byTimetable')} />
+            </Stack>
+          </>
+        ) : run.phase === 'before' ? (
+          <>
+            <Text variant="label" tone="onBrand">
+              {t('train.notStarted', { station: name(firstStop.stationId), time: fmtClock(firstStop.departSec ?? 0, lang) })}
+            </Text>
+            <Text variant="display" tone="onBrand" numeric>
+              {t('train.notStartedIn', { eta: fmtEtaAt(run.startsInSec ?? 0, firstStop.departSec ?? undefined, 'schedule', lang) })}
+            </Text>
+          </>
+        ) : (
+          <Text variant="title" tone="onBrand">
+            {t('train.finished', { station: name(lastStop.stationId), time: lastStop.arriveSec != null ? fmtClock(lastStop.arriveSec, lang) : '' })}
+          </Text>
+        )}
+      </Card>
+
+      {run.phase === 'running' && segment && train ? (
+        <Card padding={4}>
+          <SegmentProgress
+            fromLabel={name(stops.find((s) => s.here)?.stationId ?? stops[(run.markerAfter ?? 0) < 0 ? 0 : run.markerAfter ?? 0].stationId)}
+            toLabel={next ? name(next.stationId) : ''}
+            progress={segment.progress}
+            direction={dir}
+            caption={next?.etaSec != null ? t('train.arrivesIn', { name: name(next.stationId), eta: fmtEta(next.etaSec, source, lang) }) : undefined}
+          />
+        </Card>
+      ) : null}
+
       <Card padding={4}>
-        <LineDiagram
-          stations={list.map((s) => ({ id: s.id, label: stationName(s, lang) }))}
-          trains={[{ id: train.id, dir: train.dir, state: train.state, pos: stationPos(model, train.s) }]}
-          highlightStation={train.nextStation ?? undefined}
+        <TrainTimeline
+          direction={dir}
+          stops={timeline}
+          marker={
+            run.markerAfter != null
+              ? {
+                  afterIndex: run.markerAfter,
+                  label: t('train.hereNow', { id }),
+                  right: live && train ? t('train.updated', { n: fmtNum(Math.max(0, Math.round((run.now - train.ts) / 1000)), lang) }) : t('train.byTimetable'),
+                }
+              : undefined
+          }
         />
       </Card>
       <Text variant="micro" tone="muted">

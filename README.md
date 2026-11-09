@@ -32,6 +32,13 @@ npx expo start            # press w for web, or scan with Expo Go
 The app works offline too. With no backend it shows timetable estimates and
 the connection pill reads *Offline · timetable only*.
 
+**Timetable playback** needs no location permission and no riders. Press ▶ on
+the Live map, or tap a band on the Timetable screen, and the map runs the
+official schedule on a virtual clock (1× / 10× / 60×). It follows one train
+from station to station. When the line is closed (at night, or on Friday
+morning), playback starts at the next first train. Train pages
+(`/train/SB-0710`) show every stop with its scheduled time, at any time of day.
+
 **Production stack** (PostGIS + Redis + migrations + API):
 
 ```bash

@@ -328,3 +328,60 @@ export function etaToStation(m: RunModel, train: Pick<Train, 's' | 'dir'>, stati
   }).length;
   return Math.round(ahead / avgSpeed + dwellsAhead * m.dwellSec);
 }
+
+// ---------- scheduled runs (train detail, playback) ----------
+
+/** Epoch ms of `sec` on the next day (today included) that runs `type`'s timetable. */
+export function nextDateOfType(tt: TimetableFile, nowMs: number, type: ServiceDayType, sec: number, holidays?: ReadonlySet<string>): number {
+  const dayStart = nowMs - dhakaClock(nowMs).sec * 1000;
+  for (let d = 0; d < 8; d++) {
+    const midnight = dayStart + d * 86400000;
+    if (resolveDayType(dayTypeFor(midnight + 12 * 3600000, holidays), tt) === type) return midnight + sec * 1000;
+  }
+  return dayStart + sec * 1000;
+}
+
+/** Scheduled train ids are `SB-0710` (direction + terminal departure HHMM). */
+export function parseScheduledId(id: string): { dir: Direction; departSec: number } | null {
+  const m = /^(SB|NB)-(\d{2})(\d{2})$/.exec(id);
+  if (!m) return null;
+  return { dir: m[1] as Direction, departSec: Number(m[2]) * 3600 + Number(m[3]) * 60 };
+}
+
+export interface StopTime {
+  /** station index in SB (north → south) order */
+  idx: number;
+  stationId: string;
+  /** seconds after local midnight */
+  arriveSec: number;
+  departSec: number;
+}
+
+/** Every stop of one scheduled run, in travel order. */
+export function runStops(m: RunModel, dir: Direction, terminalDepartSec: number): StopTime[] {
+  const n = m.stationIds.length;
+  const order = dir === 'SB' ? [...Array(n).keys()] : [...Array(n).keys()].reverse();
+  return order.map((i) => {
+    const o = offsetsFor(m, dir, i);
+    return { idx: i, stationId: m.stationIds[i], arriveSec: terminalDepartSec + o.arrive, departSec: terminalDepartSec + o.depart };
+  });
+}
+
+/**
+ * When no scheduled train is running at `nowMs`, the epoch ms of the next
+ * terminal departure (today or one of the next days). Null while trains run.
+ */
+export function nextServiceStart(tt: TimetableFile, m: RunModel, nowMs: number, holidays?: ReadonlySet<string>): number | null {
+  if (estimatedTrains(tt, m, nowMs, holidays).length > 0) return null;
+  const dayStart = nowMs - dhakaClock(nowMs).sec * 1000;
+  for (let d = 0; d < 4; d++) {
+    const midnight = dayStart + d * 86400000;
+    const dt = dayTypeFor(midnight + 12 * 3600000, holidays);
+    const next = (['SB', 'NB'] as const)
+      .flatMap((dir) => terminalDepartures(tt, dt, dir))
+      .map((x) => midnight + x.departSec * 1000)
+      .filter((ms) => ms > nowMs);
+    if (next.length) return Math.min(...next);
+  }
+  return null;
+}

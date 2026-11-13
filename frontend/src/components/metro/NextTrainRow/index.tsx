@@ -2,12 +2,13 @@ import { Pressable, View } from 'react-native';
 
 import { useTheme } from '@/theme/useTheme';
 
+import { IconTile } from '../../ui/IconTile';
 import { StatusBadge } from '../../ui/StatusBadge';
 import { Text } from '../../ui/Text';
 
 import type { NextTrainRowProps } from './types';
 
-/** One direction on the live sheet: colour bar, destination, platform, next ETA or departure countdown (board 1). */
+/** One direction on the live sheet: train tile, destination, platform / origin, next ETA or departure countdown (design live sheet). */
 export function NextTrainRow({ direction, title, subtitle, eta, source = 'schedule', dwell, emptyText, onPress, divider, testID }: NextTrainRowProps) {
   const { c, space, size } = useTheme();
   const spoken = dwell ? `${dwell.caption} ${dwell.countdown}` : eta ?? emptyText;
@@ -17,12 +18,12 @@ export function NextTrainRow({ direction, title, subtitle, eta, source = 'schedu
       disabled={!onPress}
       onPress={onPress}
       accessibilityRole={onPress ? 'button' : undefined}
-      accessibilityLabel={[title, subtitle, spoken].filter(Boolean).join(', ')}
-      style={{ minHeight: size.rowLg, flexDirection: 'row', alignItems: 'center', gap: space[3], borderBottomWidth: divider ? 1 : 0, borderBottomColor: c.surfaceAlt }}
+      accessibilityLabel={[direction, title, subtitle, spoken].filter(Boolean).join(', ')}
+      style={{ minHeight: size.rowLg, flexDirection: 'row', alignItems: 'center', gap: space[3], paddingVertical: space[2], borderBottomWidth: divider ? 1 : 0, borderBottomColor: c.divider }}
     >
-      <View style={{ width: 10, height: 36, borderRadius: 5, backgroundColor: direction === 'SB' ? c.trainSB : c.trainNB }} />
+      <IconTile icon="train" tone="brand" />
       <View style={{ flex: 1 }}>
-        <Text weight={600} numberOfLines={1}>
+        <Text weight={700} numberOfLines={1}>
           {title}
         </Text>
         {subtitle ? (

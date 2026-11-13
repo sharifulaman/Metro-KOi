@@ -44,7 +44,7 @@ export default function JourneyScreen() {
   };
 
   return (
-    <Screen scroll gap={4}>
+    <Screen scroll gap={4} withTabBar>
       <ScreenHeader title={t('journey.plan')} right={<Button label={t('stations.timetable')} variant="ghost" size="md" icon="calendar" onPress={() => router.push('/timetable')} />} />
       <JourneyPicker
         fromCaption={t('journey.from')}

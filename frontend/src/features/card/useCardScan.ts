@@ -60,14 +60,15 @@ export function useCardScan() {
         success: (r) => (r.balance != null ? t('card.readOk', { amount: fmtTaka(r.balance, lang) }) : t('card.noBalance')),
         error: (code) => t(`card.err.${code}`),
       });
-      const tail = bytesToHex(read.idm).slice(-4);
+      const idmHex = bytesToHex(read.idm);
       useCard.getState().setLast({
         balanceBdt: read.balance,
         readAt: Date.now(),
         lastTapAt: read.transactions[0]?.at ?? null,
-        cardTail: tail,
+        cardTail: idmHex.slice(-4),
         cardType: read.cardType,
         partial: read.partial,
+        idmHex,
       });
       useHistory.getState().merge(toHistory(read));
       if (alive.current) setState({ kind: 'success', read });

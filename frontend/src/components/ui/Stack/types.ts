@@ -17,6 +17,8 @@ export interface StackProps {
   justify?: 'start' | 'center' | 'end' | 'between';
   wrap?: boolean;
   flex?: boolean;
+  /** direction="row": give every direct child equal width (e.g. two side-by-side buttons) */
+  equal?: boolean;
   /** Float over a map/scene: pinned to an edge of the nearest positioned parent. */
   overlay?: 'top' | 'bottom' | 'topRight' | 'bottomRight' | 'fill';
   /** add the device safe-area inset on that edge (floating overlays) */

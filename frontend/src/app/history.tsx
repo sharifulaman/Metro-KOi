@@ -1,8 +1,9 @@
 import { useRouter } from 'expo-router';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
+import { Pressable } from 'react-native';
 
 import { EmptyState, ScreenHeader, SummaryCard, TransactionRow } from '@/components/metro';
-import { Button, Card, InfoNote, Screen, SectionLabel, Segmented } from '@/components/ui';
+import { Card, Icon, Screen, SectionLabel, Segmented, Stack, Text } from '@/components/ui';
 import { useHistoryView, type HistoryFilter } from '@/features/history/useHistoryView';
 import { useT } from '@/i18n';
 import { useHistory } from '@/store/history';
@@ -15,12 +16,12 @@ export default function HistoryScreen() {
   const [confirmClear, setConfirmClear] = useState(false);
   const view = useHistoryView(filter, lang, t);
   const clear = useHistory((s) => s.clear);
+  useEffect(() => useHistory.getState().seedSamplesIfEmpty(), []);
   return (
     <Screen scroll gap={4}>
       <ScreenHeader title={t('history.title')} onBack={() => router.back()} backLabel={t('common.back')} />
       <SummaryCard stats={[{ label: t('history.monthTrips'), value: view.summary.trips }, { label: t('history.monthSpend'), value: view.summary.spend }]} />
       <Segmented<HistoryFilter>
-        variant="tabs"
         value={filter}
         onChange={setFilter}
         options={[
@@ -41,22 +42,33 @@ export default function HistoryScreen() {
           </Card>
         ))
       )}
-      <InfoNote icon="shield" text={t('history.onlyPhone')} />
-      {!view.empty ? (
-        confirmClear ? (
-          <Button
-            label={`${t('history.clear')}?`}
-            variant="dangerText"
-            icon="trash"
+      <Stack direction="row" justify="between" align="center" gap={3}>
+        <Stack direction="row" gap={2} align="center">
+          <Icon name="lock" size={16} tone="muted" />
+          <Text variant="label" tone="muted">
+            {t('history.onlyPhone')}
+          </Text>
+        </Stack>
+        {!view.empty ? (
+          <Pressable
+            accessibilityRole="button"
             onPress={() => {
-              clear();
-              setConfirmClear(false);
+              if (confirmClear) {
+                clear();
+                setConfirmClear(false);
+              } else {
+                setConfirmClear(true);
+              }
             }}
-          />
-        ) : (
-          <Button label={t('history.clear')} variant="dangerText" icon="trash" onPress={() => setConfirmClear(true)} />
-        )
-      ) : null}
+            hitSlop={8}
+            testID="history-clear"
+          >
+            <Text variant="label" weight={700} tone="danger">
+              {confirmClear ? `${t('history.clear')}?` : t('history.clear')}
+            </Text>
+          </Pressable>
+        ) : null}
+      </Stack>
     </Screen>
   );
 }

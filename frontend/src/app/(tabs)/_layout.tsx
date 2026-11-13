@@ -14,7 +14,7 @@ export default function TabsLayout() {
   const labels = { live: t('tabs.live'), stations: t('tabs.stations'), journey: t('tabs.journey'), card: t('tabs.card'), more: t('tabs.more') };
   return (
     <Tabs
-      screenOptions={{ headerShown: false }}
+      screenOptions={{ headerShown: false, tabBarStyle: { position: 'absolute' } }}
       tabBar={({ state, navigateToTab, insets: tabInsets }) => (
         <TabBar
           active={KEY_OF[state.routes[state.index].name] ?? 'live'}

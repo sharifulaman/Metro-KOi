@@ -15,5 +15,10 @@ export interface SheetProps {
   gap?: SpaceStep;
   /** Max height as a fraction of the window (docked only). */
   maxHeight?: number;
+  /** Leave room under the content for the floating tab bar. */
+  withTabBar?: boolean;
+  /** Present over a dimmed backdrop, rising from the bottom; tapping the backdrop calls onDismiss. */
+  modal?: boolean;
+  onDismiss?: () => void;
   testID?: string;
 }

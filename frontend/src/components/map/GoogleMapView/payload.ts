@@ -10,7 +10,7 @@ export const ZOOM_NEAR = 5.4;
 export interface MapPayload {
   dark: boolean;
   errorText: string;
-  theme: Pick<Palette, 'bg' | 'surface' | 'ink' | 'inkMuted' | 'brand' | 'onBrand' | 'live' | 'liveTint' | 'onLiveTint' | 'estimated' | 'trainSB' | 'trainNB' | 'mapGround' | 'mapRoad'>;
+  theme: Pick<Palette, 'bg' | 'surface' | 'ink' | 'inkMuted' | 'brand' | 'brandDeep' | 'onBrand' | 'live' | 'liveTint' | 'onLiveTint' | 'estimated' | 'trainSB' | 'trainNB' | 'mapGround' | 'mapRoad'>;
   stations: { id: string; label: string; lat: number; lng: number; terminal: boolean }[];
   trains: { id: string; dir: 'SB' | 'NB'; state: string; lat: number; lng: number; heading: number; label?: string; timer?: string; progress?: number }[];
   selectedStation?: string;
@@ -44,6 +44,7 @@ export function buildPayload(p: GoogleMapViewProps, c: Palette, dark: boolean, r
       ink: c.ink,
       inkMuted: c.inkMuted,
       brand: c.brand,
+      brandDeep: c.brandDeep,
       onBrand: c.onBrand,
       live: c.live,
       liveTint: c.liveTint,

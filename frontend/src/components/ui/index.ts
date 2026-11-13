@@ -14,4 +14,6 @@ export { Segmented } from './Segmented';
 export { InfoNote } from './InfoNote';
 export { SwitchRow } from './SwitchRow';
 export { Sheet } from './Sheet';
+export { TextField } from './TextField';
+export { GlassPill } from './GlassPill';
 export { Divider, Spacer, Screen } from './Layout';

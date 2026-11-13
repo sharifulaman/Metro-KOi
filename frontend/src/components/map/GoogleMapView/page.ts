@@ -19,22 +19,20 @@ html,body,#m{margin:0;height:100%;width:100%;overflow:hidden;-webkit-tap-highlig
 #err[hidden]{display:none}
 .pin{position:absolute;transform:translate(-50%,-50%);cursor:pointer;transition:left .45s linear,top .45s linear}
 .nz .pin{transition:none}
-.st{display:flex;flex-direction:column;align-items:center}
-.st i{width:14px;height:14px;border-radius:50%;box-sizing:border-box;border:3px solid var(--brand);background:var(--surface);box-shadow:0 1px 4px rgba(0,0,0,.35)}
-.st.sel i{width:22px;height:22px;border-width:5px;background:var(--surface)}
-.st b{display:none;margin-top:3px;font-size:12.5px;font-weight:700;color:var(--ink);white-space:nowrap;text-shadow:-1.5px 0 var(--surface),1.5px 0 var(--surface),0 -1.5px var(--surface),0 1.5px var(--surface)}
-.lab .st b,.st.sel b,.st.term b{display:block}
-.st.sel b{color:var(--brand)}
+.st{display:flex;align-items:center;gap:6px;padding:3px 9px 3px 5px;border-radius:999px;background:var(--surface);color:var(--ink);font-size:12.5px;font-weight:700;white-space:nowrap;box-shadow:0 3px 10px rgba(14,26,22,.22)}
+.st i{display:flex;align-items:center;justify-content:center;width:17px;height:17px;border-radius:6px;background:var(--brand);color:#fff}
+.st i svg{width:11px;height:11px;fill:#fff}
+.st.sel{background:var(--brandDeep);color:#fff}
+.st.sel i{background:#2BD39A}.st.sel i svg{fill:#04140E}
+.dots .st:not(.sel):not(.term){width:12px;height:12px;padding:0;border-radius:50%;background:var(--surface);border:2.5px solid var(--brand);box-sizing:border-box;box-shadow:0 1px 4px rgba(14,26,22,.3)}
+.dots .st:not(.sel):not(.term) i,.dots .st:not(.sel):not(.term) b{display:none}
 .tr{display:flex;flex-direction:column;align-items:center}
-.tr .tag{position:absolute;bottom:30px;min-width:92px;box-sizing:border-box;padding:4px 10px;border-radius:14px;background:var(--surface);color:var(--ink);font-size:12px;font-weight:700;white-space:nowrap;text-align:center;box-shadow:0 2px 8px rgba(0,0,0,.3)}
-.tr .tag u{display:inline-block;width:8px;height:8px;border-radius:50%;background:var(--live);margin-right:6px;text-decoration:none}
-.tr.dw .tag{background:var(--liveTint);color:var(--onLiveTint)}
-.tr .tag s{display:block;height:3px;margin-top:3px;border-radius:2px;background:var(--onLiveTint);opacity:.85;text-decoration:none}
-.tr .car{width:28px;height:28px;border-radius:50%;box-sizing:border-box;display:flex;align-items:center;justify-content:center;background:var(--dir);border:3px solid var(--ring);box-shadow:0 2px 6px rgba(0,0,0,.4)}
-.tr.est .car{background:var(--surface);border:2px dashed var(--estimated)}
-.tr.est svg{fill:var(--estimated)}
-.tr.sel .car{width:34px;height:34px}
-.tr svg{width:16px;height:16px;fill:var(--onBrand)}
+.tr .tag{position:absolute;bottom:28px;display:flex;align-items:center;gap:6px;padding:3px 10px;border-radius:999px;background:var(--ink);border:1.5px solid var(--live);color:var(--surface);font-size:11.5px;font-weight:700;white-space:nowrap}
+.tr .tag u{display:inline-block;width:7px;height:7px;border-radius:50%;background:var(--live);text-decoration:none}
+.tr.est .tag{background:var(--surface);border:1.5px dashed var(--estimated);color:var(--inkMuted)}
+.tr .car{width:24px;height:24px;border-radius:50%;box-sizing:border-box;border:2px solid var(--live);background:rgba(245,158,11,.16)}
+.tr.est .car{border:2px dashed var(--estimated);background:rgba(255,255,255,.4)}
+.tr.sel .car{width:36px;height:36px}
 </style></head>
 <body><div id="m"></div><div id="err" hidden></div>
 <script>
@@ -79,7 +77,7 @@ window.__init=function(){
   window.__line=[casing,line];
   map.addListener('zoom_changed',function(){
     var d=document.body;d.classList.add('nz');setTimeout(function(){d.classList.remove('nz');},450);
-    d.classList.toggle('lab',map.getZoom()>=14.2);
+    d.classList.toggle('dots',map.getZoom()<13.2);
   });
   // the projection arrives a moment after the first placement: redo the framing so the sheet/top offsets apply
   google.maps.event.addListenerOnce(map,'idle',function(){proj=true;if(S){placed=false;setView(S.view);placed=true;}});
@@ -97,7 +95,7 @@ function syncStations(p){
     seen[s.id]=1;
     var o=stations[s.id];
     if(!o){
-      var el=document.createElement('div');el.className='pin';el.innerHTML='<div class="st"><i></i><b></b></div>';
+      var el=document.createElement('div');el.className='pin';el.innerHTML='<div class="st"><i><svg viewBox="0 0 24 24"><path d="M7 3h10a3 3 0 0 1 3 3v9a3 3 0 0 1-3 3H7a3 3 0 0 1-3-3V6a3 3 0 0 1 3-3Zm0 3v5h10V6H7Zm1 9a1.5 1.5 0 1 0 0 .1Zm8 0a1.5 1.5 0 1 0 0 .1ZM8 19l-2 3h2.4l1.2-2Zm8 0-1.6 1 1.2 2H18Z"/></svg></i><b></b></div>';
       el.addEventListener('click',function(ev){ev.stopPropagation();send({type:'station',id:s.id});});
       o=stations[s.id]={el:el,pin:new Pin(el,s,1)};
     }
@@ -112,12 +110,11 @@ function syncStations(p){
 
 function trainHtml(t){
   var est=t.state!=='LIVE';
-  var dw=t.timer!=null;
   var tag='';
   if(t.label){
-    tag='<div class="tag">'+(dw?'':'<u></u>')+esc(t.label)+(dw?' '+esc(t.timer):'')+(dw?'<s style="width:'+Math.round(Math.max(0,Math.min(1,t.progress||0))*100)+'%"></s>':'')+'</div>';
+    tag='<div class="tag">'+(est?'':'<u></u>')+esc(t.label)+'</div>';
   }
-  return tag+'<div class="car"><svg viewBox="0 0 24 24" style="transform:rotate('+Math.round(t.heading)+'deg)"><path d="M12 2 L20 21 L12 16.5 L4 21 Z"/></svg></div>';
+  return tag+'<div class="car"></div>';
 }
 function esc(s){return String(s).replace(/[&<>"]/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c];});}
 
@@ -175,7 +172,7 @@ function apply(p){
   map.setOptions({styles:styles(p.theme,p.dark)});
   window.__line[0].setOptions({strokeColor:p.theme.surface});
   window.__line[1].setOptions({strokeColor:p.theme.brand});
-  document.body.classList.toggle('lab',map.getZoom()>=14.2);
+  document.body.classList.toggle('dots',map.getZoom()<13.2);
   syncStations(p);
   syncTrains(p);
   var v=p.view,k=v.mode+'|'+(v.mode==='focus'?v.lat.toFixed(6)+','+v.lng.toFixed(6)+','+v.zoom:'')+'|'+v.top+'|'+v.bottom+'|'+(v.shiftX||0)+'|'+v.key;

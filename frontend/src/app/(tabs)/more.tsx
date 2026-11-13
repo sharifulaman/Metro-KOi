@@ -15,7 +15,7 @@ export default function MoreScreen() {
   const { setLang, setThemeMode, setNotifications } = useSettings.getState();
   const [showCredits, setShowCredits] = useState(false);
   return (
-    <Screen scroll gap={4}>
+    <Screen scroll gap={4} withTabBar>
       <ScreenHeader title={t('more.title')} />
       <SectionLabel text={t('more.language')} />
       <Segmented<Lang> value={lang} onChange={setLang} options={[{ value: 'bn', label: 'বাংলা' }, { value: 'en', label: 'English' }]} testID="lang" />

@@ -30,6 +30,11 @@ export interface Palette {
   mapRoad: string;
   /** brick-red concourse facade (station section + 3D scene) */
   facade: string;
+  /** floating "glass" pills and the tab bar: translucent surface + hairline */
+  glass: string;
+  glassBorder: string;
+  /** border of the active tab pill */
+  brandLine: string;
 }
 
 export const light: Palette = {
@@ -60,6 +65,9 @@ export const light: Palette = {
   mapGround: '#EEF1EF',
   mapRoad: '#FFFFFF',
   facade: '#B5523B',
+  glass: 'rgba(255,255,255,0.84)',
+  glassBorder: 'rgba(255,255,255,0.75)',
+  brandLine: 'rgba(14,159,110,0.3)',
 };
 
 export const dark: Palette = {
@@ -90,7 +98,23 @@ export const dark: Palette = {
   mapGround: '#101917',
   mapRoad: '#1C2925',
   facade: '#5A2E26',
+  glass: 'rgba(19,29,26,0.86)',
+  glassBorder: 'rgba(255,255,255,0.12)',
+  brandLine: 'rgba(43,211,154,0.35)',
 };
+
+/** A saved card's colour, picked by the rider to tell cards apart — fixed in both themes, like `livery`. */
+export type CardColor = 'green' | 'dark' | 'gold' | 'blue';
+
+export const cardGradients: Record<CardColor, { from: string; via: string; to: string }> = {
+  green: { from: '#0A8A60', via: '#066B4A', to: '#04402C' },
+  dark: { from: '#2B3A35', via: '#16211D', to: '#0B1210' },
+  gold: { from: '#B7791F', via: '#8A4B0F', to: '#5C3008' },
+  blue: { from: '#2F6FD1', via: '#1D4FA3', to: '#123572' },
+};
+
+/** The EMV-style chip graphic drawn on every card, regardless of its colour. */
+export const cardChip = { from: '#F3D98B', to: '#C9A34A' } as const;
 
 /** Train livery — fixed in both themes (TrainIllustration + 3D scene). */
 export const livery = {
@@ -140,7 +164,8 @@ export const size = {
   chipH: 38,
   row: 56,
   rowLg: 66,
-  tabBar: 76,
+  /** floating capsule (64) + its gap from the bottom edge (22) */
+  tabBar: 86,
   iconTile: 38,
 } as const;
 

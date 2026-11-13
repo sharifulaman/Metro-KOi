@@ -40,7 +40,6 @@ export const en = {
     watch: 'Watch trains by the timetable',
     watchShort: 'Timetable playback',
     playbackTitle: 'Trains by the official timetable',
-    playbackNote: 'Positions come from the official timetable, not from riders.',
     timeDay: '{{time}} · {{day}}',
   },
   station: {
@@ -78,9 +77,9 @@ export const en = {
     speed: 'Speed {{v}}',
     updated: 'Updated {{n}} s ago',
     open: 'Train details',
+    unknown: 'This train is not in today’s timetable.',
     yourStation: 'Your station',
     now: 'Now',
-    unknown: 'This train is not in today’s timetable.',
   },
   rider: {
     askTitle: 'Are you on the metro?',
@@ -114,6 +113,20 @@ export const en = {
     shareEta: 'Share ETA',
     none: 'No more trains for this trip today',
     same: 'Pick two different stations',
+    plan: 'Plan a journey',
+    leaveNow: 'Now',
+    leaveLater: 'Leave later',
+    laterIn: '+{{n}}',
+    summary: '{{n}} stations · ~{{dur}}',
+    fastest: 'Fastest',
+    leavesIn: 'Leaves · {{eta}}',
+    leavesInShort: 'Leaves in {{eta}}',
+    leavesAt: 'Leaves {{time}}',
+    arriveWord: 'Arrives',
+    arriveAt: '→ {{time}} arrival',
+    platformTrain: 'Platform {{n}} · Train {{id}}',
+    fareShort: 'Fare {{amount}}',
+    disclaimer: 'Journey times are estimated from the timetable and live data. Unofficial app: follow DMTCL announcements.',
   },
   timetable: {
     title: 'Timetable',
@@ -258,13 +271,6 @@ export const en = {
   },
   gallery: { title: 'Component gallery' },
   days: { d0: 'Sunday', d1: 'Monday', d2: 'Tuesday', d3: 'Wednesday', d4: 'Thursday', d5: 'Friday', d6: 'Saturday' },
-  sim: {
-    title: 'Station to station (3D)',
-    open: 'Watch this trip in 3D',
-    more: 'Station-to-station 3D simulation',
-    moreSub: 'Ride any two stations in 3D: doors, gates and the way inside.',
-    error: 'Could not load the 3D view. Check your internet connection and try again.',
-  },
 };
 
 export type Dict = typeof en;

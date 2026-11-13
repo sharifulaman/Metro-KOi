@@ -44,8 +44,10 @@ export function TrainMarker({ x, y, bearing, dir, state, selected, label, k = 1,
   const heading = (dir === 'SB' ? bearing : bearing + 180) - 90;
   const live = state === 'LIVE';
   const tagW = label ? label.length * 7 + 20 : 0;
+  const nose = dense ? 7 : 8;
+  const noseH = dense ? 3 : 4;
   return (
-    <G {...svgPress(onPress)} transform={`translate(${ox},${oy}) scale(${k})`}>
+    <G onPress={onPress} transform={`translate(${ox},${oy}) scale(${k})`}>
       <Circle r={L / 2 + 6} fill="transparent" />
       {live && <Circle r={L / 2 + 2} fill="none" stroke={c.live} strokeWidth={2.5} opacity={0.65} />}
       {selected && <Circle r={L / 2 + 5} fill="none" stroke={c.ink} strokeWidth={2} />}
@@ -62,9 +64,8 @@ export function TrainMarker({ x, y, bearing, dir, state, selected, label, k = 1,
           strokeWidth={live ? 3 : 2}
           strokeDasharray={live ? undefined : '5,3'}
         />
-        {!dense &&
-          [-21, -7, 7].map((wx) => <Rect key={wx} x={wx} y={-3} width={10} height={6} rx={1.5} fill={live ? c.surface : color} opacity={live ? 0.8 : 0.35} />)}
-        <Path d={`M${L / 2 - (dense ? 7 : 8)},${dense ? -3 : -4} L${L / 2 - 2},0 L${L / 2 - (dense ? 7 : 8)},${dense ? 3 : 4} Z`} fill={live ? c.surface : color} />
+        {!dense && [-21, -7, 7].map((wx) => <Rect key={wx} x={wx} y={-3} width={10} height={6} rx={1.5} fill={live ? c.surface : color} opacity={live ? 0.8 : 0.35} />)}
+        <Path d={`M${L / 2 - nose},${-noseH} L${L / 2 - 2},0 L${L / 2 - nose},${noseH} Z`} fill={live ? c.surface : color} />
       </G>
       {label ? (
         <G transform={`translate(0,${-(L / 2 + 18)})`}>

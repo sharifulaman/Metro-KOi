@@ -33,9 +33,12 @@ export default function TrainScreen() {
   const source = live ? 'live' : 'schedule';
   const from = dir === 'SB' ? first : last;
   const to = dir === 'SB' ? last : first;
-  const next = stops.find((s) => !s.passed);
+  // while standing at a station, "next" is the stop after it
+  const next = stops.find((s) => !s.passed && !s.here);
+  const here = stops.find((s) => s.here);
   const firstStop = stops[0];
   const lastStop = stops[stops.length - 1];
+  const prev = here ?? stops[Math.max(0, run.markerAfter ?? 0)];
 
   const timeline: TimelineStop[] = stops.map((s) => ({
     key: s.stationId,
@@ -53,7 +56,12 @@ export default function TrainScreen() {
             ? fmtClock(s.arriveSec ?? 0, lang)
             : fmtEtaAt(s.etaSec, s.arriveSec ?? undefined, source, lang)
           : undefined,
-    rightSub: s.passed && s.departSec != null ? t('train.passed') : !s.passed && run.phase === 'running' && s.arriveSec != null && s.etaSec != null && s.etaSec < 3600 ? fmtClock(s.arriveSec, lang) : undefined,
+    rightSub:
+      s.passed && s.departSec != null
+        ? t('train.passed')
+        : !s.passed && run.phase === 'running' && s.arriveSec != null && s.etaSec != null && s.etaSec < 3600
+          ? fmtClock(s.arriveSec, lang)
+          : undefined,
   }));
 
   return (
@@ -70,7 +78,7 @@ export default function TrainScreen() {
         {run.phase === 'running' && next ? (
           <>
             <Text variant="label" tone="onBrand">
-              {segment?.atStation ? t('train.standing', { name: name(stops.find((s) => s.here)?.stationId ?? next.stationId) }) : t('train.nextStation')}
+              {segment?.atStation && here ? t('train.standing', { name: name(here.stationId) }) : t('train.nextStation')}
             </Text>
             <Stack direction="row" justify="between" align="center" gap={3}>
               <Text variant="display" tone="onBrand" numberOfLines={1}>
@@ -101,14 +109,14 @@ export default function TrainScreen() {
         )}
       </Card>
 
-      {run.phase === 'running' && segment && train ? (
+      {run.phase === 'running' && segment && next ? (
         <Card padding={4}>
           <SegmentProgress
-            fromLabel={name(stops.find((s) => s.here)?.stationId ?? stops[(run.markerAfter ?? 0) < 0 ? 0 : run.markerAfter ?? 0].stationId)}
-            toLabel={next ? name(next.stationId) : ''}
+            fromLabel={name(prev.stationId)}
+            toLabel={name(next.stationId)}
             progress={segment.progress}
             direction={dir}
-            caption={next?.etaSec != null ? t('train.arrivesIn', { name: name(next.stationId), eta: fmtEta(next.etaSec, source, lang) }) : undefined}
+            caption={next.etaSec != null ? t('train.arrivesIn', { name: name(next.stationId), eta: fmtEta(next.etaSec, source, lang) }) : undefined}
           />
         </Card>
       ) : null}

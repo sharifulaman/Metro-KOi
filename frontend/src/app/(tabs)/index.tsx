@@ -4,22 +4,22 @@ import { useEffect, useState } from 'react';
 import { MapView3D } from '@/components/map';
 import { ConnectionPill, NextTrainRow, PlaybackBar, RideBanner, SearchPill, SegmentProgress, StationHeader, TrainCard } from '@/components/metro';
 import { Button, IconButton, InfoNote, Screen, Sheet, Stack } from '@/components/ui';
-import { fractionOf, trainSegment, useTrains } from '@/features/map/useTrains';
 import { usePlayback } from '@/features/map/usePlayback';
+import { fractionOf, trainSegment, useTrains } from '@/features/map/useTrains';
 import { useRiderSession } from '@/features/rider/useRiderSession';
 import { platformTitle } from '@/features/stations/mappers';
 import { useDepartures } from '@/features/stations/useDepartures';
 import { stationAltName, stationName, useStations } from '@/features/stations/useStations';
 import { useT } from '@/i18n';
 import { config } from '@/lib/config';
-import { fmtClock, fmtEta, fmtEtaAt, fmtNum } from '@/lib/fmt';
-import { dhakaClock } from '@/lib/schedule';
+import { fmtEta, fmtEtaAt, fmtNum } from '@/lib/fmt';
 import type { Direction } from '@/models';
 import { useLive } from '@/store/live';
 import { useSettings } from '@/store/settings';
 
 const NEAR_ZOOM = 4;
 
+/** Live map (spec §10.2, board 1). */
 export default function LiveScreen() {
   const { t, lang } = useT();
   const router = useRouter();
@@ -46,7 +46,7 @@ export default function LiveScreen() {
   const tagFor = (state: string, id: string) => `${id} · ${state === 'ESTIMATED' ? t('common.estimated') : t('common.live')}`;
 
   // follow the selected train; otherwise frame the station in focus
-  const mapFocus = train ? fractionOf(model, train.s) : focusIdx >= 0 ? model.chainage[focusIdx] / model.lengthM : 0.5;
+  const mapFocus = train ? fractionOf(model, train.s) : focusIdx >= 0 ? fractionOf(model, model.chainage[focusIdx]) : 0.5;
 
   const openDeparture = (dir: Direction) => {
     const d = deps.byDir[dir][0];
@@ -74,12 +74,11 @@ export default function LiveScreen() {
   }, [followNext, trains, deps]);
 
   const closedUntil = playback.closedUntil;
-  const firstStation = closedUntil ? stationName(first, lang) : '';
 
   return (
     <Screen bleed>
       <MapView3D
-        stations={list.map((s, i) => ({ id: s.id, label: stationName(s, lang), f: model.chainage[i] / model.lengthM }))}
+        stations={list.map((s, i) => ({ id: s.id, label: stationName(s, lang), f: fractionOf(model, model.chainage[i]) }))}
         trains={trains.map((tr) => ({ id: tr.id, dir: tr.dir, state: tr.state, f: fractionOf(model, tr.s), label: tagFor(tr.state, tr.id) }))}
         selectedStation={selStation ?? (train ? undefined : focusId)}
         selectedTrain={selTrain}
@@ -192,13 +191,7 @@ export default function LiveScreen() {
                 <StationHeader compact name={t('live.stationTitle', { name: stationName(focus, lang) })} altName={stationAltName(focus, lang)} />
                 {closedUntil ? (
                   <>
-                    <InfoNote
-                      icon="clock"
-                      text={`${t('live.closedTitle')} · ${t('live.closedBody', {
-                        time: t('live.timeDay', { time: fmtClock(dhakaClock(closedUntil).sec, lang), day: t(`days.d${dhakaClock(closedUntil).weekday}`) }),
-                        station: firstStation,
-                      })}`}
-                    />
+                    <InfoNote icon="clock" text={`${t('live.closedTitle')} · ${t('live.closedBody', { time: playback.timeLabel(closedUntil), station: stationName(first, lang) })}`} />
                     <Button label={t('live.watch')} icon="play" fullWidth onPress={startPlayback} testID="watch-schedule" />
                   </>
                 ) : null}

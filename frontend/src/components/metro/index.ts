@@ -27,3 +27,5 @@ export { PlaybackBar } from './PlaybackBar';
 export { SegmentProgress } from './SegmentProgress';
 export { TrainTimeline } from './TrainTimeline';
 export type { TimelineStop } from './TrainTimeline';
+export { JourneyPicker } from './JourneyPicker';
+export { JourneyOptionCard } from './JourneyOptionCard';

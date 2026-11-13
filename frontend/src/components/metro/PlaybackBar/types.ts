@@ -1,5 +1,5 @@
 export interface PlaybackBarProps {
-  /** "Timetable playback", already translated */
+  /** "Trains by the official timetable", already translated */
   title: string;
   /** current virtual time, e.g. "সকাল ৭:১২ · শনিবার" */
   timeLabel: string;

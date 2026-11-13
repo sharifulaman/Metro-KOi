@@ -20,9 +20,7 @@ export function usePlayback(now: number) {
   // recompute the closed/open state every 30 s of (virtual) time
   const bucket = Math.floor(now / 30000);
   const nextStart = useMemo(() => nextServiceStart(tt, model, bucket * 30000 + 1), [tt, model, bucket]);
-
-  const dayLabel = (ms: number) => t(`days.d${dhakaClock(ms).weekday}`);
-  const timeLabel = (ms: number) => t('live.timeDay', { time: fmtClock(dhakaClock(ms).sec, lang), day: dayLabel(ms) });
+  const timeLabel = (ms: number) => t('live.timeDay', { time: fmtClock(dhakaClock(ms).sec, lang), day: t(`days.d${dhakaClock(ms).weekday}`) });
 
   return {
     active: playback != null,

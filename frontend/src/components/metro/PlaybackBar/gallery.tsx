@@ -11,5 +11,5 @@ const rates = [
 export const gallery: GalleryEntry = {
   name: 'PlaybackBar',
   layer: 'metro',
-  variants: [{ label: '10× playback', render: () => <PlaybackBar title="সময়সূচি অনুযায়ী চলাচল" timeLabel="সকাল ৭:১২ · শনিবার" rates={rates} rate={10} onRate={() => {}} onClose={() => {}} closeLabel="বন্ধ" /> }],
+  variants: [{ label: '10× playback', render: () => <PlaybackBar title="অফিসিয়াল সময়সূচি অনুযায়ী ট্রেন" timeLabel="সকাল ৭:১২ · শনিবার" rates={rates} rate={10} onRate={() => {}} onClose={() => {}} closeLabel="বন্ধ" /> }],
 };

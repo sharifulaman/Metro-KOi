@@ -1,7 +1,9 @@
 import { useLocalSearchParams, useRouter } from 'expo-router';
 
+import { MapView3D } from '@/components/map';
 import { EmptyState, PlatformGroup, StationHeader } from '@/components/metro';
-import { Button, Card, InfoNote, Screen, Stack, Text } from '@/components/ui';
+import { Button, Card, IconButton, InfoNote, Screen, Stack, Text } from '@/components/ui';
+import { fractionOf, useTrains } from '@/features/map/useTrains';
 import { platformTitle, toDepartureRows } from '@/features/stations/mappers';
 import { useDepartures } from '@/features/stations/useDepartures';
 import { stationAltName, stationName, useStations } from '@/features/stations/useStations';
@@ -9,7 +11,7 @@ import { useT } from '@/i18n';
 import { fmtClock, fmtNum } from '@/lib/fmt';
 import { useSettings } from '@/store/settings';
 
-/** Station sheet (spec §10.4, board 2). */
+/** Station sheet (spec §10.4, board 2): close-up map, both platforms, 3D / gates. */
 export default function StationScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const { t, lang } = useT();
@@ -17,8 +19,9 @@ export default function StationScreen() {
   const { byId, list, first, last } = useStations();
   const favourites = useSettings((s) => s.favourites);
   const toggleFavourite = useSettings((s) => s.toggleFavourite);
+  const { trains, model } = useTrains(1000);
   const st = byId[id];
-  const deps = useDepartures(id, 3);
+  const deps = useDepartures(id, 2);
   if (!st) {
     return (
       <Screen>
@@ -26,9 +29,26 @@ export default function StationScreen() {
       </Screen>
     );
   }
+  const idx = model.stationIds.indexOf(st.id);
   const rows = (dir: 'SB' | 'NB') => toDepartureRows(deps.byDir[dir], (trainId) => router.push(`/train/${trainId}`));
   return (
     <Screen scroll gap={4}>
+      <Card radius="hero" padding={0}>
+        <MapView3D
+          height={210}
+          zoom={7}
+          focus={idx >= 0 ? fractionOf(model, model.chainage[idx]) : 0.5}
+          stations={list.map((s, i) => ({ id: s.id, label: stationName(s, lang), f: fractionOf(model, model.chainage[i]) }))}
+          trains={trains.map((tr) => ({ id: tr.id, dir: tr.dir, state: tr.state, f: fractionOf(model, tr.s) }))}
+          selectedStation={st.id}
+          onTrainPress={(trainId) => router.push(`/train/${trainId}`)}
+          attribution=""
+        >
+          <Stack overlay="top" padX={3} padY={3}>
+            <IconButton icon="back" elevated accessibilityLabel={t('common.back')} onPress={() => router.back()} />
+          </Stack>
+        </MapView3D>
+      </Card>
       <StationHeader
         name={stationName(st, lang)}
         altName={stationAltName(st, lang)}
@@ -37,7 +57,6 @@ export default function StationScreen() {
         favourite={favourites.includes(st.id)}
         onFavourite={() => toggleFavourite(st.id)}
         favouriteLabel={t('common.favourite')}
-        onBack={() => router.back()}
       />
       <Card elevated gap={3}>
         {deps.isTerminusFor.SB ? (
@@ -60,7 +79,7 @@ export default function StationScreen() {
         </Stack>
       </Stack>
       <Button label={t('station.insideRoute')} icon="walk" variant="ghost" onPress={() => router.push(`/station/${st.id}/route`)} />
-      <Text variant="label" tone="muted" numeric>
+      <Text variant="label" tone="muted" align="center" numeric>
         {t('station.todayWindow', { from: fmtClock(deps.window.firstSec, lang), to: fmtClock(deps.window.lastSec, lang) })}
       </Text>
     </Screen>

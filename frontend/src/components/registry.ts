@@ -20,6 +20,8 @@ import { gallery as TabBar } from './metro/TabBar/gallery';
 import { gallery as TrainCard } from './metro/TrainCard/gallery';
 import { gallery as TrainIllustration } from './metro/TrainIllustration/gallery';
 import { gallery as TransactionRow } from './metro/TransactionRow/gallery';
+import { gallery as JourneyOptionCard } from './metro/JourneyOptionCard/gallery';
+import { gallery as JourneyPicker } from './metro/JourneyPicker/gallery';
 import { gallery as NextTrainRow } from './metro/NextTrainRow/gallery';
 import { gallery as PlaybackBar } from './metro/PlaybackBar/gallery';
 import { gallery as SearchPill } from './metro/SearchPill/gallery';
@@ -46,6 +48,6 @@ export const galleryRegistry: GalleryEntry[] = [
   Text, Icon, Stack, Button, IconButton, Chip, StatusBadge, Card, ListRow, IconTile, SectionLabel, Segmented, InfoNote, SwitchRow, Sheet, Layout,
   TabBar, ScreenHeader, StationHeader, DepartureRow, PlatformGroup, TrainCard, CoachCrowdBar, LineDiagram, GateSelector, RouteSteps,
   TransactionRow, BalanceCard, SummaryCard, RideBanner, ConnectionPill, TrainIllustration, EmptyState, StationSection,
-  SearchPill, NextTrainRow, PlaybackBar, SegmentProgress, TrainTimeline,
+  SearchPill, NextTrainRow, PlaybackBar, SegmentProgress, TrainTimeline, JourneyPicker, JourneyOptionCard,
   mapGallery,
 ];

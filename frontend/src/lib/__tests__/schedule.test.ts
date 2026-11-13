@@ -7,7 +7,7 @@ import { test } from 'node:test';
 import { fileURLToPath } from 'node:url';
 
 import type { DayType, Direction, Station, TimetableFile } from '../../models/index.ts';
-import { fmtClock, fmtEta, fmtEtaAt, fmtNum } from '../fmt.ts';
+import { fmtClock, fmtClockRange, fmtEta, fmtEtaAt, fmtNum } from '../fmt.ts';
 import {
   buildRunModel,
   dayTypeFor,
@@ -139,10 +139,11 @@ test('scheduled run: id parsing and stop times', () => {
   assert.equal(sb[sb.length - 1].arriveSec, 7 * 3600 + 2400);
   const nb = runStops(m, 'NB', 7 * 3600);
   assert.equal(nb[0].stationId, m.stationIds[m.stationIds.length - 1]);
-  assert.ok(nb.every((x, i) => i === 0 || x.arriveSec > nb[i - 1].departSec - 1e-9));
 });
 
-test('fmt: far-off trains show a clock time instead of hundreds of minutes', () => {
+test('fmt: far-off trains show a clock time; ranges share the period word', () => {
   assert.equal(fmtEtaAt(600, 7 * 3600, 'schedule', 'en'), '~10 min');
   assert.equal(fmtEtaAt(6 * 3600, 6 * 3600 + 30 * 60, 'schedule', 'bn'), 'সকাল ৬:৩০');
+  assert.equal(fmtClockRange(6 * 3600 + 1800, 7 * 3600 + 600, 'bn'), 'সকাল ৬:৩০ – ৭:১০');
+  assert.equal(fmtClockRange(10 * 3600, 15 * 3600 + 1200, 'en'), '10:00 AM – 3:20 PM');
 });

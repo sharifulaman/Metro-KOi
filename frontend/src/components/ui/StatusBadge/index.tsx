@@ -43,8 +43,8 @@ export function LiveDot({ size = 8 }: { size?: number }) {
 export function StatusBadge({ kind, label, testID }: StatusBadgeProps) {
   const { c, radius, space } = useTheme();
   const { t } = useT();
-  const bg = kind === 'live' ? c.liveTint : kind === 'delayed' ? c.dangerTint : c.surfaceAlt;
-  const text = label ?? t(kind === 'live' ? 'common.live' : kind === 'delayed' ? 'common.delayed' : 'common.estimated');
+  const bg = kind === 'live' ? c.liveTint : kind === 'delayed' ? c.dangerTint : kind === 'stop' ? c.brandTint : c.surfaceAlt;
+  const text = label ?? t(kind === 'live' ? 'common.live' : kind === 'delayed' ? 'common.delayed' : kind === 'stop' ? 'live.atStation' : 'common.estimated');
   return (
     <View
       testID={testID}
@@ -64,7 +64,7 @@ export function StatusBadge({ kind, label, testID }: StatusBadgeProps) {
       }}
     >
       {kind === 'live' && <LiveDot size={6} />}
-      <Text variant="micro" weight={700} tone={kind === 'live' ? 'live' : kind === 'delayed' ? 'danger' : 'estimated'}>
+      <Text variant="micro" weight={700} tone={kind === 'live' ? 'live' : kind === 'delayed' ? 'danger' : kind === 'stop' ? 'brand' : 'estimated'}>
         {text}
       </Text>
     </View>

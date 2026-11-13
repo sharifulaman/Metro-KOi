@@ -1,6 +1,6 @@
 import { useLocalSearchParams, useRouter } from 'expo-router';
 
-import { MapView3D } from '@/components/map';
+import { GoogleMapView } from '@/components/map';
 import { EmptyState, PlatformGroup, StationHeader } from '@/components/metro';
 import { Button, Card, IconButton, InfoNote, Screen, Stack, Text } from '@/components/ui';
 import { fractionOf, useTrains } from '@/features/map/useTrains';
@@ -34,7 +34,7 @@ export default function StationScreen() {
   return (
     <Screen scroll gap={4}>
       <Card radius="hero" padding={0}>
-        <MapView3D
+        <GoogleMapView
           height={210}
           zoom={7}
           focus={idx >= 0 ? fractionOf(model, model.chainage[idx]) : 0.5}
@@ -42,12 +42,12 @@ export default function StationScreen() {
           trains={trains.map((tr) => ({ id: tr.id, dir: tr.dir, state: tr.state, f: fractionOf(model, tr.s) }))}
           selectedStation={st.id}
           onTrainPress={(trainId) => router.push(`/train/${trainId}`)}
-          attribution=""
+          errorText={t('live.mapError')}
         >
           <Stack overlay="top" padX={3} padY={3}>
             <IconButton icon="back" elevated accessibilityLabel={t('common.back')} onPress={() => router.back()} />
           </Stack>
-        </MapView3D>
+        </GoogleMapView>
       </Card>
       <StationHeader
         name={stationName(st, lang)}

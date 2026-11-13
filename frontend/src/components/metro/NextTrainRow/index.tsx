@@ -7,16 +7,17 @@ import { Text } from '../../ui/Text';
 
 import type { NextTrainRowProps } from './types';
 
-/** One direction on the live sheet: colour bar, destination, platform, next ETA (board 1). */
-export function NextTrainRow({ direction, title, subtitle, eta, source = 'schedule', emptyText, onPress, divider, testID }: NextTrainRowProps) {
+/** One direction on the live sheet: colour bar, destination, platform, next ETA or departure countdown (board 1). */
+export function NextTrainRow({ direction, title, subtitle, eta, source = 'schedule', dwell, emptyText, onPress, divider, testID }: NextTrainRowProps) {
   const { c, space, size } = useTheme();
+  const spoken = dwell ? `${dwell.caption} ${dwell.countdown}` : eta ?? emptyText;
   return (
     <Pressable
       testID={testID}
       disabled={!onPress}
       onPress={onPress}
       accessibilityRole={onPress ? 'button' : undefined}
-      accessibilityLabel={[title, subtitle, eta ?? emptyText].filter(Boolean).join(', ')}
+      accessibilityLabel={[title, subtitle, spoken].filter(Boolean).join(', ')}
       style={{ minHeight: size.rowLg, flexDirection: 'row', alignItems: 'center', gap: space[3], borderBottomWidth: divider ? 1 : 0, borderBottomColor: c.surfaceAlt }}
     >
       <View style={{ width: 10, height: 36, borderRadius: 5, backgroundColor: direction === 'SB' ? c.trainSB : c.trainNB }} />
@@ -25,13 +26,23 @@ export function NextTrainRow({ direction, title, subtitle, eta, source = 'schedu
           {title}
         </Text>
         {subtitle ? (
-          <Text variant="label" tone="muted">
+          <Text variant="label" tone="muted" numberOfLines={1}>
             {subtitle}
           </Text>
         ) : null}
       </View>
       <View style={{ alignItems: 'flex-end', gap: 2 }}>
-        {eta ? (
+        {dwell ? (
+          <>
+            <Text variant="title" weight={700} tone="live" numeric>
+              {dwell.countdown}
+            </Text>
+            <Text variant="micro" weight={700} tone="live">
+              {dwell.caption}
+            </Text>
+            <StatusBadge kind="stop" />
+          </>
+        ) : eta ? (
           <>
             <Text variant="title" weight={700} numeric>
               {eta}

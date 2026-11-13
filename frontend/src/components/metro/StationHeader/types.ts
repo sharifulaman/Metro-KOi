@@ -13,6 +13,13 @@ export interface StationHeaderProps {
   onFavourite?: () => void;
   favouriteLabel?: string;
   onBack?: () => void;
+  /** step to the neighbouring station (live sheet); both are needed to show the arrows */
+  onPrev?: () => void;
+  onNext?: () => void;
+  prevLabel?: string;
+  nextLabel?: string;
+  /** tapping the name opens the station */
+  onPress?: () => void;
   compact?: boolean;
   testID?: string;
 }

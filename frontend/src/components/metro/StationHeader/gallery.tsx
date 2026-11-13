@@ -13,5 +13,9 @@ export const gallery: GalleryEntry = {
       ),
     },
     { label: 'compact (3D panel)', render: () => <StationHeader name="Farmgate" altName="ফার্মগেট" compact /> },
+    {
+      label: 'compact with previous / next (live sheet)',
+      render: () => <StationHeader name="ফার্মগেট স্টেশন" altName="Farmgate" orderLabel="১৬টির মধ্যে ১১ নম্বর স্টেশন" compact onPrev={() => undefined} onNext={() => undefined} prevLabel="আগের স্টেশন" nextLabel="পরের স্টেশন" />,
+    },
   ],
 };

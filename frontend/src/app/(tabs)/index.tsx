@@ -1,8 +1,8 @@
 import { useRouter } from 'expo-router';
 import { useEffect, useState } from 'react';
 
-import { MapView3D } from '@/components/map';
-import { ConnectionPill, NextTrainRow, PlaybackBar, RideBanner, SearchPill, SegmentProgress, StationHeader, TrainCard } from '@/components/metro';
+import { GoogleMapView, ZOOM_NEAR, type MapTrain } from '@/components/map';
+import { BrandBar, ConnectionPill, MapLegend, NextTrainRow, PlaybackBar, RideBanner, SearchPill, SegmentProgress, StationHeader, TrainCard } from '@/components/metro';
 import { Button, IconButton, InfoNote, Screen, Sheet, Stack } from '@/components/ui';
 import { usePlayback } from '@/features/map/usePlayback';
 import { fractionOf, trainSegment, useTrains } from '@/features/map/useTrains';
@@ -12,14 +12,12 @@ import { useDepartures } from '@/features/stations/useDepartures';
 import { stationAltName, stationName, useStations } from '@/features/stations/useStations';
 import { useT } from '@/i18n';
 import { config } from '@/lib/config';
-import { fmtEta, fmtEtaAt, fmtNum } from '@/lib/fmt';
-import type { Direction } from '@/models';
+import { fmtEta, fmtEtaAt, fmtMmSs, fmtNum } from '@/lib/fmt';
+import type { Direction, Train } from '@/models';
 import { useLive } from '@/store/live';
 import { useSettings } from '@/store/settings';
 
-const NEAR_ZOOM = 4;
-
-/** Live map (spec §10.2, board 1). */
+/** Live map (spec §10.2, board 1): oblique city, trains with departure timers, next trains sheet. */
 export default function LiveScreen() {
   const { t, lang } = useT();
   const router = useRouter();
@@ -35,6 +33,7 @@ export default function LiveScreen() {
   const [collapsed, setCollapsed] = useState(false);
   const [near, setNear] = useState(true);
   const [followNext, setFollowNext] = useState(false);
+  const [recenter, setRecenter] = useState(0);
 
   const focusId = selStation ?? favourites[0] ?? config.defaultStationId;
   const focus = byId[focusId];
@@ -48,14 +47,43 @@ export default function LiveScreen() {
   // follow the selected train; otherwise frame the station in focus
   const mapFocus = train ? fractionOf(model, train.s) : focusIdx >= 0 ? fractionOf(model, model.chainage[focusIdx]) : 0.5;
 
+  // tags: live trains and any train standing at a station (with its departure timer); a selected train always has one
+  const mapTrains: MapTrain[] = trains.map((tr) => {
+    const left = tr.dwellLeftSec;
+    const base = { id: tr.id, dir: tr.dir, state: tr.state, f: fractionOf(model, tr.s) };
+    if (left != null) return { ...base, label: t('live.tagDwell', { id: tr.id }), dwell: { timer: fmtMmSs(left, lang), progress: left / model.dwellSec } };
+    return { ...base, label: tr.state === 'LIVE' || tr.id === selTrain ? tagFor(tr.state, tr.id) : undefined };
+  });
+
+  /** the train standing at the focus station in this direction, if any */
+  const standingAt = (dir: Direction): Train | undefined =>
+    trains.find((tr) => {
+      if (tr.dir !== dir || tr.dwellLeftSec == null) return false;
+      const s = trainSegment(model, tr);
+      return s.atStation && s.fromIdx === focusIdx;
+    });
+
+  const selectStation = (id: string) => {
+    setSelTrain(undefined);
+    setSelStation(id);
+    setCollapsed(false);
+    setNear(true);
+  };
+  const stepStation = (by: number) => {
+    const id = model.stationIds[focusIdx + by];
+    if (id) selectStation(id);
+  };
+
   const openDeparture = (dir: Direction) => {
+    const standing = standingAt(dir);
     const d = deps.byDir[dir][0];
-    if (!d?.trainId) return;
-    if (trains.some((x) => x.id === d.trainId)) {
+    const id = standing?.id ?? d?.trainId;
+    if (!id) return;
+    if (trains.some((x) => x.id === id)) {
       setSelStation(undefined);
-      setSelTrain(d.trainId);
+      setSelTrain(id);
       setNear(true);
-    } else router.push(`/train/${d.trainId}`);
+    } else router.push(`/train/${id}`);
   };
 
   // playback starts by following a train (the one due at the focus station,
@@ -77,37 +105,36 @@ export default function LiveScreen() {
 
   return (
     <Screen bleed>
-      <MapView3D
+      <GoogleMapView
         stations={list.map((s, i) => ({ id: s.id, label: stationName(s, lang), f: fractionOf(model, model.chainage[i]) }))}
-        trains={trains.map((tr) => ({ id: tr.id, dir: tr.dir, state: tr.state, f: fractionOf(model, tr.s), label: tagFor(tr.state, tr.id) }))}
+        trains={mapTrains}
         selectedStation={selStation ?? (train ? undefined : focusId)}
         selectedTrain={selTrain}
-        zoom={near ? NEAR_ZOOM : 1}
+        zoom={near ? ZOOM_NEAR : 1}
         focus={mapFocus}
-        topInset={playback.active ? 250 : 130}
-        onStationPress={(id) => {
-          setSelTrain(undefined);
-          setSelStation(id);
-          setCollapsed(false);
-          setNear(true);
-        }}
+        recenterKey={recenter}
+        topInset={playback.active ? 330 : 215}
+        focusShiftX={70}
+        onStationPress={selectStation}
         onTrainPress={(id) => {
           setSelStation(undefined);
           setSelTrain(id);
           setCollapsed(false);
         }}
-        attribution={t('live.attribution')}
+        errorText={t('live.mapError')}
         reserveSheet={!collapsed}
       >
         <Stack overlay="top" safe="top" padX={4} padY={2} gap={3}>
-          <SearchPill
-            placeholder={t('live.search')}
-            onPress={() => router.push('/stations')}
+          <BrandBar
+            title="Metro"
+            accent="KOI"
+            subtitle={t('splash.brandBn')}
             langLabel={lang === 'bn' ? 'বাং · EN' : 'EN · বাং'}
             onLangPress={() => setLang(lang === 'bn' ? 'en' : 'bn')}
             langAccessibilityLabel={t('more.language')}
-            testID="search"
+            testID="brand"
           />
+          <SearchPill placeholder={t('live.search')} onPress={() => router.push('/stations')} testID="search" />
           {playback.active ? (
             <PlaybackBar
               title={t('live.playbackTitle')}
@@ -121,8 +148,18 @@ export default function LiveScreen() {
             />
           ) : null}
           <Stack direction="row" gap={2} justify="between" align="start">
-            {playback.active ? <Stack /> : <ConnectionPill state={connection} label={t(`conn.${connection}`)} />}
             <Stack gap={2}>
+              {playback.active ? null : <ConnectionPill state={connection} label={t(`conn.${connection}`)} />}
+              <MapLegend
+                items={[
+                  { kind: 'live', label: t('live.legendLive') },
+                  { kind: 'dwell', label: t('live.legendDwell') },
+                  { kind: 'estimated', label: t('live.legendEstimated') },
+                ]}
+              />
+            </Stack>
+            <Stack gap={2}>
+              <IconButton icon="box" elevated accessibilityLabel={t('live.open3dShort')} onPress={() => router.push(`/station/${focusId}/3d`)} testID="open-3d" />
               <IconButton icon={near ? 'zoomOut' : 'zoomIn'} elevated accessibilityLabel={t(near ? 'live.zoomOut' : 'live.zoomIn')} onPress={() => setNear((v) => !v)} testID="zoom" />
               {!playback.active ? <IconButton icon="play" elevated accessibilityLabel={t('live.watchShort')} onPress={startPlayback} testID="play" /> : null}
               <IconButton
@@ -133,6 +170,7 @@ export default function LiveScreen() {
                   setSelTrain(undefined);
                   setSelStation(undefined);
                   setNear(true);
+                  setRecenter((n) => n + 1);
                 }}
               />
             </Stack>
@@ -188,7 +226,18 @@ export default function LiveScreen() {
               </>
             ) : focus ? (
               <>
-                <StationHeader compact name={t('live.stationTitle', { name: stationName(focus, lang) })} altName={stationAltName(focus, lang)} />
+                <StationHeader
+                  compact
+                  name={t('live.stationTitle', { name: stationName(focus, lang) })}
+                  altName={stationAltName(focus, lang)}
+                  orderLabel={t('common.stationNo', { n: fmtNum(focus.order, lang), total: fmtNum(list.length, lang) })}
+                  onPress={() => router.push(`/station/${focusId}`)}
+                  onPrev={focusIdx > 0 ? () => stepStation(-1) : undefined}
+                  onNext={focusIdx >= 0 && focusIdx < model.stationIds.length - 1 ? () => stepStation(1) : undefined}
+                  prevLabel={t('live.prevStation')}
+                  nextLabel={t('live.nextStation')}
+                  testID="station-header"
+                />
                 {closedUntil ? (
                   <>
                     <InfoNote icon="clock" text={`${t('live.closedTitle')} · ${t('live.closedBody', { time: playback.timeLabel(closedUntil), station: stationName(first, lang) })}`} />
@@ -199,27 +248,31 @@ export default function LiveScreen() {
                   .filter((dir) => !deps.isTerminusFor[dir])
                   .map((dir, i, arr) => {
                     const d = deps.byDir[dir][0];
+                    const standing = standingAt(dir);
+                    const platform = t('common.platform', { n: fmtNum(dir === 'SB' ? 1 : 2, lang) });
+                    const liveId = standing?.id ?? (d?.source === 'live' ? d.trainId : undefined);
                     return (
                       <NextTrainRow
                         key={dir}
                         direction={dir}
                         title={t(`timetable.${dir}`)}
-                        subtitle={t('common.platform', { n: fmtNum(dir === 'SB' ? 1 : 2, lang) })}
+                        subtitle={liveId ? `${platform} · ${liveId}` : platform}
                         eta={d ? fmtEtaAt(d.etaSec, d.atSec, d.source, lang) : undefined}
                         source={d?.source}
+                        dwell={standing?.dwellLeftSec != null ? { countdown: fmtMmSs(standing.dwellLeftSec, lang), caption: t('live.leavesIn') } : undefined}
                         emptyText={t('station.noService')}
-                        onPress={d?.trainId ? () => openDeparture(dir) : undefined}
+                        onPress={standing || d?.trainId ? () => openDeparture(dir) : undefined}
                         divider={i < arr.length - 1}
                         testID={`next-${dir}`}
                       />
                     );
                   })}
-                <Button label={t('stations.title')} variant="secondary" icon="list" fullWidth onPress={() => router.push(`/station/${focusId}`)} />
+                <Button label={t('live.open3d')} icon="box" fullWidth onPress={() => router.push(`/station/${focusId}/3d`)} testID="open-3d-cta" />
               </>
             ) : null}
           </Sheet>
         </Stack>
-      </MapView3D>
+      </GoogleMapView>
     </Screen>
   );
 }

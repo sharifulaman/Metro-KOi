@@ -1,7 +1,7 @@
 import { useRouter } from 'expo-router';
 import { useState } from 'react';
 
-import { MapView3D } from '@/components/map';
+import { GoogleMapView } from '@/components/map';
 import { TrainIllustration } from '@/components/metro';
 import { Button, Card, InfoNote, Screen, Segmented, Stack, Text } from '@/components/ui';
 import { stationName, useStations } from '@/features/stations/useStations';
@@ -27,13 +27,13 @@ export default function Onboarding() {
           <>
             <Card radius="hero" padding={0}>
               <Stack>
-                <MapView3D
+                <GoogleMapView
                   stations={list.filter((_, i) => i % 3 === 0).map((s, i, a) => ({ id: s.id, label: stationName(s, lang), f: i / (a.length - 1) }))}
                   trains={[
                     { id: 'a', dir: 'SB', state: 'LIVE', f: 0.3 },
                     { id: 'b', dir: 'NB', state: 'ESTIMATED', f: 0.68 },
                   ]}
-                  attribution={t('live.attribution')}
+                  errorText={t('live.mapError')}
                   height={280}
                 />
               </Stack>

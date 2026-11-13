@@ -65,6 +65,12 @@ export function fmtEtaAt(sec: number, atSec: number | undefined, source: Source,
   return fmtEta(sec, source, lang);
 }
 
+/** Seconds → "0:14" countdown (rounded up so it never shows 0:00 while still waiting). */
+export function fmtMmSs(sec: number, lang: Lang): string {
+  const s = Math.max(0, Math.ceil(sec));
+  return fmtNum(`${Math.floor(s / 60)}:${String(s % 60).padStart(2, '0')}`, lang);
+}
+
 /** Speed m/s → "58 km/h". */
 export function fmtSpeed(mps: number, lang: Lang): string {
   const k = Math.round(Math.abs(mps) * 3.6);

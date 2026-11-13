@@ -1,8 +1,5 @@
-export { MapView3D } from './MapView3D';
-export type { MapStation, MapTrain } from './MapView3D';
-export { TrainMarker } from './TrainMarker';
-export { StationPin } from './StationPin';
+export { GoogleMapView, ZOOM_NEAR } from './GoogleMapView';
+export type { MapStation, MapTrain } from './GoogleMapView';
 export { GatePin } from './GatePin';
-export { LineLayer } from './LineLayer';
 export { WalkingPathLayer } from './WalkingPathLayer';
 export { SimulationView } from './SimulationView';

@@ -8,12 +8,13 @@ export const gallery: GalleryEntry = {
   layer: 'ui',
   variants: [
     {
-      label: 'live / estimated / delayed',
+      label: 'live / estimated / delayed / at station',
       render: () => (
-        <Stack direction="row" gap={2}>
+        <Stack direction="row" gap={2} wrap>
           <StatusBadge kind="live" />
           <StatusBadge kind="estimated" />
           <StatusBadge kind="delayed" />
+          <StatusBadge kind="stop" />
         </Stack>
       ),
     },

@@ -1,4 +1,4 @@
-export type StatusKind = 'live' | 'estimated' | 'delayed';
+export type StatusKind = 'live' | 'estimated' | 'delayed' | 'stop';
 
 export interface StatusBadgeProps {
   kind: StatusKind;

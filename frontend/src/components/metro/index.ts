@@ -29,3 +29,8 @@ export { TrainTimeline } from './TrainTimeline';
 export type { TimelineStop } from './TrainTimeline';
 export { JourneyPicker } from './JourneyPicker';
 export { JourneyOptionCard } from './JourneyOptionCard';
+export { BrandMark } from './BrandMark';
+export { BrandBar } from './BrandBar';
+export { MapLegend } from './MapLegend';
+export type { LegendKind } from './MapLegend';
+export { Splash } from './Splash';

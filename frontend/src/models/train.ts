@@ -24,6 +24,11 @@ export interface Train {
   etaSec: number | null;
   /** Client receive time, ms epoch (for interpolation). */
   ts: number;
+  /**
+   * Seconds until the train leaves the station it is standing at. Only the
+   * timetable engine knows this exactly, so riders' LIVE trains leave it unset.
+   */
+  dwellLeftSec?: number;
 }
 
 /** 0–100 per coach; 6 coaches. */

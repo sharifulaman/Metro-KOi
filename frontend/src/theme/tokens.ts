@@ -102,6 +102,23 @@ export const livery = {
   underframe: '#2A2F2D',
 } as const;
 
+
+/** Splash screen and logo art: fixed brand colours, the same in both themes. */
+export const brandFixed = {
+  top: '#0E9F6E',
+  mid: '#066B4A',
+  bottom: '#04402C',
+  accent: '#FCD34D',
+  white: '#FFFFFF',
+  pinFrom: '#14B87F',
+  pinTo: '#055E40',
+  cab: '#0B5A3F',
+  lamp: '#F59E0B',
+  rail: '#D42A1F',
+  stripe: '#1F9D63',
+  body: '#E9EDEB',
+} as const;
+
 export const space = [0, 4, 8, 12, 16, 20, 24, 32] as const;
 export type SpaceStep = 0 | 1 | 2 | 3 | 4 | 5 | 6 | 7;
 

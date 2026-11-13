@@ -8,6 +8,7 @@ export const gallery: GalleryEntry = {
   variants: [
     { label: 'live', render: () => <NextTrainRow direction="SB" title="মতিঝিলের দিকে" subtitle="প্ল্যাটফর্ম ১" eta="২ মিনিট" source="live" divider /> },
     { label: 'estimated', render: () => <NextTrainRow direction="NB" title="উত্তরার দিকে" subtitle="প্ল্যাটফর্ম ২" eta="~৯ মিনিট" /> },
+    { label: 'standing here (departure countdown)', render: () => <NextTrainRow direction="NB" title="উত্তরার দিকে" subtitle="প্ল্যাটফর্ম ২ · T-12" dwell={{ countdown: '০:১৪', caption: 'ছাড়তে বাকি' }} divider /> },
     { label: 'no train', render: () => <NextTrainRow direction="NB" title="To Uttara North" subtitle="Platform 2" emptyText="No more trains today" /> },
   ],
 };

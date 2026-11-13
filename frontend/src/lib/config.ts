@@ -5,6 +5,8 @@ const API = (process.env.EXPO_PUBLIC_API_URL ?? 'http://localhost:8080').replace
 export const config = {
   apiBase: `${API}/v1`,
   wsUrl: `${API.replace(/^http/, 'ws')}/v1/ws`,
+  /** Google Maps JavaScript API key for the Live map (EXPO_PUBLIC_GOOGLE_MAPS_API_KEY in .env.local). */
+  googleMapsKey: process.env.EXPO_PUBLIC_GOOGLE_MAPS_API_KEY ?? '',
   /** Default station for "Next trains near you" until location is known. */
   defaultStationId: 'farmgate',
 };

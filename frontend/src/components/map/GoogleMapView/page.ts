@@ -1,0 +1,187 @@
+import { LINE_PATH } from '@/lib/lineGeo';
+
+/**
+ * The HTML page that hosts Google Maps (Maps JavaScript API). It is shown in a
+ * WebView on phones and an iframe on the web, and is driven through one
+ * function, `window.__set(payload)` (see payload.ts). Taps go back out as
+ * `{type:'station'|'train', id}` messages. Colours all arrive in the payload, so
+ * the page itself holds none. (The script avoids backticks: it lives in a TS template.)
+ */
+export function mapPage(apiKey: string, lang: 'bn' | 'en'): string {
+  const path = JSON.stringify(LINE_PATH.map(([lat, lng]) => ({ lat: +lat.toFixed(6), lng: +lng.toFixed(6) })));
+  const src = `https://maps.googleapis.com/maps/api/js?key=${encodeURIComponent(apiKey)}&callback=__init&loading=async&language=${lang}&region=BD`;
+  return `<!doctype html>
+<html><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
+<style>
+html,body,#m{margin:0;height:100%;width:100%;overflow:hidden;-webkit-tap-highlight-color:transparent;font-family:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif}
+#err{position:fixed;inset:0;display:flex;align-items:center;justify-content:center;padding:24px;text-align:center;font-size:14px;line-height:1.4}
+#err[hidden]{display:none}
+.pin{position:absolute;transform:translate(-50%,-50%);cursor:pointer;transition:left .45s linear,top .45s linear}
+.nz .pin{transition:none}
+.st{display:flex;flex-direction:column;align-items:center}
+.st i{width:14px;height:14px;border-radius:50%;box-sizing:border-box;border:3px solid var(--brand);background:var(--surface);box-shadow:0 1px 4px rgba(0,0,0,.35)}
+.st.sel i{width:22px;height:22px;border-width:5px;background:var(--surface)}
+.st b{display:none;margin-top:3px;font-size:12.5px;font-weight:700;color:var(--ink);white-space:nowrap;text-shadow:-1.5px 0 var(--surface),1.5px 0 var(--surface),0 -1.5px var(--surface),0 1.5px var(--surface)}
+.lab .st b,.st.sel b,.st.term b{display:block}
+.st.sel b{color:var(--brand)}
+.tr{display:flex;flex-direction:column;align-items:center}
+.tr .tag{position:absolute;bottom:30px;min-width:92px;box-sizing:border-box;padding:4px 10px;border-radius:14px;background:var(--surface);color:var(--ink);font-size:12px;font-weight:700;white-space:nowrap;text-align:center;box-shadow:0 2px 8px rgba(0,0,0,.3)}
+.tr .tag u{display:inline-block;width:8px;height:8px;border-radius:50%;background:var(--live);margin-right:6px;text-decoration:none}
+.tr.dw .tag{background:var(--liveTint);color:var(--onLiveTint)}
+.tr .tag s{display:block;height:3px;margin-top:3px;border-radius:2px;background:var(--onLiveTint);opacity:.85;text-decoration:none}
+.tr .car{width:28px;height:28px;border-radius:50%;box-sizing:border-box;display:flex;align-items:center;justify-content:center;background:var(--dir);border:3px solid var(--ring);box-shadow:0 2px 6px rgba(0,0,0,.4)}
+.tr.est .car{background:var(--surface);border:2px dashed var(--estimated)}
+.tr.est svg{fill:var(--estimated)}
+.tr.sel .car{width:34px;height:34px}
+.tr svg{width:16px;height:16px;fill:var(--onBrand)}
+</style></head>
+<body><div id="m"></div><div id="err" hidden></div>
+<script>
+var LINE=${path};
+var map=null,ready=false,pending=null,S=null,Pin=null,stations={},trains={},placed=false,viewKey='',proj=false;
+function send(m){var s=JSON.stringify(m);if(window.ReactNativeWebView)window.ReactNativeWebView.postMessage(s);else parent.postMessage(s,'*');}
+function fail(kind){send({type:'error',kind:kind});var e=document.getElementById('err'),t=pending||S;e.hidden=false;e.textContent=(t&&t.errorText)||'Google Maps unavailable';if(t){e.style.background=t.theme.bg;e.style.color=t.theme.inkMuted;}}
+window.gm_authFailure=function(){fail('auth');};
+window.__set=function(p){if(!ready){pending=p;return;}apply(p);};
+window.addEventListener('message',function(e){if(e.source!==parent)return;try{window.__set(JSON.parse(e.data));}catch(_){}});
+window.addEventListener('error',function(){});
+
+function styles(t,dark){
+  var s=[{featureType:'poi.business',stylers:[{visibility:'off'}]},{featureType:'transit.station.bus',stylers:[{visibility:'off'}]}];
+  if(!dark)return s;
+  return s.concat([
+    {elementType:'geometry',stylers:[{color:t.mapGround}]},
+    {elementType:'labels.text.fill',stylers:[{color:t.inkMuted}]},
+    {elementType:'labels.text.stroke',stylers:[{color:t.mapGround}]},
+    {featureType:'road',elementType:'geometry',stylers:[{color:t.mapRoad}]},
+    {featureType:'road',elementType:'geometry.stroke',stylers:[{color:t.mapGround}]},
+    {featureType:'water',elementType:'geometry',stylers:[{color:t.bg}]},
+    {featureType:'poi.park',elementType:'geometry',stylers:[{color:t.surface}]}
+  ]);
+}
+
+function makePin(){
+  function P(el,pos,z){this.el=el;this.pos=pos;this.el.style.zIndex=z;this.setMap(map);}
+  P.prototype=new google.maps.OverlayView();
+  P.prototype.onAdd=function(){this.getPanes().overlayMouseTarget.appendChild(this.el);};
+  P.prototype.draw=function(){var pr=this.getProjection();if(!pr)return;var p=pr.fromLatLngToDivPixel(new google.maps.LatLng(this.pos.lat,this.pos.lng));if(p){this.el.style.left=p.x+'px';this.el.style.top=p.y+'px';}};
+  P.prototype.onRemove=function(){if(this.el.parentNode)this.el.parentNode.removeChild(this.el);};
+  P.prototype.move=function(pos){this.pos=pos;this.draw();};
+  return P;
+}
+
+window.__init=function(){
+  map=new google.maps.Map(document.getElementById('m'),{center:{lat:23.83,lng:90.365},zoom:12,disableDefaultUI:true,clickableIcons:false,gestureHandling:'greedy',keyboardShortcuts:false,isFractionalZoomEnabled:true});
+  Pin=makePin();
+  var casing=new google.maps.Polyline({map:map,path:LINE,strokeWeight:10,strokeOpacity:1,zIndex:1});
+  var line=new google.maps.Polyline({map:map,path:LINE,strokeWeight:5,strokeOpacity:1,zIndex:2});
+  window.__line=[casing,line];
+  map.addListener('zoom_changed',function(){
+    var d=document.body;d.classList.add('nz');setTimeout(function(){d.classList.remove('nz');},450);
+    d.classList.toggle('lab',map.getZoom()>=14.2);
+  });
+  // the projection arrives a moment after the first placement: redo the framing so the sheet/top offsets apply
+  google.maps.event.addListenerOnce(map,'idle',function(){proj=true;if(S){placed=false;setView(S.view);placed=true;}});
+  ready=true;
+  if(pending){var p=pending;pending=null;apply(p);}
+};
+
+function css(el,t){
+  var k;for(k in t)el.style.setProperty('--'+k,t[k]);
+}
+
+function syncStations(p){
+  var seen={};
+  p.stations.forEach(function(s){
+    seen[s.id]=1;
+    var o=stations[s.id];
+    if(!o){
+      var el=document.createElement('div');el.className='pin';el.innerHTML='<div class="st"><i></i><b></b></div>';
+      el.addEventListener('click',function(ev){ev.stopPropagation();send({type:'station',id:s.id});});
+      o=stations[s.id]={el:el,pin:new Pin(el,s,1)};
+    }
+    o.el.querySelector('b').textContent=s.label;
+    var box=o.el.firstChild;
+    box.className='st'+(s.terminal?' term':'')+(p.selectedStation===s.id?' sel':'');
+    o.el.style.zIndex=p.selectedStation===s.id?4:1;
+    css(o.el,p.theme);
+  });
+  Object.keys(stations).forEach(function(id){if(!seen[id]){stations[id].pin.setMap(null);delete stations[id];}});
+}
+
+function trainHtml(t){
+  var est=t.state!=='LIVE';
+  var dw=t.timer!=null;
+  var tag='';
+  if(t.label){
+    tag='<div class="tag">'+(dw?'':'<u></u>')+esc(t.label)+(dw?' '+esc(t.timer):'')+(dw?'<s style="width:'+Math.round(Math.max(0,Math.min(1,t.progress||0))*100)+'%"></s>':'')+'</div>';
+  }
+  return tag+'<div class="car"><svg viewBox="0 0 24 24" style="transform:rotate('+Math.round(t.heading)+'deg)"><path d="M12 2 L20 21 L12 16.5 L4 21 Z"/></svg></div>';
+}
+function esc(s){return String(s).replace(/[&<>"]/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c];});}
+
+function syncTrains(p){
+  var seen={};
+  p.trains.forEach(function(t){
+    seen[t.id]=1;
+    var o=trains[t.id];
+    if(!o){
+      var el=document.createElement('div');el.className='pin';
+      el.addEventListener('click',function(ev){ev.stopPropagation();send({type:'train',id:t.id});});
+      o=trains[t.id]={el:el,pin:new Pin(el,t,3),html:''};
+    }
+    var dw=t.timer!=null,est=t.state!=='LIVE';
+    var cls='pin tr'+(est?' est':'')+(dw?' dw':'')+(p.selectedTrain===t.id?' sel':'');
+    if(o.el.className!==cls)o.el.className=cls;
+    var h=trainHtml(t);
+    if(o.html!==h){o.html=h;o.el.innerHTML=h;}
+    o.el.style.zIndex=p.selectedTrain===t.id?6:3;
+    o.el.style.setProperty('--dir',t.dir==='SB'?p.theme.trainSB:p.theme.trainNB);
+    o.el.style.setProperty('--ring',dw?p.theme.brand:p.theme.live);
+    css(o.el,p.theme);
+    o.pin.move(t);
+  });
+  Object.keys(trains).forEach(function(id){if(!seen[id]){trains[id].pin.setMap(null);delete trains[id];}});
+}
+
+function setView(v){
+  if(v.mode==='fit'){
+    var b=new google.maps.LatLngBounds();LINE.forEach(function(q){b.extend(q);});
+    map.fitBounds(b,{top:v.top+24,bottom:v.bottom+24,left:28,right:28});
+    return;
+  }
+  var ll={lat:v.lat,lng:v.lng};
+  var d=(v.bottom-v.top)/2;
+  if(!placed||!proj){
+    map.setOptions({zoom:v.zoom,center:ll});
+  }else{
+    if(Math.abs(map.getZoom()-v.zoom)>0.3)map.setZoom(v.zoom);
+  }
+  var pr=map.getProjection();
+  if(pr){
+    var pt=pr.fromLatLngToPoint(new google.maps.LatLng(v.lat,v.lng));
+    pt.y+=d/Math.pow(2,v.zoom);
+    pt.x-=(v.shiftX||0)/Math.pow(2,v.zoom);
+    var c=pr.fromPointToLatLng(pt);
+    if(placed&&proj)map.panTo(c);else map.setCenter(c);
+  }else map.setCenter(ll);
+}
+
+function apply(p){
+  S=p;
+  document.documentElement.style.background=p.theme.bg;
+  document.body.style.background=p.theme.bg;
+  map.setOptions({styles:styles(p.theme,p.dark)});
+  window.__line[0].setOptions({strokeColor:p.theme.surface});
+  window.__line[1].setOptions({strokeColor:p.theme.brand});
+  document.body.classList.toggle('lab',map.getZoom()>=14.2);
+  syncStations(p);
+  syncTrains(p);
+  var v=p.view,k=v.mode+'|'+(v.mode==='focus'?v.lat.toFixed(6)+','+v.lng.toFixed(6)+','+v.zoom:'')+'|'+v.top+'|'+v.bottom+'|'+(v.shiftX||0)+'|'+v.key;
+  if(k!==viewKey){viewKey=k;setView(v);placed=true;}
+}
+</script>
+<script async defer src="${src}" onerror="fail('load')"></script>
+</body></html>`;
+}

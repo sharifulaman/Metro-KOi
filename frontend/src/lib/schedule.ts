@@ -161,6 +161,8 @@ export interface SchedulePosition {
   etaNextSec: number | null;
   /** signed m/s along chainage */
   v: number;
+  /** seconds until it leaves, when dwelling at a station */
+  dwellLeftSec?: number;
 }
 
 /** Train position `elapsed` seconds after leaving its terminal (spec §6.4 step 2). */
@@ -180,6 +182,7 @@ export function positionAt(m: RunModel, dir: Direction, elapsed: number): Schedu
         nextIdx: next,
         etaNextSec: next == null ? null : offsetsFor(m, dir, next).arrive - elapsed,
         v: 0,
+        dwellLeftSec: depart - elapsed,
       };
     }
     if (k + 1 < n) {
@@ -225,6 +228,7 @@ export function estimatedTrains(tt: TimetableFile, m: RunModel, nowMs: number, h
         nextStation: p.nextIdx == null ? null : m.stationIds[p.nextIdx],
         etaSec: p.etaNextSec == null ? null : Math.round(p.etaNextSec),
         ts: nowMs,
+        ...(p.dwellLeftSec != null && p.nextIdx != null ? { dwellLeftSec: p.dwellLeftSec } : {}),
       });
     }
   }

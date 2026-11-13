@@ -88,6 +88,20 @@ test('run model: 40 min end to end, dwell 30 s, symmetric NB', () => {
   assert.ok(mid && mid.s > 0 && mid.s < m.lengthM);
 });
 
+test('a dwelling train reports how long until it leaves; a moving one does not', () => {
+  const m = buildRunModel(stations, 40, 30);
+  const stop = positionAt(m, 'SB', m.arrive[3] + 10);
+  assert.equal(stop?.atStation, 3);
+  assert.ok(Math.abs((stop?.dwellLeftSec ?? NaN) - 20) < 1e-6, 'arrived 10 s ago, 30 s dwell → 20 s left');
+  assert.equal(positionAt(m, 'SB', m.depart[3] + 5)?.dwellLeftSec, undefined);
+  // NB mirrors it
+  const nb = positionAt(m, 'NB', 0);
+  assert.equal(nb?.atStation, 15);
+  // the terminal stop has no "next" station, so estimatedTrains never shows a departure timer for it
+  const end = estimatedTrains(tt, m, SUN_0820).filter((t) => t.dwellLeftSec != null);
+  assert.ok(end.every((t) => t.nextStation != null));
+});
+
 test('estimated trains and station departures at Sun 08:20', () => {
   const m = buildRunModel(stations, 40, 30);
   const est = estimatedTrains(tt, m, SUN_0820);

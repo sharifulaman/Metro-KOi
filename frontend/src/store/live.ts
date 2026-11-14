@@ -11,6 +11,8 @@ interface LiveState {
   kin: Record<string, Kinematics>;
   notice: Notice | null;
   helping: number;
+  /** +1 every time a (re)connection opens: the server forgets sessions of a dropped connection */
+  epoch: number;
   setConnection(c: ConnectionState): void;
   handle(msg: ServerMessage): void;
 }
@@ -38,7 +40,8 @@ export const useLive = create<LiveState>()((set) => ({
   kin: {},
   notice: null,
   helping: 0,
-  setConnection: (connection) => set({ connection }),
+  epoch: 0,
+  setConnection: (connection) => set((st) => ({ connection, epoch: connection === 'live' && st.connection !== 'live' ? st.epoch + 1 : st.epoch })),
   handle: (msg) =>
     set((st) => {
       const now = Date.now();

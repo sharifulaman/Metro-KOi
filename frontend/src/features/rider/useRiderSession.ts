@@ -92,7 +92,7 @@ export function useRiderSession() {
         helping: 0,
       });
 
-      let announced = false;
+      let announcedEpoch = -1;
       let nearSince: number | null = null;
       let outsideSince: number | null = null;
       sub.current = await Location.watchPositionAsync({ accuracy: Location.Accuracy.High, timeInterval: FIX_INTERVAL_MS, distanceInterval: 0 }, (loc) => {
@@ -123,17 +123,23 @@ export function useRiderSession() {
         const spd = loc.coords.speed ?? 0;
         if (spd * 3.6 >= 40 && spd * 3.6 <= 85) signals.current.trainSpeedSeen = true;
         const score = scoreSignals(signals.current);
-        st.update({ score });
+        st.update({ score, lastF: snap.f });
         if (!canShare(signals.current)) return;
 
+        // Offline (no backend) the ride still runs on the phone: the trip view uses the timetable and GPS.
+        // Sharing starts - and restarts after every reconnect, as the server drops a closed connection's
+        // sessions - once the connection is live.
+        const lv = useLive.getState();
+        if (lv.connection !== 'live') return;
         const client = liveClient();
-        if (!announced) {
+        if (announcedEpoch !== lv.epoch) {
+          announcedEpoch = lv.epoch;
+          st.update({ acked: false });
           client?.send({ t: 'rider.start', sessionId, score });
-          announced = true;
-          // the server refuses silently (3 rides a day, low score) or may be unreachable: no ack → not live
+          // connected but never accepted (3 rides a day, low score): not live
           setTimeout(() => {
             const cur = useRider.getState().session;
-            if (cur && cur.sessionId === sessionId && !cur.acked && !cur.stopReason) stop('refused');
+            if (cur && cur.sessionId === sessionId && !cur.acked && !cur.stopReason && useLive.getState().epoch === announcedEpoch && useLive.getState().connection === 'live') stop('refused');
           }, ACK_TIMEOUT_MS);
         }
         client?.send({

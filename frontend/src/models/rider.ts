@@ -38,5 +38,7 @@ export interface RiderSession {
   helping: number;
   /** the server accepted this session (rider.ack); until then we are not live */
   acked?: boolean;
+  /** last position on the line, 0..1 from Uttara North (works without the server) */
+  lastF?: number;
   stopReason?: StopReason;
 }

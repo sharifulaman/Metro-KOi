@@ -5,11 +5,14 @@ import { estimatedTrains, type RunModel } from '@/lib/schedule';
 import type { Train } from '@/models';
 import { useClock } from '@/store/clock';
 import { useLive } from '@/store/live';
+import { useRider } from '@/store/rider';
 
 import { useNow } from '../common/useNow';
 import { useRunModel, useTimetable } from '../timetable/useTimetable';
 
 const MERGE_M = 300;
+/** my own train, drawn from the phone's GPS while the server has not accepted the ride (offline / not confirmed) */
+export const LOCAL_TRAIN_ID = 'YOU';
 
 /**
  * Live (rider) trains + timetable estimates. An estimate within 300 m of a
@@ -23,13 +26,18 @@ export function useTrains(tickMs = 500): { trains: Train[]; model: RunModel; now
   const live = useLive((s) => s.trains);
   const kin = useLive((s) => s.kin);
   const playback = useClock((s) => s.playback);
+  const ride = useRider((s) => s.session);
   const trains = useMemo(() => {
     const liveList = playback ? [] : Object.values(live).map((t) => (kin[t.id] ? { ...t, s: displayedS(kin[t.id], now) } : t));
     const est = estimatedTrains(tt, model, now).filter(
       (e) => !liveList.some((l) => l.dir === e.dir && Math.abs(l.s - e.s) <= MERGE_M),
     );
-    return [...liveList, ...est];
-  }, [live, kin, now, tt, model, playback]);
+    const own: Train[] =
+      !playback && ride && !ride.acked && !ride.stopReason && ride.direction && ride.lastF != null
+        ? [{ id: LOCAL_TRAIN_ID, dir: ride.direction, s: model.chainage[0] + ride.lastF * model.lengthM, v: 0, lat: null, lng: null, hdg: null, state: 'LIVE', riders: 1, nextStation: null, etaSec: null, ts: now }]
+        : [];
+    return [...liveList, ...est, ...own];
+  }, [live, kin, now, tt, model, playback, ride]);
   return { trains, model, now };
 }
 

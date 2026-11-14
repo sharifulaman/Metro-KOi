@@ -3,7 +3,7 @@ import { useState } from 'react';
 import { GoogleMapView, ZOOM_NEAR } from '@/components/map';
 import { SegmentProgress } from '@/components/metro';
 import { Button, Card, Chip, IconButton, Screen, Stack, StatusBadge, Text } from '@/components/ui';
-import { fractionOf, trainSegment, useTrains } from '@/features/map/useTrains';
+import { fractionOf, LOCAL_TRAIN_ID, trainSegment, useTrains } from '@/features/map/useTrains';
 import { snapToLine } from '@/lib/lineGeo';
 import { useUserLocation } from '@/features/map/useUserLocation';
 import { useRiderSession } from '@/features/rider/useRiderSession';
@@ -11,6 +11,7 @@ import { stationName, useStations } from '@/features/stations/useStations';
 import { useT } from '@/i18n';
 import { fmtEta, fmtMmSs, fmtNum } from '@/lib/fmt';
 import { etaToStation } from '@/lib/schedule';
+import { useLive } from '@/store/live';
 
 /**
  * Journey page while the rider is live: the trip on the map (route from → to with arrows, your dot, the
@@ -21,6 +22,7 @@ export function ActiveTrip() {
   const { list, byId, first, last } = useStations();
   const { trains, model } = useTrains(500);
   const rider = useRiderSession();
+  const connection = useLive((s) => s.connection);
   const { user } = useUserLocation();
   const [view3d, setView3d] = useState(false);
   const session = rider.session;
@@ -41,7 +43,7 @@ export function ActiveTrip() {
     mySec == null
       ? undefined
       : trains
-          .filter((x) => !dir || x.dir === dir)
+          .filter((x) => x.id !== LOCAL_TRAIN_ID && (!dir || x.dir === dir))
           .sort((a, b) => Math.abs(a.s - mySec) - Math.abs(b.s - mySec))[0];
   const seg = mine ? trainSegment(model, mine) : null;
   const nameAt = (i: number) => (byId[model.stationIds[i]] ? stationName(byId[model.stationIds[i]], lang) : '');
@@ -62,14 +64,14 @@ export function ActiveTrip() {
                 : ''}
           </Text>
         </Stack>
-        <Chip label={rider.sharing ? t('rider.sharing') : t('rider.waiting')} tone="brand" icon="train" />
+        <Chip label={rider.sharing ? t('rider.sharing') : connection !== 'live' ? t('trip.local') : t('rider.waiting')} tone="brand" icon="train" />
       </Stack>
 
       <Stack>
         <GoogleMapView
           height={300}
           stations={list.map((s, i) => ({ id: s.id, label: stationName(s, lang), f: fractionOf(model, model.chainage[i]) }))}
-          trains={trains.map((x) => ({ id: x.id, dir: x.dir, state: x.state, f: fractionOf(model, x.s), label: x.id === mine?.id ? `${x.id}` : undefined }))}
+          trains={trains.map((x) => ({ id: x.id, dir: x.dir, state: x.state, f: fractionOf(model, x.s), label: x.id === mine?.id || x.id === LOCAL_TRAIN_ID ? x.id : undefined }))}
           selectedTrain={mine?.id}
           route={route}
           user={user}

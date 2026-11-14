@@ -158,6 +158,7 @@ export const en = {
     locating: 'Finding your location…',
     autoStop: 'Sharing stops by itself when you leave the metro line or reach the end.',
     end: 'End journey',
+    local: 'Offline · tracking on your phone',
   },
   rider: {
     askTitle: 'Are you on the metro?',

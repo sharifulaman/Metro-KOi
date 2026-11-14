@@ -8,6 +8,8 @@ export interface ButtonProps {
   variant?: ButtonVariant;
   /** lg = 52, md = 44 */
   size?: 'lg' | 'md';
+  /** exact height in px (overrides `size`; the design's Add-card sheet uses 48) */
+  height?: number;
   icon?: IconName;
   fullWidth?: boolean;
   loading?: boolean;

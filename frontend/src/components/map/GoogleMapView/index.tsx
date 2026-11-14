@@ -44,7 +44,7 @@ export function GoogleMapView(props: GoogleMapViewProps) {
   const [loaded, setLoaded] = useState(false);
   const reserved = (props.bottomInset ?? 0) + (props.reserveSheet ? win.height * layout.dockedSheet : 0);
 
-  const html = useMemo(() => mapPage(config.googleMapsKey, lang), [lang]);
+  const html = useMemo(() => mapPage(config.googleMapsKey, lang, config.googleMapId, dark), [lang, dark]);
   const script = `window.__set(${JSON.stringify(buildPayload(props, c, dark, reserved))});true;`;
   useEffect(() => {
     if (loaded) ref.current?.injectJavaScript(script);
@@ -88,4 +88,4 @@ export function GoogleMapView(props: GoogleMapViewProps) {
 }
 
 export { ZOOM_NEAR } from './payload';
-export type { GoogleMapViewProps, MapStation, MapTrain } from './types';
+export type { GoogleMapViewProps, MapStation, MapTrain, MapUser } from './types';

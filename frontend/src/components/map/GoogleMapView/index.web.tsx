@@ -21,7 +21,7 @@ export function GoogleMapView(props: GoogleMapViewProps) {
   const frame = useRef<HTMLIFrameElement | null>(null);
   const reserved = (props.bottomInset ?? 0) + (props.reserveSheet ? win.height * layout.dockedSheet : 0);
 
-  const html = useMemo(() => mapPage(config.googleMapsKey, lang), [lang]);
+  const html = useMemo(() => mapPage(config.googleMapsKey, lang, config.googleMapId, dark), [lang, dark]);
   const message = JSON.stringify(buildPayload(props, c, dark, reserved));
   const post = () => frame.current?.contentWindow?.postMessage(message, '*');
   useEffect(post);
@@ -60,4 +60,4 @@ export function GoogleMapView(props: GoogleMapViewProps) {
 }
 
 export { ZOOM_NEAR } from './payload';
-export type { GoogleMapViewProps, MapStation, MapTrain } from './types';
+export type { GoogleMapViewProps, MapStation, MapTrain, MapUser } from './types';

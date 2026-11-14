@@ -2,15 +2,15 @@ import { Pressable, View } from 'react-native';
 
 import { useTheme } from '@/theme/useTheme';
 
+import { Badge } from '../../ui/Badge';
 import { Icon } from '../../ui/Icon';
-import { StatusBadge } from '../../ui/StatusBadge';
 import { Text } from '../../ui/Text';
 
 import type { NearestBannerProps } from './types';
 
 /** Banner above the stations list: your nearest station and its next train, or "service has ended" (design ১৩/১৪). */
 export function NearestBanner({ mode, caption, title, subtitle, eta, onPress, testID }: NearestBannerProps) {
-  const { c, space, radius } = useTheme();
+  const { c } = useTheme();
   const nearest = mode === 'nearest';
   return (
     <Pressable
@@ -19,32 +19,32 @@ export function NearestBanner({ mode, caption, title, subtitle, eta, onPress, te
       onPress={onPress}
       accessibilityRole={onPress ? 'button' : undefined}
       accessibilityLabel={[caption, title, subtitle, eta?.label].filter(Boolean).join(', ')}
-      style={({ pressed }) => ({ flexDirection: 'row', alignItems: 'center', gap: space[3], padding: space[3], borderRadius: radius.card - 2, backgroundColor: nearest ? c.brandTint : c.surfaceAlt, opacity: pressed ? 0.85 : 1 })}
+      style={({ pressed }) => ({ flexDirection: 'row', alignItems: 'center', gap: 12, paddingHorizontal: 14, paddingVertical: nearest ? 10 : 12, borderRadius: 20, backgroundColor: nearest ? c.brandTint : c.surfaceAlt, opacity: pressed ? 0.85 : 1 })}
     >
-      <View style={{ width: 40, height: 40, borderRadius: 20, backgroundColor: nearest ? c.brandDeep : c.surface, alignItems: 'center', justifyContent: 'center' }}>
-        <Icon name={nearest ? 'locate' : 'clock'} size={20} color={nearest ? c.onBrand : c.ink} />
+      <View style={{ width: 40, height: 40, borderRadius: 20, backgroundColor: nearest ? c.brandSolid : c.surface, alignItems: 'center', justifyContent: 'center' }}>
+        <Icon name={nearest ? 'locate' : 'moon'} size={21} color={nearest ? c.onBrandSolid : c.ink} strokeWidth={nearest ? 2.2 : 2} />
       </View>
       <View style={{ flex: 1, minWidth: 0 }}>
         {nearest ? (
-          <Text variant="micro" weight={700} tone="brand">
+          <Text size={12} lh={1.3} weight={600} color={c.onBrandTint}>
             {caption}
           </Text>
         ) : null}
-        <Text variant={nearest ? 'title' : 'body'} weight={700} numberOfLines={1}>
+        <Text size={nearest ? 17 : 15.5} lh={1.35} weight={700} numberOfLines={1}>
           {title}
         </Text>
         {subtitle ? (
-          <Text variant="label" tone="muted" numberOfLines={2}>
+          <Text size={12.5} lh={nearest ? 1.35 : 1.4} weight={400} tone="muted" numberOfLines={2}>
             {subtitle}
           </Text>
         ) : null}
       </View>
       {eta ? (
-        <View style={{ alignItems: 'flex-end', gap: 2 }}>
-          <Text variant="title" weight={700} numeric>
+        <View style={{ alignItems: 'flex-end' }}>
+          <Text size={19} lh={1.2} weight={700} numeric>
             {eta.label}
           </Text>
-          <StatusBadge kind={eta.live ? 'live' : 'estimated'} />
+          <Badge label={eta.badge} tone={eta.live ? 'live' : 'neutral'} />
         </View>
       ) : null}
     </Pressable>

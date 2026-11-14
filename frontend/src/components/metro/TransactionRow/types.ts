@@ -1,14 +1,11 @@
-import type { TransactionKind } from '@/models';
-
 export interface TransactionRowProps {
-  kind: TransactionKind;
-  /** "Mirpur-10 → Farmgate" or "Recharge" (translated) */
+  kind: 'trip' | 'recharge';
   title: string;
-  /** formatted time */
+  /** "আজ ০৮:১২" */
   time: string;
-  amountBdt: number;
-  sample?: boolean;
-  sampleLabel?: string;
+  /** signed, formatted ("−৳ ৪০" / "+৳ ৫০০") */
+  amount: string;
+  /** hairline under the row (not the last one) */
   divider?: boolean;
   testID?: string;
 }

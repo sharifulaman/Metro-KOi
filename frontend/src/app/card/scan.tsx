@@ -1,17 +1,20 @@
 import { useRouter } from 'expo-router';
 import { useEffect, useRef } from 'react';
 
-import { TrainIllustration } from '@/components/metro';
-import { Button, Icon, IconButton, InfoNote, Screen, Stack, Text } from '@/components/ui';
+import { ScanView } from '@/components/metro';
 import { useCardScan } from '@/features/card/useCardScan';
+import { useSampleCards } from '@/features/card/useSampleCards';
 import { useT } from '@/i18n';
+import { useWallet } from '@/store/wallet';
 
-/** Full-screen NFC scan: starts automatically, then hands off to /card/found on a good read. */
+/** Full-screen NFC scan (design ২): starts automatically, then hands off to /card/found on a good read. */
 export default function CardScanScreen() {
   const { t } = useT();
   const router = useRouter();
+  useSampleCards();
   const scan = useCardScan();
   const started = useRef(false);
+  const sample = useWallet((s) => s.cards.find((c) => c.isDefault) ?? s.cards[0]);
 
   useEffect(() => {
     if (started.current) return;
@@ -30,28 +33,19 @@ export default function CardScanScreen() {
   };
 
   return (
-    <Screen gap={5}>
-      <IconButton icon="close" onPress={cancel} accessibilityLabel={t('common.cancel')} elevated />
-      <Stack flex align="center" justify="center" gap={4}>
-        <Icon name="nfc" size={56} tone="brand" />
-        <TrainIllustration width={260} />
-        <Text variant="heading" align="center">
-          {t('card.hold')}
-        </Text>
-        {scan.state.kind === 'error' ? (
-          <InfoNote icon="info" tone="danger" text={t(`card.err.${scan.state.code}`)} testID="scan-error" />
-        ) : (
-          <Text tone="muted" align="center">
-            {t('card.holdHint')}
-          </Text>
-        )}
-      </Stack>
-      <Stack gap={2}>
-        <InfoNote icon="info" text={t('card.androidHint')} />
-        <InfoNote icon="info" text={t('card.iosHint')} />
-      </Stack>
-      {scan.state.kind === 'error' ? <Button label={t('card.scanAgain')} icon="nfc" fullWidth onPress={() => void scan.start()} /> : null}
-      <Button label={t('common.cancel')} variant="secondary" fullWidth onPress={cancel} />
-    </Screen>
+    <ScanView
+      title={t('card.scanTitle')}
+      closeLabel={t('common.cancel')}
+      onClose={cancel}
+      heading={t('card.hold')}
+      hint={t('card.holdHint')}
+      error={scan.state.kind === 'error' ? t('card.err.' + scan.state.code) : undefined}
+      retryLabel={t('card.scanAgain')}
+      onRetry={() => void scan.start()}
+      androidHint={t('card.androidHint')}
+      iosHint={t('card.iosHint')}
+      cancelLabel={t('common.cancel')}
+      card={{ name: sample?.name ?? t('card.defaultCardName'), tail: sample?.tail ?? '4821', typeLabel: t('card.rapid_pass') }}
+    />
   );
 }

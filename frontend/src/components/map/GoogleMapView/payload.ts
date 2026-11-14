@@ -13,9 +13,14 @@ export interface MapPayload {
   theme: Pick<Palette, 'bg' | 'surface' | 'ink' | 'inkMuted' | 'brand' | 'brandDeep' | 'onBrand' | 'live' | 'liveTint' | 'onLiveTint' | 'estimated' | 'trainSB' | 'trainNB' | 'mapGround' | 'mapRoad'>;
   stations: { id: string; label: string; lat: number; lng: number; terminal: boolean }[];
   trains: { id: string; dir: 'SB' | 'NB'; state: string; lat: number; lng: number; heading: number; label?: string; timer?: string; progress?: number }[];
+  user: { lat: number; lng: number; accuracy: number } | null;
   selectedStation?: string;
   selectedTrain?: string;
   view: {
+    /** tilted 3D view */
+    tilt: boolean;
+    /** compass heading for the 3D view (looks along the line) */
+    heading: number;
     mode: 'fit' | 'focus';
     lat: number;
     lng: number;
@@ -31,9 +36,11 @@ export interface MapPayload {
 }
 
 export function buildPayload(p: GoogleMapViewProps, c: Palette, dark: boolean, reservedBottom: number): MapPayload {
-  const near = (p.zoom ?? 1) > 1 && p.focus != null;
-  const at = geoAt(near ? (p.focus as number) : 0.5);
-  const level = Math.max(11, Math.min(18, 13 + Math.log2(p.zoom ?? 1)));
+  const near = (p.zoom ?? 1) > 1 && (p.focus != null || p.focusPoint != null);
+  const along = geoAt(near && p.focus != null ? p.focus : 0.5);
+  const at = near && p.focusPoint ? { lat: p.focusPoint.lat, lng: p.focusPoint.lng } : along;
+  const tilt = !!p.tilt && near;
+  const level = Math.max(tilt ? 16 : 11, Math.min(19, 13 + Math.log2(p.zoom ?? 1)));
   const last = p.stations.length - 1;
   return {
     dark,
@@ -74,9 +81,12 @@ export function buildPayload(p: GoogleMapViewProps, c: Palette, dark: boolean, r
         progress: t.dwell?.progress,
       };
     }),
+    user: p.user ? { lat: p.user.lat, lng: p.user.lng, accuracy: p.user.accuracy ?? 0 } : null,
     selectedStation: p.selectedStation,
     selectedTrain: p.selectedTrain,
     view: {
+      tilt,
+      heading: Math.round(along.bearing),
       mode: near ? 'focus' : 'fit',
       lat: at.lat,
       lng: at.lng,
@@ -84,7 +94,7 @@ export function buildPayload(p: GoogleMapViewProps, c: Palette, dark: boolean, r
       top: p.topInset ?? 0,
       bottom: reservedBottom,
       shiftX: p.focusShiftX ?? 0,
-      key: String(p.recenterKey ?? ''),
+      key: String(p.recenterKey ?? '') + (tilt ? '|3d' : ''),
     },
   };
 }

@@ -1,9 +1,13 @@
 import { useLocalSearchParams, useRouter } from 'expo-router';
+import { useState } from 'react';
+
+import { StationDemo } from '@/features/stations/StationDemo';
 
 import { GoogleMapView } from '@/components/map';
 import { DirectionEtaCard, EmptyState, InfoTile, type EtaTile } from '@/components/metro';
 import { Button, Card, IconButton, IconTile, InfoNote, Screen, Stack, Text } from '@/components/ui';
 import { fractionOf, useTrains } from '@/features/map/useTrains';
+import { useUserLocation } from '@/features/map/useUserLocation';
 import { useDepartures } from '@/features/stations/useDepartures';
 import { stationAltName, stationName, useStations } from '@/features/stations/useStations';
 import { useT } from '@/i18n';
@@ -12,7 +16,7 @@ import type { Departure, Direction } from '@/models';
 import { useSettings } from '@/store/settings';
 
 /** Station detail (design ১৫): map header, both directions' next trains as tiles, facts, journey / 3D. */
-export default function StationScreen() {
+function StationReal() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const { t, lang } = useT();
   const router = useRouter();
@@ -22,6 +26,8 @@ export default function StationScreen() {
   const { trains, model } = useTrains(1000);
   const st = byId[id];
   const deps = useDepartures(id, 3);
+  const [tilt, setTilt] = useState(false);
+  const { user } = useUserLocation();
   if (!st) {
     return (
       <Screen>
@@ -48,12 +54,17 @@ export default function StationScreen() {
           stations={list.map((s, i) => ({ id: s.id, label: stationName(s, lang), f: fractionOf(model, model.chainage[i]) }))}
           trains={trains.map((tr) => ({ id: tr.id, dir: tr.dir, state: tr.state, f: fractionOf(model, tr.s), label: tr.dwellLeftSec != null ? t('live.atStationTag', { id: tr.id }) : undefined }))}
           selectedStation={st.id}
+          user={user}
+          tilt={tilt}
           onTrainPress={(trainId) => router.push(`/train/${trainId}`)}
           errorText={t('live.mapError')}
         >
           <Stack overlay="top" padX={3} padY={3} direction="row" justify="between">
             <IconButton icon="back" elevated accessibilityLabel={t('common.back')} onPress={() => router.back()} />
-            <IconButton icon="star" elevated active={fav} accessibilityLabel={t('common.favourite')} onPress={() => toggleFavourite(st.id)} />
+            <Stack direction="row" gap={2}>
+              <IconButton icon="box" label={tilt ? '2D' : '3D'} elevated active={tilt} accessibilityLabel={t(tilt ? 'live.tilt2d' : 'live.tilt3d')} onPress={() => setTilt((v) => !v)} />
+              <IconButton icon="star" elevated active={fav} accessibilityLabel={t('common.favourite')} onPress={() => toggleFavourite(st.id)} />
+            </Stack>
           </Stack>
         </GoogleMapView>
       </Card>
@@ -95,4 +106,9 @@ export default function StationScreen() {
       </Text>
     </Screen>
   );
+}
+
+export default function StationScreen() {
+  const demo = useSettings((s) => s.demo !== false);
+  return demo ? <StationDemo /> : <StationReal />;
 }

@@ -56,7 +56,7 @@ export default function BalanceScreen() {
       ) : (
         <Card padding={3}>
           {recent.map((r, i) => (
-            <TransactionRow key={r.id} kind={r.kind} title={r.title} time={r.time} amountBdt={r.amountBdt} sample={r.sample} sampleLabel={t('common.sample')} divider={i < recent.length - 1} />
+            <TransactionRow key={r.id} kind={r.kind} title={r.title} time={r.time} amount={r.amount} divider={i < recent.length - 1} />
           ))}
         </Card>
       )}

@@ -8,7 +8,7 @@ export interface NearestBannerProps {
   /** "220 m · 3 min walk", or "Next first train 6:30 · by the timetable" */
   subtitle?: string;
   /** right side: "4 min" + a live/estimated badge (nearest only) */
-  eta?: { label: string; live: boolean };
+  eta?: { label: string; live: boolean; /** translated "Live" / "Estimated" */ badge: string };
   onPress?: () => void;
   testID?: string;
 }

@@ -12,8 +12,8 @@ const GAP = 12;
 const STEP = CARD_W + GAP;
 
 /** Horizontally paged strip of saved cards, with a dot per card (Card tab home). */
-export function WalletCarousel({ cards, index, onIndexChange, onPressCard, testID }: WalletCarouselProps) {
-  const { c, space } = useTheme();
+export function WalletCarousel({ cards, index, onIndexChange, onPressCard, hideDots, testID }: WalletCarouselProps) {
+  const { c } = useTheme();
   const scrolling = useRef(false);
 
   const onScroll = (e: NativeSyntheticEvent<NativeScrollEvent>) => {
@@ -23,14 +23,14 @@ export function WalletCarousel({ cards, index, onIndexChange, onPressCard, testI
   };
 
   return (
-    <View testID={testID} style={{ gap: space[3] }}>
+    <View testID={testID}>
       <ScrollView
         horizontal
         showsHorizontalScrollIndicator={false}
         decelerationRate="fast"
         snapToInterval={STEP}
         snapToAlignment="start"
-        contentContainerStyle={{ paddingLeft: space[6], gap: GAP }}
+        contentContainerStyle={{ paddingLeft: 24, paddingRight: 24, paddingBottom: 12, gap: GAP }}
         scrollEventThrottle={32}
         onScroll={onScroll}
         onMomentumScrollEnd={onScroll}
@@ -41,8 +41,8 @@ export function WalletCarousel({ cards, index, onIndexChange, onPressCard, testI
           </Pressable>
         ))}
       </ScrollView>
-      {cards.length > 1 ? (
-        <View style={{ flexDirection: 'row', justifyContent: 'center', gap: space[1] }}>
+      {cards.length > 1 && !hideDots ? (
+        <View style={{ flexDirection: 'row', justifyContent: 'center', gap: 6, marginTop: 0 }}>
           {cards.map((card, i) => (
             <View
               key={card.id}

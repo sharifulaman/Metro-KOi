@@ -9,6 +9,8 @@ export interface CardProps {
   padding?: SpaceStep;
   gap?: SpaceStep;
   elevated?: boolean;
+  /** 1px hairline border (the design's white panels) */
+  bordered?: boolean;
   onPress?: () => void;
   testID?: string;
   accessibilityLabel?: string;

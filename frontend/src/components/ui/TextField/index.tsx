@@ -1,10 +1,9 @@
-import { TextInput } from 'react-native';
+import { TextInput, View } from 'react-native';
 
 import { useSettings } from '@/store/settings';
 import { fontFamily } from '@/theme/fonts';
 import { useTheme } from '@/theme/useTheme';
 
-import { Stack } from '../Stack';
 import { Text } from '../Text';
 
 import type { TextFieldProps } from './types';
@@ -14,9 +13,9 @@ export function TextField({ label, value, onChangeText, placeholder, maxLength, 
   const { c, radius, space } = useTheme();
   const lang = useSettings((s) => s.lang);
   return (
-    <Stack gap={1}>
+    <View>
       {label ? (
-        <Text variant="label" tone="muted" weight={600}>
+        <Text size={13} lh={1.4} tone="muted" weight={600}>
           {label}
         </Text>
       ) : null}
@@ -32,6 +31,7 @@ export function TextField({ label, value, onChangeText, placeholder, maxLength, 
         autoFocus={autoFocus}
         selectionColor={c.brand}
         style={{
+          marginTop: 6,
           height: 50,
           paddingHorizontal: space[4],
           borderRadius: radius.tile + 4,
@@ -43,7 +43,7 @@ export function TextField({ label, value, onChangeText, placeholder, maxLength, 
           fontFamily: fontFamily(lang, 400),
         }}
       />
-    </Stack>
+    </View>
   );
 }
 

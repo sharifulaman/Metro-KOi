@@ -1,69 +1,69 @@
 import { Pressable, View } from 'react-native';
 
-import { useT } from '@/i18n';
-import { fmtTaka } from '@/lib/fmt';
 import { useTheme } from '@/theme/useTheme';
 
-import { Chip } from '../../ui/Chip';
-import { IconButton } from '../../ui/IconButton';
+import { Badge } from '../../ui/Badge';
+import { Icon } from '../../ui/Icon';
 import { Text } from '../../ui/Text';
 import { CardArt } from '../CardArt';
 
 import type { SavedCardRowProps } from './types';
 
-/** One row in the saved-cards list: the card art, its name/tail/balance, and edit/delete buttons. */
-export function SavedCardRow({
-  name,
-  tail,
-  typeLabel,
-  color,
-  balanceBdt,
-  isDefault,
-  defaultLabel,
-  noBalanceLabel,
-  editLabel,
-  deleteLabel,
-  onPress,
-  onEdit,
-  onDelete,
-  sample,
-  sampleLabel,
-  divider,
-  testID,
-}: SavedCardRowProps) {
-  const { c, space } = useTheme();
-  const { lang } = useT();
+function RoundTool({ icon, label, onPress, danger }: { icon: 'edit' | 'trash'; label: string; onPress(): void; danger?: boolean }) {
+  const { c } = useTheme();
   return (
-    <View
-      testID={testID}
-      style={{ flexDirection: 'row', alignItems: 'center', gap: space[3], paddingVertical: space[3], borderBottomWidth: divider ? 1 : 0, borderBottomColor: c.divider }}
+    <Pressable
+      accessibilityRole="button"
+      accessibilityLabel={label}
+      onPress={onPress}
+      style={({ pressed }) => ({ width: 40, height: 40, borderRadius: 20, backgroundColor: danger ? c.dangerTint : c.surfaceAlt, alignItems: 'center', justifyContent: 'center', opacity: pressed ? 0.8 : 1 })}
     >
-      <Pressable onPress={onPress} disabled={!onPress} accessibilityRole="button" accessibilityLabel={name} style={({ pressed }) => ({ opacity: pressed ? 0.85 : 1 })}>
-        <CardArt name={name} tail={tail} typeLabel={typeLabel} color={color} size="row" />
-      </Pressable>
-      <View style={{ flex: 1, minWidth: 0, gap: 4 }}>
-        <Text variant="body" weight={700} numberOfLines={1}>
-          {name}
-        </Text>
-        <Text variant="label" tone="muted" numeric>
-          {`•••• ${tail}`}
-        </Text>
-        <View style={{ flexDirection: 'row', flexWrap: 'wrap', alignItems: 'center', rowGap: space[1], columnGap: space[2] }}>
-          {balanceBdt != null ? (
-            <Text variant="body" weight={700} numeric>
-              {fmtTaka(balanceBdt, lang)}
-            </Text>
-          ) : (
-            <Chip label={noBalanceLabel} tone="neutral" />
-          )}
-          {isDefault ? <Chip label={defaultLabel} tone="brand" icon="check" /> : null}
-          {sample && sampleLabel ? <Chip label={sampleLabel} tone="neutral" /> : null}
+      <Icon name={icon} size={18} color={danger ? c.dangerInk : c.ink} />
+    </Pressable>
+  );
+}
+
+/** One row of the saved-cards list (design ৭): 98×62 card thumbnail, name / •••• tail / balance, edit + delete. */
+export function SavedCardRow(p: SavedCardRowProps) {
+  const { c } = useTheme();
+  return (
+    <View testID={p.testID}>
+      <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12, paddingHorizontal: 14, paddingVertical: 12 }}>
+        <Pressable onPress={p.onPress} disabled={!p.onPress} accessibilityRole="button" accessibilityLabel={p.name}>
+          <CardArt name={p.name} tail={p.tail} typeLabel={p.typeLabel} color={p.color} size="row" width={98} />
+        </Pressable>
+        <View style={{ flex: 1, minWidth: 0 }}>
+          <Text size={15.5} lh={1.35} weight={700} numberOfLines={1}>
+            {p.name}
+          </Text>
+          <Text size={12.5} lh={1.4} weight={400} tone="muted">
+            {p.tailText}
+          </Text>
+          <View style={{ flexDirection: 'row', flexWrap: 'wrap', alignItems: 'center', gap: 6, marginTop: 4 }}>
+            {p.confirming ? (
+              <Text size={13} lh={1.4} weight={600} color={c.dangerInk}>
+                {p.confirmText}
+              </Text>
+            ) : (
+              <>
+                {p.balance != null ? (
+                  <Text size={15} lh={1.35} weight={700}>
+                    {p.balance}
+                  </Text>
+                ) : (
+                  <Badge label={p.noBalanceLabel} tone="neutral" />
+                )}
+                {p.isDefault ? <Badge label={p.defaultLabel} tone="brand" icon="check" /> : null}
+              </>
+            )}
+          </View>
+        </View>
+        <View style={{ gap: 6 }}>
+          <RoundTool icon="edit" label={p.editLabel} onPress={p.onEdit} />
+          <RoundTool icon="trash" label={p.deleteLabel} onPress={p.onDelete} danger={p.confirming} />
         </View>
       </View>
-      <View style={{ gap: space[1] }}>
-        <IconButton icon="edit" onPress={onEdit} accessibilityLabel={editLabel} />
-        <IconButton icon="trash" onPress={onDelete} accessibilityLabel={deleteLabel} />
-      </View>
+      {p.divider ? <View style={{ height: 1, backgroundColor: c.divider, marginHorizontal: 14 }} /> : null}
     </View>
   );
 }

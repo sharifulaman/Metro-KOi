@@ -7,10 +7,11 @@ import { Text, type TextTone } from '../Text';
 
 import type { ButtonProps } from './types';
 
-export function Button({ label, onPress, variant = 'primary', size = 'lg', icon, fullWidth, loading, disabled, floating, testID, accessibilityLabel }: ButtonProps) {
+export function Button({ label, onPress, variant = 'primary', size = 'lg', height, icon, fullWidth, loading, disabled, floating, testID, accessibilityLabel }: ButtonProps) {
   const { c, radius, size: sz, shadow, space } = useTheme();
-  const bg = variant === 'primary' ? c.brandDeep : variant === 'secondary' ? c.surface : 'transparent';
+  const bg = variant === 'primary' ? c.brandSolid : variant === 'secondary' ? c.surface : 'transparent';
   const border = variant === 'secondary' ? c.outline : 'transparent';
+  const fg = variant === 'primary' ? c.onBrandSolid : undefined;
   const tone: TextTone = variant === 'primary' ? 'onBrand' : variant === 'dangerText' ? 'danger' : variant === 'ghost' ? 'brand' : 'ink';
   return (
     <Pressable
@@ -22,9 +23,9 @@ export function Button({ label, onPress, variant = 'primary', size = 'lg', icon,
       onPress={onPress}
       style={({ pressed }) => [
         {
-          minHeight: size === 'lg' ? sz.button : sz.buttonMd,
+          minHeight: height ?? (size === 'lg' ? sz.button : sz.buttonMd),
           paddingHorizontal: space[5],
-          borderRadius: radius.control,
+          borderRadius: (height ?? (size === 'lg' ? sz.button : sz.buttonMd)) / 2,
           backgroundColor: bg,
           borderWidth: variant === 'secondary' ? 1.5 : 0,
           borderColor: border,
@@ -37,11 +38,11 @@ export function Button({ label, onPress, variant = 'primary', size = 'lg', icon,
     >
       <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: space[2] }}>
         {loading ? (
-          <ActivityIndicator color={variant === 'primary' ? c.onBrand : c.brand} />
+          <ActivityIndicator color={variant === 'primary' ? c.onBrandSolid : c.brand} />
         ) : (
-          icon && <Icon name={icon} size={18} tone={tone} />
+          icon && <Icon name={icon} size={20} tone={tone} color={fg} />
         )}
-        <Text variant="body" weight={600} tone={tone} numberOfLines={1}>
+        <Text size={16} lh={1.35} weight={600} tone={tone} numberOfLines={1} color={fg}>
           {label}
         </Text>
       </View>

@@ -14,12 +14,19 @@ export interface Palette {
   brand: string;
   brandDeep: string;
   brandTint: string;
+  /** text/icon colour on a `brandTint` background */
+  onBrandTint: string;
+  /** solid primary-button fill and the text on it (dark mode flips to the bright accent) */
+  brandSolid: string;
+  onBrandSolid: string;
   live: string;
   liveTint: string;
   onLiveTint: string;
   estimated: string;
   danger: string;
   dangerTint: string;
+  /** text colour for destructive links (a darker red that passes contrast) */
+  dangerInk: string;
   trainSB: string;
   trainNB: string;
   crowdLow: string;
@@ -33,6 +40,8 @@ export interface Palette {
   /** floating "glass" pills and the tab bar: translucent surface + hairline */
   glass: string;
   glassBorder: string;
+  /** near-opaque glass for controls floating on the Live map */
+  glassMap: string;
   /** border of the active tab pill */
   brandLine: string;
 }
@@ -50,12 +59,16 @@ export const light: Palette = {
   brand: '#0E9F6E',
   brandDeep: '#066B4A',
   brandTint: '#DDF3E8',
+  onBrandTint: '#066B4A',
+  brandSolid: '#066B4A',
+  onBrandSolid: '#FFFFFF',
   live: '#F59E0B',
   liveTint: '#FEF3C7',
   onLiveTint: '#92400E',
   estimated: '#6B7C75',
   danger: '#E5484D',
   dangerTint: '#FDE7E8',
+  dangerInk: '#C2373B',
   trainSB: '#0E9F6E',
   trainNB: '#3B82F6',
   crowdLow: '#1F9D63',
@@ -67,6 +80,7 @@ export const light: Palette = {
   facade: '#B5523B',
   glass: 'rgba(255,255,255,0.84)',
   glassBorder: 'rgba(255,255,255,0.75)',
+  glassMap: 'rgba(255,255,255,0.94)',
   brandLine: 'rgba(14,159,110,0.3)',
 };
 
@@ -83,12 +97,16 @@ export const dark: Palette = {
   brand: '#2BD39A',
   brandDeep: '#0E9F6E',
   brandTint: '#173A2E',
+  onBrandTint: '#2BD39A',
+  brandSolid: '#2BD39A',
+  onBrandSolid: '#04140E',
   live: '#FBBF24',
   liveTint: '#3A2A08',
   onLiveTint: '#FCD34D',
   estimated: '#8EA19A',
   danger: '#FF6369',
   dangerTint: '#3A1517',
+  dangerInk: '#FF6369',
   trainSB: '#2BD39A',
   trainNB: '#60A5FA',
   crowdLow: '#3FCB8A',
@@ -100,6 +118,7 @@ export const dark: Palette = {
   facade: '#5A2E26',
   glass: 'rgba(19,29,26,0.86)',
   glassBorder: 'rgba(255,255,255,0.12)',
+  glassMap: 'rgba(19,29,26,0.94)',
   brandLine: 'rgba(43,211,154,0.35)',
 };
 

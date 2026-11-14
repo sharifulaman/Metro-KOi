@@ -1,5 +1,6 @@
 import { useId } from 'react';
-import Svg, { Circle, ClipPath, Defs, G, Line, LinearGradient, Path, Rect, Stop, Text as SvgText } from 'react-native-svg';
+import { View } from 'react-native';
+import Svg, { Circle, Defs, G, Line, LinearGradient, Path, Rect, Stop, Text as SvgText } from 'react-native-svg';
 
 import { useSettings } from '@/store/settings';
 import { fmtNum } from '@/lib/fmt';
@@ -28,7 +29,10 @@ export function CardArt({ name, tail, typeLabel, color, size = 'hero', width, te
   const w = width ?? (size === 'hero' ? 310 : 104);
   const h = (w * H) / W;
   const hero = size === 'hero';
+  // long names shrink so they never run into the card number
+  const nameSize = name.length > 16 ? Math.max(12, Math.round((18 * 16) / name.length)) : 18;
   return (
+    <View style={{ width: w, height: h, borderRadius: (22 * w) / W, boxShadow: hero ? '0 6px 18px rgba(14,26,22,0.22)' : '0 3px 8px rgba(14,26,22,0.18)' }}>
     <Svg testID={testID} width={w} height={h} viewBox={`0 0 ${W} ${H}`} accessibilityLabel={`${name}, ${typeLabel}`}>
       <Defs>
         <LinearGradient id={`g${id}`} x1="0%" y1="0%" x2="85%" y2="100%">
@@ -40,9 +44,6 @@ export function CardArt({ name, tail, typeLabel, color, size = 'hero', width, te
           <Stop offset="0%" stopColor={cardChip.from} />
           <Stop offset="100%" stopColor={cardChip.to} />
         </LinearGradient>
-        <ClipPath id={`name${id}`}>
-          <Rect x={18} y="62%" width={200} height={40} />
-        </ClipPath>
       </Defs>
 
       <Rect x={0} y={0} width={W} height={H} rx={22} fill={`url(#g${id})`} />
@@ -69,15 +70,16 @@ export function CardArt({ name, tail, typeLabel, color, size = 'hero', width, te
 
       {hero ? (
         <>
-          <SvgText clipPath={`url(#name${id})`} x={20} y={188} fontSize={18} fontWeight="700" fontFamily={fontFamily(lang, 700)} fill="#FFFFFF">
+          <SvgText x={20} y={187} fontSize={nameSize} fontWeight="700" fontFamily={fontFamily(lang, 700)} fill="#FFFFFF">
             {name}
           </SvgText>
-          <SvgText x={306} y={188} textAnchor="end" fontSize={15} fontWeight="600" fontFamily={fontFamily(lang, 600, true)} fill="#FFFFFF">
+          <SvgText x={306} y={187} textAnchor="end" fontSize={15} fontWeight="600" fontFamily={fontFamily(lang, 600, true)} fill="#FFFFFF">
             {`•••• ${fmtNum(tail, lang)}`}
           </SvgText>
         </>
       ) : null}
     </Svg>
+    </View>
   );
 }
 

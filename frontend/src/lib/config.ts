@@ -7,6 +7,8 @@ export const config = {
   wsUrl: `${API.replace(/^http/, 'ws')}/v1/ws`,
   /** Google Maps JavaScript API key for the Live map (EXPO_PUBLIC_GOOGLE_MAPS_API_KEY in .env.local). */
   googleMapsKey: process.env.EXPO_PUBLIC_GOOGLE_MAPS_API_KEY ?? '',
+  /** Optional Google Map ID (vector map: tilt, rotation, 3D buildings). Falls back to Google's DEMO_MAP_ID. */
+  googleMapId: process.env.EXPO_PUBLIC_GOOGLE_MAP_ID ?? 'DEMO_MAP_ID',
   /** Default station for "Next trains near you" until location is known. */
   defaultStationId: 'farmgate',
 };

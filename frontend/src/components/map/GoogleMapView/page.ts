@@ -7,9 +7,9 @@ import { LINE_PATH } from '@/lib/lineGeo';
  * `{type:'station'|'train', id}` messages. Colours all arrive in the payload, so
  * the page itself holds none. (The script avoids backticks: it lives in a TS template.)
  */
-export function mapPage(apiKey: string, lang: 'bn' | 'en'): string {
+export function mapPage(apiKey: string, lang: 'bn' | 'en', mapId: string, dark: boolean): string {
   const path = JSON.stringify(LINE_PATH.map(([lat, lng]) => ({ lat: +lat.toFixed(6), lng: +lng.toFixed(6) })));
-  const src = `https://maps.googleapis.com/maps/api/js?key=${encodeURIComponent(apiKey)}&callback=__init&loading=async&language=${lang}&region=BD`;
+  const src = `https://maps.googleapis.com/maps/api/js?key=${encodeURIComponent(apiKey)}&callback=__init&loading=async&v=weekly&language=${lang}&region=BD`;
   return `<!doctype html>
 <html><head><meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
@@ -26,6 +26,7 @@ html,body,#m{margin:0;height:100%;width:100%;overflow:hidden;-webkit-tap-highlig
 .st.sel i{background:#2BD39A}.st.sel i svg{fill:#04140E}
 .dots .st:not(.sel):not(.term){width:12px;height:12px;padding:0;border-radius:50%;background:var(--surface);border:2.5px solid var(--brand);box-sizing:border-box;box-shadow:0 1px 4px rgba(14,26,22,.3)}
 .dots .st:not(.sel):not(.term) i,.dots .st:not(.sel):not(.term) b{display:none}
+.me{width:18px;height:18px;border-radius:50%;background:#1A73E8;border:3px solid #fff;box-sizing:border-box;box-shadow:0 0 0 1px rgba(14,26,22,.18),0 2px 8px rgba(14,26,22,.4)}
 .tr{display:flex;flex-direction:column;align-items:center}
 .tr .tag{position:absolute;bottom:28px;display:flex;align-items:center;gap:6px;padding:3px 10px;border-radius:999px;background:var(--ink);border:1.5px solid var(--live);color:var(--surface);font-size:11.5px;font-weight:700;white-space:nowrap}
 .tr .tag u{display:inline-block;width:7px;height:7px;border-radius:50%;background:var(--live);text-decoration:none}
@@ -36,8 +37,8 @@ html,body,#m{margin:0;height:100%;width:100%;overflow:hidden;-webkit-tap-highlig
 </style></head>
 <body><div id="m"></div><div id="err" hidden></div>
 <script>
-var LINE=${path};
-var map=null,ready=false,pending=null,S=null,Pin=null,stations={},trains={},placed=false,viewKey='',proj=false;
+var LINE=${path},MAPID=${JSON.stringify(mapId)},DARK=${dark ? 'true' : 'false'};
+var me=null,meRing=null,tiltOn=false,map=null,ready=false,pending=null,S=null,Pin=null,stations={},trains={},placed=false,viewKey='',proj=false;
 function send(m){var s=JSON.stringify(m);if(window.ReactNativeWebView)window.ReactNativeWebView.postMessage(s);else parent.postMessage(s,'*');}
 function fail(kind){send({type:'error',kind:kind});var e=document.getElementById('err'),t=pending||S;e.hidden=false;e.textContent=(t&&t.errorText)||'Google Maps unavailable';if(t){e.style.background=t.theme.bg;e.style.color=t.theme.inkMuted;}}
 window.gm_authFailure=function(){fail('auth');};
@@ -70,7 +71,7 @@ function makePin(){
 }
 
 window.__init=function(){
-  map=new google.maps.Map(document.getElementById('m'),{center:{lat:23.83,lng:90.365},zoom:12,disableDefaultUI:true,clickableIcons:false,gestureHandling:'greedy',keyboardShortcuts:false,isFractionalZoomEnabled:true});
+  map=new google.maps.Map(document.getElementById('m'),{center:{lat:23.83,lng:90.365},zoom:12,disableDefaultUI:true,clickableIcons:false,gestureHandling:'greedy',keyboardShortcuts:false,isFractionalZoomEnabled:true,mapId:MAPID,colorScheme:DARK?google.maps.ColorScheme.DARK:google.maps.ColorScheme.LIGHT,renderingType:google.maps.RenderingType.VECTOR,headingInteractionEnabled:true,tiltInteractionEnabled:true});
   Pin=makePin();
   var casing=new google.maps.Polyline({map:map,path:LINE,strokeWeight:10,strokeOpacity:1,zIndex:1});
   var line=new google.maps.Polyline({map:map,path:LINE,strokeWeight:5,strokeOpacity:1,zIndex:2});
@@ -142,6 +143,24 @@ function syncTrains(p){
   Object.keys(trains).forEach(function(id){if(!seen[id]){trains[id].pin.setMap(null);delete trains[id];}});
 }
 
+function syncUser(p){
+  if(!p.user){if(me){me.pin.setMap(null);me=null;}if(meRing){meRing.setMap(null);meRing=null;}return;}
+  var pos={lat:p.user.lat,lng:p.user.lng};
+  if(!me){var el=document.createElement('div');el.className='pin';el.innerHTML='<div class="me"></div>';me={el:el,pin:new Pin(el,pos,5)};}
+  else me.pin.move(pos);
+  if(p.user.accuracy>0){
+    if(!meRing)meRing=new google.maps.Circle({map:map,strokeOpacity:0,fillColor:'#1A73E8',fillOpacity:0.14,clickable:false,zIndex:0});
+    meRing.setOptions({center:pos,radius:Math.min(p.user.accuracy,400)});
+  }else if(meRing){meRing.setMap(null);meRing=null;}
+}
+
+function setTilt(v){
+  if(v.tilt===tiltOn&&placed)return;
+  tiltOn=v.tilt;
+  map.setTilt(v.tilt?60:0);
+  map.setHeading(v.tilt?v.heading:0);
+}
+
 function setView(v){
   if(v.mode==='fit'){
     var b=new google.maps.LatLngBounds();LINE.forEach(function(q){b.extend(q);});
@@ -169,14 +188,15 @@ function apply(p){
   S=p;
   document.documentElement.style.background=p.theme.bg;
   document.body.style.background=p.theme.bg;
-  map.setOptions({styles:styles(p.theme,p.dark)});
+  if(!MAPID)map.setOptions({styles:styles(p.theme,p.dark)});
   window.__line[0].setOptions({strokeColor:p.theme.surface});
   window.__line[1].setOptions({strokeColor:p.theme.brand});
   document.body.classList.toggle('dots',map.getZoom()<13.2);
   syncStations(p);
   syncTrains(p);
+  syncUser(p);
   var v=p.view,k=v.mode+'|'+(v.mode==='focus'?v.lat.toFixed(6)+','+v.lng.toFixed(6)+','+v.zoom:'')+'|'+v.top+'|'+v.bottom+'|'+(v.shiftX||0)+'|'+v.key;
-  if(k!==viewKey){viewKey=k;setView(v);placed=true;}
+  if(k!==viewKey){viewKey=k;setView(v);setTilt(v);placed=true;}else setTilt(v);
 }
 </script>
 <script async defer src="${src}" onerror="fail('load')"></script>

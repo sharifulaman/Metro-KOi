@@ -6,7 +6,8 @@ export type IconName =
   | 'moon' | 'sun' | 'history' | 'wallet' | 'nfc' | 'live' | 'clock' | 'users' | 'arrowRight'
   | 'layers' | 'close' | 'stop' | 'share' | 'trash' | 'offline' | 'gpsOff' | 'calendar' | 'building'
   | 'lift' | 'scan' | 'settings' | 'ticket' | 'receipt' | 'dot' | 'accessibility'
-  | 'zoomIn' | 'zoomOut' | 'play' | 'add' | 'edit' | 'check' | 'pin' | 'lock' | 'person' | 'grid';
+  | 'zoomIn' | 'zoomOut' | 'play' | 'add' | 'edit' | 'check' | 'pin' | 'lock' | 'person' | 'grid'
+  | 'warning' | 'circlePlus' | 'phone' | 'arrowUpRight' | 'metro' | 'contactless' | 'shieldPlain';
 
 export interface IconProps {
   name: IconName;

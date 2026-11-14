@@ -2,6 +2,7 @@ import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useState } from 'react';
 
 import { GateSelector, RouteSteps, ScreenHeader, StationHeader, StationSection, TrainCard } from '@/components/metro';
+import { StationMap } from '@/features/stations/StationMap';
 import { Card, InfoNote, Screen, Segmented, SwitchRow } from '@/components/ui';
 import { buildRouteSteps, gateLabels, toGateItems, useStationGates } from '@/features/gates/useStationGates';
 import { platformTitle } from '@/features/stations/mappers';
@@ -47,20 +48,26 @@ export default function Station3DScreen() {
         onChange={setShot}
         options={(['exterior', 'platform', 'city', 'line'] as const).map((s) => ({ value: s, label: t(`s3d.shots.${s}`) }))}
       />
-      <StationSection
-        gate={gate}
-        mode={mode}
-        platform={1}
-        trainAt={trainAt}
-        roofOpen={roofOpen}
-        labels={{
-          concourse: showLabels ? t('route.concourse') : '',
-          platform1: showLabels ? `${t('common.platform', { n: fmtNum(1, lang) })} ${t('common.towardsShort', { name: stationName(last, lang) })}` : '',
-          platform2: showLabels ? `${t('common.platform', { n: fmtNum(2, lang) })} ${t('common.towardsShort', { name: stationName(first, lang) })}` : '',
-          street: showLabels ? stationName(st, lang) : '',
-        }}
-      />
-      <InfoNote icon="box" text={t('s3d.fallback')} />
+      {shot === 'platform' ? (
+        <StationSection
+          gate={gate}
+          mode={mode}
+          platform={1}
+          trainAt={trainAt}
+          roofOpen={roofOpen}
+          labels={{
+            concourse: showLabels ? t('route.concourse') : '',
+            platform1: showLabels ? `${t('common.platform', { n: fmtNum(1, lang) })} ${t('common.towardsShort', { name: stationName(last, lang) })}` : '',
+            platform2: showLabels ? `${t('common.platform', { n: fmtNum(2, lang) })} ${t('common.towardsShort', { name: stationName(first, lang) })}` : '',
+            street: showLabels ? stationName(st, lang) : '',
+          }}
+        />
+      ) : (
+        <Card radius="hero" padding={0}>
+          <StationMap stationId={st.id} height={360} tilt zoom={shot === 'line' ? 2.2 : shot === 'city' ? 4 : 8} />
+        </Card>
+      )}
+      {shot === 'platform' ? <InfoNote icon="box" text={t('s3d.fallback')} /> : null}
       <StationHeader compact name={stationName(st, lang)} altName={stationAltName(st, lang)} />
       {!deps.isTerminusFor.SB ? (
         <TrainCard compact platform={1} title={platformTitle('SB', first, last, lang, t)} eta={sb ? { sec: sb.etaSec } : undefined} source={sb?.source ?? 'schedule'} trainId={sb?.source === 'live' ? sb.trainId : undefined} labels={cardLabels} />

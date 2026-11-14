@@ -14,5 +14,7 @@ export interface WalletCarouselProps {
   index: number;
   onIndexChange(index: number): void;
   onPressCard?(id: string): void;
+  /** hide the pager dots (the home draws them after the balance panel) */
+  hideDots?: boolean;
   testID?: string;
 }

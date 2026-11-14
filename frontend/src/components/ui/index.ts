@@ -4,6 +4,7 @@ export type { IconName } from './Icon';
 export { Stack } from './Stack';
 export { Button } from './Button';
 export { IconButton } from './IconButton';
+export { Badge } from './Badge';
 export { Chip } from './Chip';
 export { StatusBadge, LiveDot } from './StatusBadge';
 export { Card } from './Card';

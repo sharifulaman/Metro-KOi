@@ -1,3 +1,5 @@
+import { View } from 'react-native';
+
 import type { GalleryEntry } from '../../galleryTypes';
 
 import { TransactionRow } from './index';
@@ -6,7 +8,14 @@ export const gallery: GalleryEntry = {
   name: 'TransactionRow',
   layer: 'metro',
   variants: [
-    { label: 'trip (sample)', render: () => <TransactionRow kind="trip" title="মিরপুর-১০ → ফার্মগেট" time="সকাল ৮:৪২" amountBdt={30} sample sampleLabel="নমুনা তথ্য" divider /> },
-    { label: 'recharge', render: () => <TransactionRow kind="recharge" title="রিচার্জ" time="গতকাল" amountBdt={500} /> },
+    {
+      label: 'trip + recharge',
+      render: () => (
+        <View style={{ width: 342 }}>
+          <TransactionRow kind="trip" title="Agargaon → Motijheel" time="Today 08:12" amount="−৳ 40" divider />
+          <TransactionRow kind="recharge" title="Recharge" time="Yesterday 21:30" amount="+৳ 500" />
+        </View>
+      ),
+    },
   ],
 };

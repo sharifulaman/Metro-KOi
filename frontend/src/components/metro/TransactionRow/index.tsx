@@ -1,30 +1,36 @@
-import { useT } from '@/i18n';
-import { fmtTaka } from '@/lib/fmt';
+import { View } from 'react-native';
 
-import { IconTile } from '../../ui/IconTile';
-import { ListRow } from '../../ui/ListRow';
+import { useTheme } from '@/theme/useTheme';
+
+import { Icon } from '../../ui/Icon';
 import { Text } from '../../ui/Text';
 
 import type { TransactionRowProps } from './types';
 
-/** Preset of ListRow for trips and recharges. */
-export function TransactionRow({ kind, title, time, amountBdt, sample, sampleLabel, divider, testID }: TransactionRowProps) {
-  const { lang } = useT();
-  const sign = kind === 'trip' ? '−' : '+';
+/** One trip or recharge in a history list (design: 38px tile, title 15/600, time 12.5, amount 15/700). */
+export function TransactionRow({ kind, title, time, amount, divider, testID }: TransactionRowProps) {
+  const { c } = useTheme();
+  const trip = kind === 'trip';
   return (
-    <ListRow
-      testID={testID}
-      leading={<IconTile icon={kind === 'trip' ? 'train' : 'wallet'} tone={kind === 'trip' ? 'brand' : 'live'} />}
-      title={title}
-      subtitle={[time, sample ? sampleLabel : null].filter(Boolean).join(' · ')}
-      trailing={
-        <Text weight={700} numeric tone={kind === 'trip' ? 'ink' : 'brand'}>
-          {sign}
-          {fmtTaka(amountBdt, lang)}
+    <View testID={testID}>
+      <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12, paddingHorizontal: 14, paddingVertical: 10 }}>
+        <View style={{ width: 38, height: 38, borderRadius: 12, backgroundColor: trip ? c.surfaceAlt : c.brandTint, alignItems: 'center', justifyContent: 'center' }}>
+          <Icon name={trip ? 'train' : 'circlePlus'} size={20} color={trip ? c.ink : c.onBrandTint} />
+        </View>
+        <View style={{ flex: 1 }}>
+          <Text size={15} lh={1.35} weight={600} numberOfLines={1}>
+            {title}
+          </Text>
+          <Text size={12.5} lh={1.4} tone="muted" weight={400}>
+            {time}
+          </Text>
+        </View>
+        <Text size={15} weight={700} lh={1.35} color={trip ? c.ink : c.onBrandTint}>
+          {amount}
         </Text>
-      }
-      divider={divider}
-    />
+      </View>
+      {divider ? <View style={{ height: 1, backgroundColor: c.divider, marginHorizontal: 14 }} /> : null}
+    </View>
   );
 }
 

@@ -25,6 +25,14 @@ export interface MapTrain {
   };
 }
 
+/** The rider's own position (blue dot + accuracy ring). */
+export interface MapUser {
+  lat: number;
+  lng: number;
+  /** metres */
+  accuracy?: number;
+}
+
 export interface GoogleMapViewProps {
   stations: MapStation[];
   trains: MapTrain[];
@@ -42,6 +50,12 @@ export interface GoogleMapViewProps {
   zoom?: number;
   /** 0..1 along the line to centre on when zoomed (a station, or a train to follow) */
   focus?: number;
+  /** Show the rider's position on the map. */
+  user?: MapUser | null;
+  /** Frame this exact point (e.g. the rider) instead of `focus`; needs `zoom` > 1. */
+  focusPoint?: { lat: number; lng: number };
+  /** 3D: tilted vector map with buildings, turned to look along the line. 2D when omitted. */
+  tilt?: boolean;
   /** Change this to glide back to `focus` after the user has dragged the map away. */
   recenterKey?: number | string;
   /** px at the top covered by floating controls; the map is framed below them */

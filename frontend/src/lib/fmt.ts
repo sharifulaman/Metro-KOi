@@ -109,3 +109,23 @@ export function secOfDayFromMs(ms: number): number {
   const d = new Date(ms + 6 * 3600 * 1000);
   return d.getUTCHours() * 3600 + d.getUTCMinutes() * 60 + d.getUTCSeconds();
 }
+
+/** "০৮:১২" / "08:12": 24-hour Dhaka time, as the design shows trip times. */
+export function fmtHM(ms: number, lang: Lang): string {
+  const sec = secOfDayFromMs(ms);
+  const h = Math.floor(sec / 3600);
+  const m = Math.floor((sec % 3600) / 60);
+  return fmtNum(`${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}`, lang);
+}
+
+/** "−৳ ৪০" / "+৳ ৫০০": a fare or recharge with its sign, as the design writes it. */
+export function fmtTakaSigned(n: number, sign: '−' | '+', lang: Lang): string {
+  return `${sign}৳ ${fmtNum(n.toLocaleString('en-US'), lang)}`;
+}
+
+/** Whole days between two instants on the Dhaka calendar (0 = same day). */
+export function dayDiff(nowMs: number, thenMs: number): number {
+  const day = (ms: number) => Math.floor((ms + 6 * 3600 * 1000) / 86400000);
+  return day(nowMs) - day(thenMs);
+}
+

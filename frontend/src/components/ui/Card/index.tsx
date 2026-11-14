@@ -4,7 +4,7 @@ import { useTheme } from '@/theme/useTheme';
 
 import type { CardProps } from './types';
 
-export function Card({ children, radius = 'card', tone = 'surface', padding = 4, gap = 0, elevated, onPress, testID, accessibilityLabel }: CardProps) {
+export function Card({ children, radius = 'card', tone = 'surface', padding = 4, gap = 0, elevated, bordered, onPress, testID, accessibilityLabel }: CardProps) {
   const t = useTheme();
   const bg = tone === 'brand' ? t.c.brandDeep : tone === 'alt' ? t.c.surfaceAlt : t.c.surface;
   return (
@@ -18,6 +18,8 @@ export function Card({ children, radius = 'card', tone = 'surface', padding = 4,
         {
           backgroundColor: bg,
           borderRadius: t.radius[radius],
+          borderWidth: bordered ? 1 : 0,
+          borderColor: t.c.divider,
           padding: t.space[padding],
           gap: t.space[gap],
           opacity: pressed ? 0.9 : 1,

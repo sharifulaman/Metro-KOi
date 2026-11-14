@@ -18,12 +18,13 @@ const toneKey: Record<TextTone, keyof Palette> = {
   estimated: 'estimated',
 };
 
-export function Text({ variant = 'body', tone = 'ink', numeric, weight, align, numberOfLines, children, testID, accessibilityLabel }: TextProps) {
+export function Text({ variant = 'body', tone = 'ink', numeric, weight, size, lh, tracking, color, align, numberOfLines, children, testID, accessibilityLabel }: TextProps) {
   const { c } = useTheme();
   const lang = useSettings((s) => s.lang);
   const ts = typeScale[variant];
   const w = weight ?? ts.weight;
-  const lineHeight = lang === 'bn' ? Math.max(ts.line, Math.round(ts.size * BANGLA_LINE_FACTOR)) : ts.line;
+  const fs = size ?? ts.size;
+  const lineHeight = lh != null ? Math.round(fs * lh) : size != null ? Math.round(fs * (lang === 'bn' ? BANGLA_LINE_FACTOR : 1.35)) : lang === 'bn' ? Math.max(ts.line, Math.round(ts.size * BANGLA_LINE_FACTOR)) : ts.line;
   return (
     <RNText
       testID={testID}
@@ -31,8 +32,9 @@ export function Text({ variant = 'body', tone = 'ink', numeric, weight, align, n
       numberOfLines={numberOfLines}
       maxFontSizeMultiplier={1.3}
       style={{
-        color: c[toneKey[tone]],
-        fontSize: ts.size,
+        color: color ?? c[toneKey[tone]],
+        fontSize: fs,
+        letterSpacing: tracking,
         lineHeight,
         fontFamily: fontFamily(lang, w, numeric || variant === 'countdown'),
         fontVariant: numeric || variant === 'countdown' ? ['tabular-nums'] : undefined,

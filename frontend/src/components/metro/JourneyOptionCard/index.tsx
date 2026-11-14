@@ -158,6 +158,11 @@ export function JourneyOptionCard(p: JourneyOptionCardProps) {
           ) : null}
         </View>
       ) : null}
+      {p.extra ? (
+        <View style={{ marginTop: 10 }}>
+          <Button label={p.extra.label} icon={p.extra.icon} variant="secondary" fullWidth height={50} onPress={p.extra.onPress} />
+        </View>
+      ) : null}
     </Pressable>
   );
 }

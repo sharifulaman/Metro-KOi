@@ -34,5 +34,25 @@ export function geoAt(f: number): GeoPoint {
   return { lng: ax + t * (bx - ax), lat: ay + t * (by - ay), bearing: (bearing + 360) % 360 };
 }
 
+const M_PER_DEG = 111320;
+
+/** Closest point on the track to a GPS position: distance in metres and fraction f along the line. */
+export function snapToLine(lat: number, lng: number): { metres: number; f: number } {
+  let best = { metres: Infinity, f: 0 };
+  for (let i = 1; i < coords.length; i++) {
+    const [ax, ay] = coords[i - 1];
+    const [bx, by] = coords[i];
+    const dx = (bx - ax) * KX;
+    const dy = by - ay;
+    const len2 = dx * dx + dy * dy;
+    const px = (lng - ax) * KX;
+    const py = lat - ay;
+    const t = len2 === 0 ? 0 : Math.max(0, Math.min(1, (px * dx + py * dy) / len2));
+    const metres = Math.hypot(px - t * dx, py - t * dy) * M_PER_DEG;
+    if (metres < best.metres) best = { metres, f: (cum[i - 1] + t * (cum[i] - cum[i - 1])) / TOTAL };
+  }
+  return best;
+}
+
 /** The whole track as [lat, lng] pairs, for the polyline. */
 export const LINE_PATH: [number, number][] = coords.map(([lng, lat]) => [lat, lng]);

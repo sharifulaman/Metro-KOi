@@ -38,7 +38,7 @@ html,body,#m{margin:0;height:100%;width:100%;overflow:hidden;-webkit-tap-highlig
 <body><div id="m"></div><div id="err" hidden></div>
 <script>
 var LINE=${path},MAPID=${JSON.stringify(mapId)},DARK=${dark ? 'true' : 'false'};
-var me=null,meRing=null,tiltOn=false,map=null,ready=false,pending=null,S=null,Pin=null,stations={},trains={},placed=false,viewKey='',proj=false;
+var routeCasing=null,routeLine=null,me=null,meRing=null,tiltOn=false,map=null,ready=false,pending=null,S=null,Pin=null,stations={},trains={},placed=false,viewKey='',proj=false;
 function send(m){var s=JSON.stringify(m);if(window.ReactNativeWebView)window.ReactNativeWebView.postMessage(s);else parent.postMessage(s,'*');}
 function fail(kind){send({type:'error',kind:kind});var e=document.getElementById('err'),t=pending||S;e.hidden=false;e.textContent=(t&&t.errorText)||'Google Maps unavailable';if(t){e.style.background=t.theme.bg;e.style.color=t.theme.inkMuted;}}
 window.gm_authFailure=function(){fail('auth');};
@@ -154,6 +154,16 @@ function syncUser(p){
   }else if(meRing){meRing.setMap(null);meRing=null;}
 }
 
+function syncRoute(p){
+  if(!p.route){if(routeLine){routeCasing.setMap(null);routeLine.setMap(null);routeCasing=routeLine=null;}return;}
+  if(!routeLine){
+    routeCasing=new google.maps.Polyline({map:map,strokeOpacity:1,strokeWeight:14,zIndex:3,clickable:false});
+    routeLine=new google.maps.Polyline({map:map,strokeOpacity:1,strokeWeight:8,zIndex:4,clickable:false,icons:[{icon:{path:google.maps.SymbolPath.FORWARD_CLOSED_ARROW,scale:2.6,strokeColor:'#ffffff',fillColor:'#ffffff',fillOpacity:1,strokeWeight:1},offset:'12px',repeat:'64px'}]});
+  }
+  routeCasing.setOptions({path:p.route,strokeColor:p.theme.surface});
+  routeLine.setOptions({path:p.route,strokeColor:p.theme.brandDeep});
+}
+
 function setTilt(v){
   if(v.tilt===tiltOn&&placed)return;
   tiltOn=v.tilt;
@@ -163,7 +173,7 @@ function setTilt(v){
 
 function setView(v){
   if(v.mode==='fit'){
-    var b=new google.maps.LatLngBounds();LINE.forEach(function(q){b.extend(q);});
+    var b=new google.maps.LatLngBounds();(v.fit||LINE).forEach(function(q){b.extend(q);});
     map.fitBounds(b,{top:v.top+24,bottom:v.bottom+24,left:28,right:28});
     return;
   }
@@ -192,6 +202,7 @@ function apply(p){
   window.__line[0].setOptions({strokeColor:p.theme.surface});
   window.__line[1].setOptions({strokeColor:p.theme.brand});
   document.body.classList.toggle('dots',map.getZoom()<13.2);
+  syncRoute(p);
   syncStations(p);
   syncTrains(p);
   syncUser(p);

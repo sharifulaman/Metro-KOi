@@ -1,6 +1,7 @@
 import { create } from 'zustand';
 
 import { applyServerUpdate, type Kinematics } from '@/lib/interpolate';
+import { useRider } from './rider';
 import type { ConnectionState, Notice, ServerMessage, Train, WireTrain } from '@/models';
 
 interface LiveState {
@@ -63,8 +64,12 @@ export const useLive = create<LiveState>()((set) => ({
         }
         case 'notice':
           return { notice: { level: msg.level, textBn: msg.textBn, textEn: msg.textEn } };
-        case 'rider.ack':
+        case 'rider.ack': {
+          // the server answers rider.start (accepted) and rider.stop with an ack
+          const s = useRider.getState().session;
+          if (s && s.sessionId === msg.sessionId && !s.stopReason) useRider.getState().update({ acked: true });
           return { helping: msg.helping };
+        }
         default:
           return {};
       }

@@ -14,6 +14,8 @@ export interface MapPayload {
   stations: { id: string; label: string; lat: number; lng: number; terminal: boolean }[];
   trains: { id: string; dir: 'SB' | 'NB'; state: string; lat: number; lng: number; heading: number; label?: string; timer?: string; progress?: number }[];
   user: { lat: number; lng: number; accuracy: number } | null;
+  /** the trip, sampled along the track in travel order */
+  route: { lat: number; lng: number }[] | null;
   selectedStation?: string;
   selectedTrain?: string;
   view: {
@@ -24,6 +26,8 @@ export interface MapPayload {
     mode: 'fit' | 'focus';
     lat: number;
     lng: number;
+    /** points the whole-line view frames instead of the entire line (the trip) */
+    fit: { lat: number; lng: number }[] | null;
     /** Google zoom level (focus mode) */
     zoom: number;
     /** px covered by floating UI at the top / by the sheet at the bottom */
@@ -42,6 +46,16 @@ export function buildPayload(p: GoogleMapViewProps, c: Palette, dark: boolean, r
   const tilt = !!p.tilt && near;
   const level = Math.max(tilt ? 16 : 11, Math.min(19, 13 + Math.log2(p.zoom ?? 1)));
   const last = p.stations.length - 1;
+  let route: { lat: number; lng: number }[] | null = null;
+  if (p.route) {
+    const { from, to } = p.route;
+    const n = Math.max(2, Math.ceil(Math.abs(to - from) * 240));
+    route = [];
+    for (let i = 0; i <= n; i++) {
+      const g = geoAt(from + ((to - from) * i) / n);
+      route.push({ lat: +g.lat.toFixed(6), lng: +g.lng.toFixed(6) });
+    }
+  }
   return {
     dark,
     errorText: p.errorText,
@@ -81,6 +95,7 @@ export function buildPayload(p: GoogleMapViewProps, c: Palette, dark: boolean, r
         progress: t.dwell?.progress,
       };
     }),
+    route,
     user: p.user ? { lat: p.user.lat, lng: p.user.lng, accuracy: p.user.accuracy ?? 0 } : null,
     selectedStation: p.selectedStation,
     selectedTrain: p.selectedTrain,
@@ -90,11 +105,12 @@ export function buildPayload(p: GoogleMapViewProps, c: Palette, dark: boolean, r
       mode: near ? 'focus' : 'fit',
       lat: at.lat,
       lng: at.lng,
+      fit: route,
       zoom: level,
       top: p.topInset ?? 0,
       bottom: reservedBottom,
       shiftX: p.focusShiftX ?? 0,
-      key: String(p.recenterKey ?? '') + (tilt ? '|3d' : ''),
+      key: String(p.recenterKey ?? '') + (tilt ? '|3d' : '') + (route ? '|r' + route.length + ':' + route[0].lat + ',' + route[route.length - 1].lat : ''),
     },
   };
 }

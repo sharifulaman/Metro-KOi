@@ -5,7 +5,9 @@ import { Share } from 'react-native';
 import { JourneyView, type JourneyBadge, type JourneyOptionCardProps } from '@/components/metro';
 import { ListRow, Sheet, Text } from '@/components/ui';
 import { DEMO_JOURNEY } from '@/data/demoJourney';
+import { ActiveTrip } from '@/features/journey/ActiveTrip';
 import { useJourney } from '@/features/journey/useJourney';
+import { useRiderSession } from '@/features/rider/useRiderSession';
 import { stationName, useStations } from '@/features/stations/useStations';
 import { useT } from '@/i18n';
 import { fmtClock, fmtDuration, fmtEta, fmtNum } from '@/lib/fmt';
@@ -24,6 +26,7 @@ export default function JourneyScreen() {
   const { t, lang } = useT();
   const router = useRouter();
   const { list, byId } = useStations();
+  const rider = useRiderSession();
   const demo = useSettings((s) => s.demo !== false);
   const [from, setFrom] = useState<string | null>('farmgate');
   const [to, setTo] = useState<string | null>('motijheel');
@@ -80,6 +83,12 @@ export default function JourneyScreen() {
     void Share.share({ message: `${name(from)} → ${name(to)}: ${t('journey.leaves', { time: fmtClock(best.departSec, lang) })}, ${t('journey.arrives', { time: fmtClock(best.arriveSec, lang), dur: fmtDuration(best.durationSec, lang) })}` });
   };
 
+  // one confirmation on the rider page, which then comes back here with the trip running
+  const startJourney = () => {
+    if (!best || !from || !to) return;
+    router.push({ pathname: '/rider', params: { from, to, dir: best.direction } });
+  };
+
   const row = (o: JourneyOption): JourneyOptionCardProps => {
     const b = badgeOf(o);
     return { depart: clock(o.departSec), arrive: clock(o.arriveSec), waitText: whenText(o), badge: b, badgeLabel: badgeLabel(b), onPress: () => open(o) };
@@ -100,8 +109,12 @@ export default function JourneyScreen() {
           platformMeta: closed ? t('journey.byTimetable') : best.trainId,
           action: closed ? { label: t('journey.details'), icon: 'list', onPress: () => open(best) } : { label: t('journey.track'), icon: 'pin', onPress: () => router.push(`/train/${best.trainId}`) },
           share: { label: t('journey.share'), onPress: shareEta },
+          // start the trip: go live as a rider on this train and watch it on the Live map
+          extra: closed ? undefined : { label: t('journey.start'), icon: 'train', onPress: startJourney },
         }
       : undefined;
+
+  if (rider.session && rider.phase === 'active') return <ActiveTrip />;
 
   return (
     <JourneyView

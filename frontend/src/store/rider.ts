@@ -6,6 +6,9 @@ interface RiderState {
   phase: RiderPhase;
   session: RiderSession | null;
   permissionDenied: boolean;
+  /** tried to start while too far from the line */
+  tooFar: boolean;
+  setTooFar(v: boolean): void;
   setPhase(p: RiderPhase): void;
   begin(session: RiderSession): void;
   update(patch: Partial<RiderSession>): void;
@@ -18,6 +21,8 @@ export const useRider = create<RiderState>()((set) => ({
   phase: 'idle',
   session: null,
   permissionDenied: false,
+  tooFar: false,
+  setTooFar: (tooFar) => set({ tooFar }),
   setPhase: (phase) => set({ phase }),
   begin: (session) => set({ session, phase: 'active' }),
   update: (patch) => set((s) => (s.session ? { session: { ...s.session, ...patch } } : {})),

@@ -33,5 +33,7 @@ export interface JourneyOptionCardProps {
   /** "SB-0630" or "By the timetable" */
   platformMeta?: string;
   action?: { label: string; icon?: IconName; onPress(): void };
-  share?: { label: string; onPress(): void };
+  /** second, outlined full-width button under the actions (e.g. "Start journey") */
+  extra?: { label: string; icon?: IconName; onPress(): void };
+  share?:{ label: string; onPress(): void };
 }

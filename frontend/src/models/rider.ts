@@ -25,7 +25,7 @@ export interface RiderSignals {
   startedInStation: boolean;
 }
 
-export type StopReason = 'user' | 'left_corridor' | 'stationary' | 'timeout' | 'terminal';
+export type StopReason = 'user' | 'left_corridor' | 'stationary' | 'timeout' | 'terminal' | 'refused';
 
 export interface RiderSession {
   sessionId: string;
@@ -36,5 +36,7 @@ export interface RiderSession {
   score: number;
   fixesSent: number;
   helping: number;
+  /** the server accepted this session (rider.ack); until then we are not live */
+  acked?: boolean;
   stopReason?: StopReason;
 }

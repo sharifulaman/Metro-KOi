@@ -50,6 +50,8 @@ export interface GoogleMapViewProps {
   zoom?: number;
   /** 0..1 along the line to centre on when zoomed (a station, or a train to follow) */
   focus?: number;
+  /** Highlight the trip from one point of the line to another (0..1 each), with arrows in the travel direction; the whole-line view frames it. */
+  route?: { from: number; to: number } | null;
   /** Show the rider's position on the map. */
   user?: MapUser | null;
   /** Frame this exact point (e.g. the rider) instead of `focus`; needs `zoom` > 1. */

@@ -13,6 +13,7 @@ import { stationAltName, stationName, useStations } from '@/features/stations/us
 import { useT } from '@/i18n';
 import { config } from '@/lib/config';
 import { fmtDistance, fmtEta, fmtEtaAt, fmtMmSs, fmtNum } from '@/lib/fmt';
+import { etaToStation } from '@/lib/schedule';
 import type { Direction, Train } from '@/models';
 import { useLive } from '@/store/live';
 import { useSettings } from '@/store/settings';
@@ -46,6 +47,7 @@ export function LiveReal() {
   const train = trains.find((x) => x.id === selTrain);
   const seg = train ? trainSegment(model, train) : null;
   const nameAt = (i: number) => (byId[model.stationIds[i]] ? stationName(byId[model.stationIds[i]], lang) : '');
+  const nameOf = (id: string) => (byId[id] ? stationName(byId[id], lang) : id);
   const tagFor = (state: string, id: string) => `${id} · ${state === 'ESTIMATED' ? t('common.estimated') : t('common.live')}`;
   const liveCount = trains.filter((x) => x.state !== 'ESTIMATED').length;
 
@@ -102,8 +104,8 @@ export function LiveReal() {
 
   // playback starts by following a train (the one due at the focus station,
   // else the first one out) so it can be watched moving station to station
-  const startPlayback = () => {
-    playback.start();
+  const startPlayback = (fromFirstTrain = false) => {
+    playback.start(fromFirstTrain);
     setSelStation(undefined);
     setNear(true);
     setFollowNext(true);
@@ -128,6 +130,15 @@ export function LiveReal() {
     setRecenter((n) => n + 1);
   };
 
+  // "I'm on this train": share my position so others see it live (only possible near the line)
+  const goLive = (tr: Train) => router.push({ pathname: '/rider', params: { dir: tr.dir } });
+
+  // while live: the trip (or the rest of the line in my direction) drawn on the map
+  const sess = rider.session;
+  const iFrom = sess?.fromStationId ? model.stationIds.indexOf(sess.fromStationId) : -1;
+  const iTo = sess?.toStationId ? model.stationIds.indexOf(sess.toStationId) : -1;
+  const liveRoute = sess && iFrom >= 0 && iTo >= 0 ? { from: fractionOf(model, model.chainage[iFrom]), to: fractionOf(model, model.chainage[iTo]) } : null;
+
   const closedUntil = playback.closedUntil;
   const zoomLevel = near ? 15 : 12;
 
@@ -141,6 +152,7 @@ export function LiveReal() {
         zoom={near || view3d ? ZOOM_NEAR : 1}
         focus={mapFocus}
         focusPoint={userFocus ?? undefined}
+        route={liveRoute}
         user={user}
         tilt={view3d}
         recenterKey={recenter}
@@ -189,7 +201,7 @@ export function LiveReal() {
               <IconButton icon="box" label={view3d ? '2D' : '3D'} size="sm" elevated active={view3d} accessibilityLabel={t(view3d ? 'live.tilt2d' : 'live.tilt3d')} onPress={() => setView3d((v) => !v)} testID="open-3d" />
               <IconButton icon="locate" size="sm" elevated active={!!userFocus} accessibilityLabel={t('live.locate')} onPress={() => void locate()} testID="locate" />
               <IconButton icon={near ? 'zoomOut' : 'zoomIn'} size="sm" elevated accessibilityLabel={t(near ? 'live.zoomOut' : 'live.zoomIn')} onPress={() => setNear((v) => !v)} testID="zoom" />
-              {!playback.active ? <IconButton icon="play" size="sm" elevated accessibilityLabel={t('live.watchShort')} onPress={startPlayback} testID="play" /> : null}
+              {!playback.active ? <IconButton icon="play" size="sm" elevated accessibilityLabel={t('live.watchShort')} onPress={() => startPlayback()} testID="play" /> : null}
             </Stack>
           </Stack>
           {locNote ? <InfoNote icon="gpsOff" tone="danger" text={t('live.locationOff')} /> : null}
@@ -202,7 +214,11 @@ export function LiveReal() {
               <Stack flex>
                 <RideBanner
                   title={`${t('rider.sharing')}${rider.sharing ? '' : ' · ' + t('rider.waiting')}`}
-                  subtitle={t('rider.helping', { count: fmtNum(rider.helping, lang) })}
+                  subtitle={
+                    rider.session.fromStationId && rider.session.toStationId
+                      ? `${nameOf(rider.session.fromStationId)} → ${nameOf(rider.session.toStationId)} · ${t('rider.helping', { count: fmtNum(rider.helping, lang) })}`
+                      : t('rider.helping', { count: fmtNum(rider.helping, lang) })
+                  }
                   stopLabel={t('common.close')}
                   onStop={() => rider.stop('user')}
                   onPress={() => router.push('/rider')}
@@ -239,6 +255,19 @@ export function LiveReal() {
                   direction={train.dir}
                   caption={seg.atStation ? t('train.standing', { name: nameAt(seg.fromIdx) }) : t('live.nextStationIs', { name: nameAt(seg.toIdx) })}
                 />
+                {nearest ? (
+                  (() => {
+                    const eta = etaToStation(model, train, model.stationIds[nearest.index]);
+                    return (
+                      <Text variant="label" tone="muted">
+                        {eta == null ? t('live.passedYou', { name: nearestName }) : t('live.reachesYou', { name: nearestName, eta: fmtEta(eta, train.state === 'ESTIMATED' ? 'schedule' : 'live', lang) })}
+                      </Text>
+                    );
+                  })()
+                ) : null}
+                {!rider.session ? (
+                  <Button label={t('live.goLive')} icon="train" fullWidth onPress={() => goLive(train)} testID="go-live" />
+                ) : null}
                 <Button label={t('train.open')} variant="secondary" size="md" fullWidth onPress={() => router.push(`/train/${train.id}`)} />
               </>
             ) : focus ? (
@@ -264,7 +293,7 @@ export function LiveReal() {
                 {closedUntil ? (
                   <>
                     <InfoNote icon="clock" text={`${t('live.closedTitle')} · ${t('live.closedBody', { time: playback.timeLabel(closedUntil), station: stationName(first, lang) })}`} />
-                    <Button label={t('live.watch')} icon="play" fullWidth onPress={startPlayback} testID="watch-schedule" />
+                    <Button label={t('live.watch')} icon="play" fullWidth onPress={() => startPlayback(true)} testID="watch-schedule" />
                   </>
                 ) : null}
                 {(['SB', 'NB'] as const)

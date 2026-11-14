@@ -29,10 +29,13 @@ export function usePlayback(now: number) {
     /** epoch ms of the next first train when nothing runs right now */
     closedUntil: playback ? null : nextStart,
     timeLabel,
-    start() {
+    /** Starts at the device's current time (trains already on the line appear
+     * where the timetable says they are; others leave the depot at their
+     * scheduled time). `fromFirstTrain` jumps to the next first departure. */
+    start(fromFirstTrain = false) {
       const real = Date.now();
-      const next = nextServiceStart(tt, model, real);
-      useClock.getState().start(next ?? real, 10);
+      const next = fromFirstTrain ? nextServiceStart(tt, model, real) : null;
+      useClock.getState().start(next ?? real, 1);
     },
     setRate: (r: number) => useClock.getState().setRate(r),
     stop: () => useClock.getState().stop(),

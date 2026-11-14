@@ -47,7 +47,8 @@
     "test": "node --test src/lib/__tests__/schedule.test.ts src/lib/__tests__/felica.test.ts",
     "check:ui": "node scripts/check-ui-rules.mjs",
     "verify": "npm run typecheck && npm test && npm run check:ui",
-    "build:sim": "node scripts/build-sim.mjs"
+    "build:sim": "node scripts/build-sim.mjs",
+    "lint": "expo lint"
   },
   "private": true
 }

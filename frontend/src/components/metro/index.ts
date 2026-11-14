@@ -40,6 +40,7 @@ export { SearchPill } from './SearchPill';
 export { NextTrainRow } from './NextTrainRow';
 export { PlaybackBar } from './PlaybackBar';
 export { SegmentProgress } from './SegmentProgress';
+export { Speedometer } from './Speedometer';
 export { TrainTimeline } from './TrainTimeline';
 export type { TimelineStop } from './TrainTimeline';
 export { JourneyPicker } from './JourneyPicker';

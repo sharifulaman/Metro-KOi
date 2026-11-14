@@ -123,7 +123,7 @@ export function useRiderSession() {
         const spd = loc.coords.speed ?? 0;
         if (spd * 3.6 >= 40 && spd * 3.6 <= 85) signals.current.trainSpeedSeen = true;
         const score = scoreSignals(signals.current);
-        st.update({ score, lastF: snap.f });
+        st.update({ score, lastF: snap.f, lastSpd: spd });
         if (!canShare(signals.current)) return;
 
         // Offline (no backend) the ride still runs on the phone: the trip view uses the timetable and GPS.

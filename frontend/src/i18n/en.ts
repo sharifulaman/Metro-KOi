@@ -71,6 +71,7 @@ export const en = {
     atStationTag: '{{id}} · at station',
     nextStationIs: 'Next station: {{name}}',
     goLive: "I'm on this train · go live",
+    kmh: 'km/h',
     reachesYou: 'Reaches {{name}} (nearest to you) in {{eta}}',
     passedYou: 'Already passed {{name}} (nearest to you)',
     leavesAt: 'At station · leaves in {{t}}',

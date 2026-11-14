@@ -73,6 +73,7 @@ export const bn: Dict = {
     atStationTag: '{{id}} · স্টেশনে আছে',
     nextStationIs: 'পরের স্টেশন: {{name}}',
     goLive: 'আমি এই ট্রেনে · লাইভ হন',
+    kmh: 'কিমি/ঘণ্টা',
     reachesYou: '{{name}} (আপনার সবচেয়ে কাছে) পৌঁছাবে {{eta}}-এ',
     passedYou: '{{name}} (আপনার সবচেয়ে কাছে) পার হয়ে গেছে',
     leavesAt: 'স্টেশনে আছে · ছাড়বে {{t}}',

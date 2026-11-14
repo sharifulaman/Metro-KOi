@@ -2,7 +2,7 @@ import { useRouter } from 'expo-router';
 import { useEffect, useState } from 'react';
 
 import { GoogleMapView, ZOOM_NEAR, type MapTrain } from '@/components/map';
-import { BrandBar, ConnectionPill, NextTrainRow, PlaybackBar, RideBanner, SearchPill, SegmentProgress, StationHeader } from '@/components/metro';
+import { BrandBar, ConnectionPill, NextTrainRow, PlaybackBar, RideBanner, SearchPill, SegmentProgress, Speedometer, StationHeader } from '@/components/metro';
 import { Button, Chip, GlassPill, IconButton, InfoNote, Screen, Sheet, Stack, StatusBadge, Text } from '@/components/ui';
 import { usePlayback } from '@/features/map/usePlayback';
 import { nearestStation, useUserLocation } from '@/features/map/useUserLocation';
@@ -47,6 +47,8 @@ export function LiveReal() {
   const train = trains.find((x) => x.id === selTrain);
   const seg = train ? trainSegment(model, train) : null;
   const nameAt = (i: number) => (byId[model.stationIds[i]] ? stationName(byId[model.stationIds[i]], lang) : '');
+  /** km/h: standing at a station = 0; a rider's own train uses the phone's GPS speed */
+  const trainKmh = (tr: Train) => (tr.dwellLeftSec != null ? 0 : Math.abs(tr.v) * 3.6);
   const nameOf = (id: string) => (byId[id] ? stationName(byId[id], lang) : id);
   const tagFor = (state: string, id: string) => `${id} · ${state === 'ESTIMATED' ? t('common.estimated') : t('common.live')}`;
   const liveCount = trains.filter((x) => x.state !== 'ESTIMATED').length;
@@ -239,14 +241,17 @@ export function LiveReal() {
                   </Text>
                 </Stack>
                 <Stack direction="row" justify="between" align="end">
-                  <Text variant="countdown" numeric>
-                    {train.dwellLeftSec != null
-                      ? fmtMmSs(train.dwellLeftSec, lang)
-                      : train.etaSec != null
-                        ? fmtEta(train.etaSec, train.state === 'ESTIMATED' ? 'schedule' : 'live', lang)
-                        : '—'}
-                  </Text>
-                  <StatusBadge kind={train.dwellLeftSec != null ? 'stop' : train.state === 'ESTIMATED' ? 'estimated' : 'live'} />
+                  <Stack gap={2}>
+                    <Text variant="countdown" numeric>
+                      {train.dwellLeftSec != null
+                        ? fmtMmSs(train.dwellLeftSec, lang)
+                        : train.etaSec != null
+                          ? fmtEta(train.etaSec, train.state === 'ESTIMATED' ? 'schedule' : 'live', lang)
+                          : '—'}
+                    </Text>
+                    <StatusBadge kind={train.dwellLeftSec != null ? 'stop' : train.state === 'ESTIMATED' ? 'estimated' : 'live'} />
+                  </Stack>
+                  <Speedometer value={trainKmh(train)} unit={t('live.kmh')} valueLabel={fmtNum(Math.round(trainKmh(train)), lang)} size={150} testID="speedometer" />
                 </Stack>
                 <SegmentProgress
                   fromLabel={nameAt(seg.fromIdx)}

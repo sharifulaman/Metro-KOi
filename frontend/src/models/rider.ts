@@ -40,5 +40,7 @@ export interface RiderSession {
   acked?: boolean;
   /** last position on the line, 0..1 from Uttara North (works without the server) */
   lastF?: number;
+  /** last GPS speed, m/s */
+  lastSpd?: number;
   stopReason?: StopReason;
 }

@@ -34,7 +34,7 @@ export function useTrains(tickMs = 500): { trains: Train[]; model: RunModel; now
     );
     const own: Train[] =
       !playback && ride && !ride.acked && !ride.stopReason && ride.direction && ride.lastF != null
-        ? [{ id: LOCAL_TRAIN_ID, dir: ride.direction, s: model.chainage[0] + ride.lastF * model.lengthM, v: 0, lat: null, lng: null, hdg: null, state: 'LIVE', riders: 1, nextStation: null, etaSec: null, ts: now }]
+        ? [{ id: LOCAL_TRAIN_ID, dir: ride.direction, s: model.chainage[0] + ride.lastF * model.lengthM, v: ride.lastSpd ?? 0, lat: null, lng: null, hdg: null, state: 'LIVE', riders: 1, nextStation: null, etaSec: null, ts: now }]
         : [];
     return [...liveList, ...est, ...own];
   }, [live, kin, now, tt, model, playback, ride]);

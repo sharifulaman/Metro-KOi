@@ -28,6 +28,6 @@ export interface JourneyDetailViewProps {
   stops: JourneyDetailStop[];
   /** "ট্রেন ফার্মগেট স্টেশনে আসতে ~৪ মিনিট" */
   waitNote?: string;
-  action: { label: string; icon?: IconName; onPress(): void };
+  action?: { label: string; icon?: IconName; onPress(): void };
   testID?: string;
 }

@@ -2,12 +2,13 @@ import { useRouter } from 'expo-router';
 import { useEffect, useState } from 'react';
 
 import { GoogleMapView, ZOOM_NEAR, type MapTrain } from '@/components/map';
-import { BrandBar, ConnectionPill, NextTrainRow, PlaybackBar, RideBanner, SearchPill, SegmentProgress, Speedometer, StationHeader } from '@/components/metro';
+import { BrandBar, NextTrainRow, RideBanner, SegmentProgress, Speedometer, StationHeader } from '@/components/metro';
 import { Button, Chip, GlassPill, IconButton, InfoNote, Screen, Sheet, Stack, StatusBadge, Text } from '@/components/ui';
 import { usePlayback } from '@/features/map/usePlayback';
 import { nearestStation, useUserLocation } from '@/features/map/useUserLocation';
 import { fractionOf, trainSegment, useTrains } from '@/features/map/useTrains';
 import { useRiderSession } from '@/features/rider/useRiderSession';
+import { useStartRide } from '@/features/rider/useStartRide';
 import { useDepartures } from '@/features/stations/useDepartures';
 import { stationAltName, stationName, useStations } from '@/features/stations/useStations';
 import { useT } from '@/i18n';
@@ -15,8 +16,10 @@ import { config } from '@/lib/config';
 import { fmtDistance, fmtEta, fmtEtaAt, fmtMmSs, fmtNum } from '@/lib/fmt';
 import { etaToStation } from '@/lib/schedule';
 import type { Direction, Train } from '@/models';
-import { useLive } from '@/store/live';
 import { useSettings } from '@/store/settings';
+
+/** within this many metres of a station the sheet shows that station */
+const AT_STATION_M = 300;
 
 /** Live map (design ১০–১২): Google map with the line, trains and station pills; floating controls; next-trains sheet. */
 export function LiveReal() {
@@ -24,10 +27,9 @@ export function LiveReal() {
   const router = useRouter();
   const { list, byId, first, last, geometry } = useStations();
   const { trains, model, now } = useTrains(500);
-  const connection = useLive((s) => s.connection);
   const favourites = useSettings((s) => s.favourites);
-  const setLang = useSettings((s) => s.setLang);
   const rider = useRiderSession();
+  const startRide = useStartRide();
   const playback = usePlayback(now);
   const [selStation, setSelStation] = useState<string | undefined>();
   const [selTrain, setSelTrain] = useState<string | undefined>();
@@ -40,7 +42,16 @@ export function LiveReal() {
   const [locNote, setLocNote] = useState(false);
   const { user, request: requestLocation } = useUserLocation();
 
-  const focusId = selStation ?? favourites[0] ?? config.defaultStationId;
+  // standing at / near a station: the sheet follows that station by itself and updates as the rider moves
+  const nearest = user ? nearestStation(user, model.chainage.map((m) => fractionOf(model, m))) : null;
+  const nearbyId = nearest && nearest.metres <= AT_STATION_M ? model.stationIds[nearest.index] : undefined;
+  const [seenNearby, setSeenNearby] = useState<string | undefined>();
+  if (nearbyId !== seenNearby) {
+    setSeenNearby(nearbyId);
+    if (nearbyId) setSelStation(undefined);
+  }
+
+  const focusId = selStation ?? nearbyId ?? favourites[0] ?? config.defaultStationId;
   const focus = byId[focusId];
   const focusIdx = model.stationIds.indexOf(focusId);
   const deps = useDepartures(focusId, 1);
@@ -51,7 +62,6 @@ export function LiveReal() {
   const trainKmh = (tr: Train) => (tr.dwellLeftSec != null ? 0 : Math.abs(tr.v) * 3.6);
   const nameOf = (id: string) => (byId[id] ? stationName(byId[id], lang) : id);
   const tagFor = (state: string, id: string) => `${id} · ${state === 'ESTIMATED' ? t('common.estimated') : t('common.live')}`;
-  const liveCount = trains.filter((x) => x.state !== 'ESTIMATED').length;
 
   // follow the selected train; otherwise frame the station in focus
   const mapFocus = train ? fractionOf(model, train.s) : focusIdx >= 0 ? fractionOf(model, model.chainage[focusIdx]) : 0.5;
@@ -120,7 +130,6 @@ export function LiveReal() {
   }, [followNext, trains, deps]);
 
   // where the rider is relative to the line
-  const nearest = user ? nearestStation(user, model.chainage.map((m) => fractionOf(model, m))) : null;
   const nearestName = nearest ? nameAt(nearest.index) : '';
   const locate = async () => {
     const fix = user ?? (await requestLocation());
@@ -133,7 +142,7 @@ export function LiveReal() {
   };
 
   // "I'm on this train": share my position so others see it live (only possible near the line)
-  const goLive = (tr: Train) => router.push({ pathname: '/rider', params: { dir: tr.dir } });
+  const goLive = (tr: Train) => void startRide({ direction: tr.dir });
 
   // while live: the trip (or the rest of the line in my direction) drawn on the map
   const sess = rider.session;
@@ -175,35 +184,19 @@ export function LiveReal() {
             title="Metro"
             accent="KOI"
             subtitle={t('splash.brandBn')}
-            langLabel={lang === 'bn' ? 'বাং · EN' : 'EN · বাং'}
-            onLangPress={() => setLang(lang === 'bn' ? 'en' : 'bn')}
-            langAccessibilityLabel={t('more.language')}
             testID="brand"
           />
-          <SearchPill placeholder={t('live.searchLong')} onPress={() => router.push('/stations')} testID="search" />
-          {playback.active ? (
-            <PlaybackBar
-              title={t('live.playbackTitle')}
-              timeLabel={playback.timeLabel(now)}
-              rates={playback.rates}
-              rate={playback.rate}
-              onRate={playback.setRate}
-              onClose={playback.stop}
-              closeLabel={t('common.close')}
-              testID="playback"
-            />
-          ) : null}
           <Stack direction="row" gap={2} justify="between" align="start">
             <Stack gap={2}>
-              <GlassPill dot="live" label={t('live.counts', { live: fmtNum(liveCount, lang), est: fmtNum(trains.length - liveCount, lang) })} testID="counts" />
-              {!playback.active && connection !== 'live' ? <ConnectionPill state={connection} label={t(`conn.${connection}`)} /> : null}
-              {nearest ? <GlassPill icon="locate" label={t('live.youAre', { m: fmtDistance(nearest.metres, lang), name: nearestName })} testID="near-you" /> : null}
+              <Stack direction="row" gap={2} align="center">
+                <GlassPill size="sm" icon="train" label={t('live.trainsCount', { count: trains.length })} testID="counts" />
+              </Stack>
+              {nearest && !train && collapsed ? <GlassPill size="sm" icon="locate" label={t('live.youAre', { m: fmtDistance(nearest.metres, lang), name: nearestName })} testID="near-you" /> : null}
             </Stack>
             <Stack gap={2}>
               <IconButton icon="box" label={view3d ? '2D' : '3D'} size="sm" elevated active={view3d} accessibilityLabel={t(view3d ? 'live.tilt2d' : 'live.tilt3d')} onPress={() => setView3d((v) => !v)} testID="open-3d" />
               <IconButton icon="locate" size="sm" elevated active={!!userFocus} accessibilityLabel={t('live.locate')} onPress={() => void locate()} testID="locate" />
               <IconButton icon={near ? 'zoomOut' : 'zoomIn'} size="sm" elevated accessibilityLabel={t(near ? 'live.zoomOut' : 'live.zoomIn')} onPress={() => setNear((v) => !v)} testID="zoom" />
-              {!playback.active ? <IconButton icon="play" size="sm" elevated accessibilityLabel={t('live.watchShort')} onPress={() => startPlayback()} testID="play" /> : null}
             </Stack>
           </Stack>
           {locNote ? <InfoNote icon="gpsOff" tone="danger" text={t('live.locationOff')} /> : null}
@@ -229,7 +222,7 @@ export function LiveReal() {
             ) : (
               <Stack />
             )}
-            <GlassPill size="sm" icon="layers" label={t('live.zoomBadge', { z: fmtNum(zoomLevel, lang), what: near ? t('live.zoomCity') : t('live.zoomWhole') })} />
+            {collapsed ? <GlassPill size="sm" icon="layers" label={t('live.zoomBadge', { z: fmtNum(zoomLevel, lang), what: near ? t('live.zoomCity') : t('live.zoomWhole') })} /> : null}
           </Stack>
           <Sheet docked withTabBar collapsed={collapsed} onToggle={() => setCollapsed((v) => !v)} maxHeight={0.5} peek={null}>
             {train && seg ? (
@@ -251,7 +244,7 @@ export function LiveReal() {
                     </Text>
                     <StatusBadge kind={train.dwellLeftSec != null ? 'stop' : train.state === 'ESTIMATED' ? 'estimated' : 'live'} />
                   </Stack>
-                  <Speedometer value={trainKmh(train)} unit={t('live.kmh')} valueLabel={fmtNum(Math.round(trainKmh(train)), lang)} size={150} testID="speedometer" />
+                  <Speedometer value={trainKmh(train)} unit={t('live.kmh')} valueLabel={fmtNum(Math.round(trainKmh(train)), lang)} size={112} testID="speedometer" />
                 </Stack>
                 <SegmentProgress
                   fromLabel={nameAt(seg.fromIdx)}
@@ -270,10 +263,16 @@ export function LiveReal() {
                     );
                   })()
                 ) : null}
-                {!rider.session ? (
-                  <Button label={t('live.goLive')} icon="train" fullWidth onPress={() => goLive(train)} testID="go-live" />
-                ) : null}
-                <Button label={t('train.open')} variant="secondary" size="md" fullWidth onPress={() => router.push(`/train/${train.id}`)} />
+                <Stack direction="row" gap={2}>
+                  <Stack flex>
+                    <Button label={t('train.open')} variant="secondary" size="md" fullWidth onPress={() => router.push(`/train/${train.id}`)} />
+                  </Stack>
+                  {!rider.session ? (
+                    <Stack flex>
+                      <Button label={t('live.goLive')} icon="train" size="md" fullWidth onPress={() => goLive(train)} testID="go-live" />
+                    </Stack>
+                  ) : null}
+                </Stack>
               </>
             ) : focus ? (
               <>
@@ -298,7 +297,6 @@ export function LiveReal() {
                 {closedUntil ? (
                   <>
                     <InfoNote icon="clock" text={`${t('live.closedTitle')} · ${t('live.closedBody', { time: playback.timeLabel(closedUntil), station: stationName(first, lang) })}`} />
-                    <Button label={t('live.watch')} icon="play" fullWidth onPress={() => startPlayback(true)} testID="watch-schedule" />
                   </>
                 ) : null}
                 {(['SB', 'NB'] as const)
@@ -323,7 +321,6 @@ export function LiveReal() {
                       />
                     );
                   })}
-                <Button label={t('station.view3dStation')} icon="box" variant="secondary" size="md" fullWidth onPress={() => router.push(`/station/${focusId}/3d`)} testID="open-3d-cta" />
               </>
             ) : null}
           </Sheet>

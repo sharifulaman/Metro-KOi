@@ -12,10 +12,12 @@ export interface GatePinProps {
   gate: Gate;
   selected?: boolean;
   recommended?: boolean;
+  /** Landmark name drawn under the pin. */
+  label?: string;
   onPress?: () => void;
 }
 
-export function GatePin({ x, y, gate, selected, recommended, onPress }: GatePinProps) {
+export function GatePin({ x, y, gate, selected, recommended, label, onPress }: GatePinProps) {
   const { c } = useTheme();
   const fill = selected ? c.brandDeep : c.surface;
   const fg = selected ? c.onBrand : c.ink;
@@ -27,6 +29,11 @@ export function GatePin({ x, y, gate, selected, recommended, onPress }: GatePinP
       <SvgText y={-9} fontSize={14} fontWeight="700" fontFamily={fontFamily('en', 700)} fill={fg} textAnchor="middle">
         {gate}
       </SvgText>
+      {label ? (
+        <SvgText y={26} fontSize={10.5} fontWeight="600" fontFamily={fontFamily('en', 600)} fill={c.ink} stroke={c.mapGround} strokeWidth={3} textAnchor="middle">
+          {label}
+        </SvgText>
+      ) : null}
     </G>
   );
 }

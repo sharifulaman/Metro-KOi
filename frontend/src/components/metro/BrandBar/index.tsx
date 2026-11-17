@@ -30,16 +30,18 @@ export function BrandBar({ title, accent, subtitle, langLabel, onLangPress, lang
           ) : null}
         </View>
       </View>
-      <Pressable
-        onPress={onLangPress}
-        accessibilityRole="button"
-        accessibilityLabel={langAccessibilityLabel ?? langLabel}
-        style={({ pressed }) => [{ height: 48, borderRadius: 24, paddingHorizontal: space[4], justifyContent: 'center', backgroundColor: c.surface, opacity: pressed ? 0.85 : 1 }, shadow.float]}
-      >
-        <Text variant="label" weight={700}>
-          {langLabel}
-        </Text>
-      </Pressable>
+      {langLabel ? (
+        <Pressable
+          onPress={onLangPress}
+          accessibilityRole="button"
+          accessibilityLabel={langAccessibilityLabel ?? langLabel}
+          style={({ pressed }) => [{ height: 48, borderRadius: 24, paddingHorizontal: space[4], justifyContent: 'center', backgroundColor: c.surface, opacity: pressed ? 0.85 : 1 }, shadow.float]}
+        >
+          <Text variant="label" weight={700}>
+            {langLabel}
+          </Text>
+        </Pressable>
+      ) : null}
     </View>
   );
 }

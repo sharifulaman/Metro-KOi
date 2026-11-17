@@ -13,6 +13,8 @@ export interface MapPayload {
   theme: Pick<Palette, 'bg' | 'surface' | 'ink' | 'inkMuted' | 'brand' | 'brandDeep' | 'onBrand' | 'live' | 'liveTint' | 'onLiveTint' | 'estimated' | 'trainSB' | 'trainNB' | 'mapGround' | 'mapRoad'>;
   stations: { id: string; label: string; lat: number; lng: number; terminal: boolean }[];
   trains: { id: string; dir: 'SB' | 'NB'; state: string; lat: number; lng: number; heading: number; label?: string; timer?: string; progress?: number }[];
+  gates: { id: string; letter: string; label: string; lat: number; lng: number }[];
+  selectedGate?: string;
   user: { lat: number; lng: number; accuracy: number } | null;
   /** the trip, sampled along the track in travel order */
   route: { lat: number; lng: number }[] | null;
@@ -95,6 +97,8 @@ export function buildPayload(p: GoogleMapViewProps, c: Palette, dark: boolean, r
         progress: t.dwell?.progress,
       };
     }),
+    gates: (p.gates ?? []).map((g) => ({ id: g.id, letter: g.letter, label: g.label, lat: g.lat, lng: g.lng })),
+    selectedGate: p.selectedGate,
     route,
     user: p.user ? { lat: p.user.lat, lng: p.user.lng, accuracy: p.user.accuracy ?? 0 } : null,
     selectedStation: p.selectedStation,

@@ -3,7 +3,6 @@ import { useEffect, useMemo, useState } from 'react';
 
 import { EmptyState, WalletHome } from '@/components/metro';
 import { Screen } from '@/components/ui';
-import { useSampleCards } from '@/features/card/useSampleCards';
 import { useHistoryView } from '@/features/history/useHistoryView';
 import { useT } from '@/i18n';
 import { fmtNum } from '@/lib/fmt';
@@ -20,7 +19,6 @@ export default function CardScreen() {
   const focused = cards[index] ?? cards[0];
   const history = useHistoryView('all', lang, t);
 
-  useSampleCards();
 
   if (cards.length === 0 || !focused) {
     return (

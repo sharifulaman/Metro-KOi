@@ -14,7 +14,7 @@ import type { GoogleMapViewProps } from './types';
 
 /** Web build: the same Google Maps page in an iframe (srcdoc), driven with postMessage. */
 export function GoogleMapView(props: GoogleMapViewProps) {
-  const { children, height, testID, errorText, onStationPress, onTrainPress } = props;
+  const { children, height, testID, errorText, onStationPress, onTrainPress, onGatePress } = props;
   const { c, dark } = useTheme();
   const lang = useSettings((s) => s.lang);
   const win = useWindowDimensions();
@@ -26,8 +26,8 @@ export function GoogleMapView(props: GoogleMapViewProps) {
   const post = () => frame.current?.contentWindow?.postMessage(message, '*');
   useEffect(post);
 
-  const handlers = useRef({ onStationPress, onTrainPress });
-  handlers.current = { onStationPress, onTrainPress };
+  const handlers = useRef({ onStationPress, onTrainPress, onGatePress });
+  handlers.current = { onStationPress, onTrainPress, onGatePress };
   useEffect(() => {
     const listen = (e: MessageEvent) => {
       if (e.source !== frame.current?.contentWindow || typeof e.data !== 'string') return;
@@ -35,6 +35,7 @@ export function GoogleMapView(props: GoogleMapViewProps) {
         const m = JSON.parse(e.data) as { type: string; id?: string };
         if (m.type === 'station' && m.id) handlers.current.onStationPress?.(m.id);
         else if (m.type === 'train' && m.id) handlers.current.onTrainPress?.(m.id);
+        else if (m.type === 'gate' && m.id) handlers.current.onGatePress?.(m.id);
       } catch {
         // not ours
       }
@@ -60,4 +61,4 @@ export function GoogleMapView(props: GoogleMapViewProps) {
 }
 
 export { ZOOM_NEAR } from './payload';
-export type { GoogleMapViewProps, MapStation, MapTrain, MapUser } from './types';
+export type { GoogleMapViewProps, MapGate, MapStation, MapTrain, MapUser } from './types';

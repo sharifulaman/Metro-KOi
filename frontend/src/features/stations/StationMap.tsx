@@ -1,11 +1,11 @@
-import { GoogleMapView, ZOOM_NEAR } from '@/components/map';
+import { GoogleMapView, ZOOM_NEAR, type MapGate } from '@/components/map';
 import { fractionOf, useTrains } from '@/features/map/useTrains';
 import { useUserLocation } from '@/features/map/useUserLocation';
 import { stationName, useStations } from '@/features/stations/useStations';
 import { useT } from '@/i18n';
 
 /** The real map around one station: the line, every station, the trains, and the rider's own dot. 2D, or tilted 3D with buildings. */
-export function StationMap({ stationId, height, tilt, zoom = ZOOM_NEAR }: { stationId: string; height?: number; tilt?: boolean; zoom?: number }) {
+export function StationMap({ stationId, height, tilt, zoom = ZOOM_NEAR, gates, selectedGate, onGatePress }: { stationId: string; height?: number; tilt?: boolean; zoom?: number; gates?: MapGate[]; selectedGate?: string; onGatePress?(id: string): void }) {
   const { t, lang } = useT();
   const { list, byId } = useStations();
   const { trains, model } = useTrains(1000);
@@ -21,6 +21,9 @@ export function StationMap({ stationId, height, tilt, zoom = ZOOM_NEAR }: { stat
       selectedStation={stationId}
       user={user}
       tilt={tilt}
+      gates={gates}
+      selectedGate={selectedGate}
+      onGatePress={onGatePress}
       errorText={t('live.mapError')}
     />
   );

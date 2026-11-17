@@ -16,8 +16,11 @@ export function initI18n(lang: Lang): typeof i18n {
       interpolation: { escapeValue: false },
       returnNull: false,
     });
-  } else if (i18n.language !== lang) {
-    void i18n.changeLanguage(lang);
+  } else {
+    // refresh the bundles on every call so edited texts show after a fast refresh, not only after a full restart
+    i18n.addResourceBundle('bn', 'translation', bn, true, true);
+    i18n.addResourceBundle('en', 'translation', en, true, true);
+    if (i18n.language !== lang) void i18n.changeLanguage(lang);
   }
   return i18n;
 }

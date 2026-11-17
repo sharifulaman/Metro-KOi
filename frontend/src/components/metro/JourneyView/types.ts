@@ -24,10 +24,14 @@ export interface JourneyViewProps {
   };
   /** shown instead of the cards (same stations, no trains left) */
   empty?: { icon: IconName; title: string; action?: { label: string; onPress(): void } };
+  /** Station-to-station fare (single journey and pass). */
+  fare?: { title: string; amount: string; passLabel: string; passAmount: string; note?: string };
   best?: JourneyOptionCardProps;
   listTitle?: string;
   rows: JourneyOptionCardProps[];
   disclaimer: string;
+  /** extra section under the trains, e.g. the exit-gate finder */
+  footer?: ReactNode;
   /** overlay, e.g. the station picker sheet */
   children?: ReactNode;
   testID?: string;

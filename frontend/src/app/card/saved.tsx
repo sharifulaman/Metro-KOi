@@ -2,7 +2,6 @@ import { useRouter } from 'expo-router';
 import { useState } from 'react';
 
 import { SavedCardsView } from '@/components/metro';
-import { useSampleCards } from '@/features/card/useSampleCards';
 import { useT } from '@/i18n';
 import { fmtNum } from '@/lib/fmt';
 import { useWallet } from '@/store/wallet';
@@ -11,7 +10,6 @@ import { useWallet } from '@/store/wallet';
 export default function CardSavedScreen() {
   const { t, lang } = useT();
   const router = useRouter();
-  useSampleCards();
   const cards = useWallet((s) => s.cards);
   const setDefault = useWallet((s) => s.setDefault);
   const remove = useWallet((s) => s.remove);

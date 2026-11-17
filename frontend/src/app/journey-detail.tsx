@@ -68,7 +68,6 @@ export default function JourneyDetailScreen() {
       meta={meta}
       stops={stops}
       waitNote={showWait ? t('journey.trainArrives', { name: name(p.from), eta: fmtEta(wait, badge === 'live' ? 'live' : 'schedule', lang) }) : undefined}
-      action={{ label: t('journey.boarding'), icon: 'train', onPress: () => router.push('/rider') }}
     />
   );
 }

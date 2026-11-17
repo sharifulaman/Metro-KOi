@@ -8,14 +8,18 @@ import { DEMO_JOURNEY } from '@/data/demoJourney';
 import { ActiveTrip } from '@/features/journey/ActiveTrip';
 import { useJourney } from '@/features/journey/useJourney';
 import { useRiderSession } from '@/features/rider/useRiderSession';
+import { useStartRide } from '@/features/rider/useStartRide';
+import { GateTrackerPanel } from '@/features/gates/GateTracker';
 import { stationName, useStations } from '@/features/stations/useStations';
 import { useT } from '@/i18n';
+import { fareFor } from '@/lib/schedule';
+import faresFile from '@/data/fares.json';
+import type { FaresFile } from '@/models';
 import { fmtClock, fmtDuration, fmtEta, fmtNum } from '@/lib/fmt';
 import type { JourneyOption } from '@/models';
 import { useSettings } from '@/store/settings';
 
 type Field = 'from' | 'to';
-const LATER = [15, 30, 60] as const;
 
 /**
  * Journey planner (design ১৬ · ১৮): From → To card, leave now / later, the fastest train as a card and the
@@ -27,6 +31,7 @@ export default function JourneyScreen() {
   const router = useRouter();
   const { list, byId } = useStations();
   const rider = useRiderSession();
+  const startRide = useStartRide();
   const demo = useSettings((s) => s.demo !== false);
   const [from, setFrom] = useState<string | null>('farmgate');
   const [to, setTo] = useState<string | null>('motijheel');
@@ -57,7 +62,25 @@ export default function JourneyScreen() {
     return [one(0, true), ...DEMO_JOURNEY.gaps.map((g) => one(g, false))];
   })();
   const closed = !demo && real.closed;
+  const fares = faresFile as FaresFile;
+  const fareAmt = differ && from && to ? fareFor(fares, from, to) : null;
+  const fromOrigin = from === 'uttara-north' || to === 'uttara-north';
+  const fareCard =
+    fareAmt != null
+      ? {
+          title: t('journey.fareNormal'),
+          amount: `৳${fmtNum(fareAmt, lang)}`,
+          passLabel: t('journey.fareCard'),
+          passAmount: `৳${fmtNum(Math.round(fareAmt * fares.rapidPassMultiplier), lang)}`,
+          note: fromOrigin ? undefined : t('journey.fareEstimate'),
+        }
+      : undefined;
   const best = options[0];
+  // the "next train" tab lists the trains; the Now tab shows the fastest one as a card
+  const laterTab = showLater && !closed;
+  // a train is arriving now: go back to the Now tab on its own
+  const nextWaitSec = real.options[0]?.waitSec;
+  if (showLater && nextWaitSec != null && nextWaitSec <= 60) setShowLater(false);
 
   // waitSec is measured from the chosen leave time; show it from now
   const waitOf = (o: JourneyOption) => (demo ? o.waitSec : o.waitSec + laterMin * 60);
@@ -83,10 +106,10 @@ export default function JourneyScreen() {
     void Share.share({ message: `${name(from)} → ${name(to)}: ${t('journey.leaves', { time: fmtClock(best.departSec, lang) })}, ${t('journey.arrives', { time: fmtClock(best.arriveSec, lang), dur: fmtDuration(best.durationSec, lang) })}` });
   };
 
-  // one confirmation on the rider page, which then comes back here with the trip running
+  // starts the trip at once and comes back here with it running
   const startJourney = () => {
     if (!best || !from || !to) return;
-    router.push({ pathname: '/rider', params: { from, to, dir: best.direction } });
+    void startRide({ fromStationId: from, toStationId: to, direction: best.direction });
   };
 
   const row = (o: JourneyOption): JourneyOptionCardProps => {
@@ -150,14 +173,16 @@ export default function JourneyScreen() {
               },
               onLater: () => setShowLater(true),
               summary: differ && best ? t('journey.dirSummary', { dir: dirText(best), dur: fmtDuration(best.durationSec, lang) }) : undefined,
-              laterOptions: LATER.map((m) => ({ key: String(m), label: t('journey.laterIn', { n: fmtDuration(m * 60, lang) }), selected: laterMin === m, onPress: () => setLaterMin(m) })),
+              laterOptions: [],
             }
       }
       empty={!differ ? { icon: 'route', title: t('journey.same') } : !best ? { icon: 'clock', title: t('journey.none'), action: { label: t('stations.timetable'), onPress: () => router.push('/timetable') } } : undefined}
-      best={bestCard}
-      listTitle={closed ? t('journey.after') : t('journey.nextTrains')}
-      rows={differ ? options.slice(1).map(row) : []}
+      fare={fareCard}
+      best={laterTab ? undefined : bestCard}
+      listTitle={closed ? t('journey.after') : laterTab ? undefined : t('journey.nextTrains')}
+      rows={differ ? (laterTab ? options : closed ? options.slice(1) : []).map(row) : []}
       disclaimer={t('journey.disclaimer')}
+      footer={<GateTrackerPanel stationHint={to} />}
     >
       {picking ? (
         <Sheet onToggle={() => setPicking(null)}>

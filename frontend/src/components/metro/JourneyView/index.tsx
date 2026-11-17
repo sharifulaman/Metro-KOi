@@ -45,6 +45,34 @@ export function JourneyView(p: JourneyViewProps) {
           <JourneyPicker {...p.picker} />
         </View>
 
+        {p.fare ? (
+          <View style={{ marginTop: 14, marginHorizontal: 20, padding: 14, borderRadius: 20, backgroundColor: c.surface, borderWidth: 1, borderColor: c.outline }}>
+            <View style={{ flexDirection: 'row', justifyContent: 'space-between', gap: 12 }}>
+              <View>
+                <Text size={12.5} lh={1.4} weight={700} tone="muted">
+                  {p.fare.title}
+                </Text>
+                <Text size={30} lh={1.25} weight={700} numeric>
+                  {p.fare.amount}
+                </Text>
+              </View>
+              <View style={{ alignItems: 'flex-end', flexShrink: 1 }}>
+                <Text size={12.5} lh={1.4} weight={700} tone="muted" align="right">
+                  {p.fare.passLabel}
+                </Text>
+                <Text size={30} lh={1.25} weight={700} color={c.onBrandTint} numeric>
+                  {p.fare.passAmount}
+                </Text>
+              </View>
+            </View>
+            {p.fare.note ? (
+              <Text size={11.5} lh={1.4} tone="muted">
+                {p.fare.note}
+              </Text>
+            ) : null}
+          </View>
+        ) : null}
+
         {p.closedNote ? (
           <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12, marginTop: 14, marginHorizontal: 20, paddingVertical: 12, paddingHorizontal: 14, borderRadius: 20, backgroundColor: c.surfaceAlt }}>
             <View style={{ width: 40, height: 40, borderRadius: 20, backgroundColor: c.surface, alignItems: 'center', justifyContent: 'center' }}>
@@ -83,7 +111,7 @@ export function JourneyView(p: JourneyViewProps) {
                 </View>
               ) : null}
             </View>
-            {m.later ? (
+            {m.later && m.laterOptions.length > 0 ? (
               <View style={{ flexDirection: 'row', gap: 8, marginTop: 10 }}>
                 {m.laterOptions.map((o) => (
                   <Pressable key={o.key} accessibilityRole="button" accessibilityState={{ selected: o.selected }} onPress={o.onPress} style={{ height: 34, paddingHorizontal: 14, borderRadius: 17, justifyContent: 'center', backgroundColor: o.selected ? c.ink : c.surfaceAlt }}>
@@ -127,6 +155,8 @@ export function JourneyView(p: JourneyViewProps) {
             </View>
           </View>
         ) : null}
+
+        {p.footer ? <View style={{ marginTop: 22, marginHorizontal: 20 }}>{p.footer}</View> : null}
 
         <View style={{ marginTop: 18, marginHorizontal: 24 }}>
           <Text size={11.5} lh={1.4} tone="muted">

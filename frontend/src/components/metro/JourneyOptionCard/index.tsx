@@ -63,7 +63,7 @@ export function JourneyOptionCard(p: JourneyOptionCardProps) {
       testID={p.testID}
       disabled={!p.onPress}
       onPress={p.onPress}
-      accessibilityRole={p.onPress ? 'button' : undefined}
+      // this card holds its own buttons, so it must not be a button itself (a <button> cannot contain a <button>)
       accessibilityLabel={a11y}
       style={[{ paddingTop: 14, paddingHorizontal: 16, paddingBottom: 16, borderRadius: 26, backgroundColor: c.surface, borderWidth: 2, borderColor: c.brand }, shadow.card]}
     >

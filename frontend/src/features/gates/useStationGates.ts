@@ -17,7 +17,7 @@ export function useStationGates(stationId: string, userPos?: { lat: number; lng:
   return useMemo(() => {
     const gates = all.filter((g) => g.stationId === stationId);
     const recommended = userPos ? nearestGate(gates, userPos.lat, userPos.lng) : undefined;
-    return { gates, recommended, surveyed: gates.some((g) => g.lat != null) };
+    return { gates, recommended, surveyed: gates.some((g) => g.lat != null && !g.approx) };
   }, [stationId, userPos]);
 }
 

@@ -18,8 +18,6 @@ interface WalletState {
   update(id: string, patch: Partial<Omit<SavedCard, 'id'>>): void;
   remove(id: string): void;
   setDefault(id: string): void;
-  /** Fills the wallet with 3 clearly-labelled sample cards, only if it is empty — so the Card tab isn't blank before the rider saves a real one. */
-  seedSamplesIfEmpty(names: { card: string; office: string; dad: string }): void;
 }
 
 export const useWallet = create<WalletState>()(
@@ -41,17 +39,18 @@ export const useWallet = create<WalletState>()(
           return { cards };
         }),
       setDefault: (id) => set((s) => ({ cards: s.cards.map((c) => ({ ...c, isDefault: c.id === id })) })),
-      seedSamplesIfEmpty: (names) => {
-        if (get().cards.length > 0) return;
-        const now = Date.now();
-        const base: Omit<SavedCard, 'id' | 'isDefault'>[] = [
-          { name: names.card, color: 'green', tail: '4821', cardType: 'rapid_pass', source: 'manual', balanceBdt: 340, lastTapAt: now - 2 * 3600_000, updatedAt: now, sample: true },
-          { name: names.office, color: 'gold', tail: '1709', cardType: 'rapid_pass', source: 'manual', balanceBdt: 120, lastTapAt: now - 26 * 3600_000, updatedAt: now, sample: true },
-          { name: names.dad, color: 'dark', tail: '9302', cardType: 'mrt_pass', source: 'manual', balanceBdt: null, lastTapAt: null, updatedAt: now, sample: true },
-        ];
-        set({ cards: base.map((c, i) => ({ ...c, id: `sample_${now}_${i}`, isDefault: i === 0 })) });
-      },
     }),
-    { name: 'wallet', storage: createJSONStorage(() => zustandStorage('metro-koi-wallet')) },
+    {
+      name: 'wallet',
+      version: 1,
+      storage: createJSONStorage(() => zustandStorage('metro-koi-wallet')),
+      // earlier builds saved three made-up sample cards: drop them, keep real ones
+      migrate: (persisted) => {
+        const p = persisted as { cards?: SavedCard[] };
+        const cards = (p.cards ?? []).filter((c) => !c.sample);
+        if (cards.length > 0 && !cards.some((c) => c.isDefault)) cards[0] = { ...cards[0], isDefault: true };
+        return { ...p, cards } as WalletState;
+      },
+    },
   ),
 );

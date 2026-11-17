@@ -5,7 +5,7 @@ export interface BrandBarProps {
   /** second line, e.g. the Bangla name */
   subtitle?: string;
   /** language toggle on the right, e.g. "বাং · EN" */
-  langLabel: string;
+  langLabel?: string;
   onLangPress?: () => void;
   langAccessibilityLabel?: string;
   testID?: string;

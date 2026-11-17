@@ -3,7 +3,6 @@ import { useEffect, useRef } from 'react';
 
 import { ScanView } from '@/components/metro';
 import { useCardScan } from '@/features/card/useCardScan';
-import { useSampleCards } from '@/features/card/useSampleCards';
 import { useT } from '@/i18n';
 import { useWallet } from '@/store/wallet';
 
@@ -11,7 +10,6 @@ import { useWallet } from '@/store/wallet';
 export default function CardScanScreen() {
   const { t } = useT();
   const router = useRouter();
-  useSampleCards();
   const scan = useCardScan();
   const started = useRef(false);
   const sample = useWallet((s) => s.cards.find((c) => c.isDefault) ?? s.cards[0]);
@@ -45,7 +43,7 @@ export default function CardScanScreen() {
       androidHint={t('card.androidHint')}
       iosHint={t('card.iosHint')}
       cancelLabel={t('common.cancel')}
-      card={{ name: sample?.name ?? t('card.defaultCardName'), tail: sample?.tail ?? '4821', typeLabel: t('card.rapid_pass') }}
+      card={{ name: sample?.name ?? t('card.defaultCardName'), tail: sample?.tail ?? '····', typeLabel: t('card.rapid_pass') }}
     />
   );
 }

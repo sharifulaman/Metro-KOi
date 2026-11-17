@@ -11,6 +11,14 @@ import { Text } from '../../ui/Text';
 import type { StationDetailViewProps } from './types';
 
 const ART = require('../../../../assets/maps/live-station.webp');
+/** Where gates A–D stand on the station picture (390 x 844 art, tip of the pin), as in the live-map station view. */
+const GATE_SPOTS = [
+  { x: 154, y: 316 },
+  { x: 289, y: 272 },
+  { x: 103, y: 261 },
+  { x: 230, y: 223 },
+] as const;
+const ART_TOP = 70;
 const blur = Platform.OS === 'web' ? ({ backdropFilter: 'blur(12px)' } as object) : {};
 
 /** Station detail (design ১৫): 3D map header, both directions' next trains, facts, journey / 3D buttons. */
@@ -42,6 +50,27 @@ export function StationDetailView(p: StationDetailViewProps) {
               </View>
             </View>
           ) : null}
+          {!p.map && p.gatePins
+            ? p.gatePins.slice(0, GATE_SPOTS.length).map((g, i) => (
+                <View key={g.letter} pointerEvents="box-none" style={{ position: 'absolute', left: (GATE_SPOTS[i].x / 390) * 100 + '%', top: GATE_SPOTS[i].y - ART_TOP - 44, width: 160, marginLeft: -80, alignItems: 'center' }}>
+                  <Pressable accessibilityRole="button" accessibilityLabel={g.letter + ' ' + g.label} onPress={g.onPress} style={{ alignItems: 'center' }}>
+                    <View style={{ width: g.selected ? 38 : 30, height: g.selected ? 38 : 30, borderRadius: 19, backgroundColor: g.selected ? c.brandDeep : c.brandSolid, borderWidth: 2.5, borderColor: '#FFFFFF', alignItems: 'center', justifyContent: 'center', boxShadow: '0 3px 10px rgba(14,26,22,0.35)' }}>
+                      <Text size={g.selected ? 17 : 14} lh={1.2} weight={700} color="#FFFFFF">
+                        {g.letter}
+                      </Text>
+                    </View>
+                    <View style={{ width: 2, height: 8, backgroundColor: g.selected ? c.brandDeep : c.brandSolid }} />
+                    {g.selected && g.label ? (
+                      <View style={{ marginTop: 2, maxWidth: 160, paddingVertical: 2, paddingHorizontal: 8, borderRadius: 999, backgroundColor: c.brandDeep }}>
+                        <Text size={11} lh={1.3} weight={700} color="#FFFFFF" align="center">
+                          {g.label}
+                        </Text>
+                      </View>
+                    ) : null}
+                  </Pressable>
+                </View>
+              ))
+            : null}
           <Pressable accessibilityRole="button" accessibilityLabel={p.backLabel} onPress={p.onBack} style={[glass, { left: 16 }, blur]}>
             <Icon name="back" size={22} color="#0E1A16" />
           </Pressable>
@@ -101,7 +130,7 @@ export function StationDetailView(p: StationDetailViewProps) {
 
           <View style={{ flexDirection: 'row', gap: 8, marginTop: 6 }}>
             {p.facts.map((f) => (
-              <Pressable key={f.label} disabled={!f.onPress} onPress={f.onPress} accessibilityRole={f.onPress ? 'button' : undefined} style={{ flex: 1, gap: 2, paddingVertical: 10, paddingHorizontal: 12, borderRadius: 16, backgroundColor: c.surfaceAlt }}>
+              <Pressable key={f.label} disabled={!f.onPress} onPress={f.onPress} accessibilityRole={f.onPress ? 'button' : undefined} style={{ flex: 1, gap: 2, paddingVertical: 10, paddingHorizontal: 12, borderRadius: 16, backgroundColor: f.active ? c.brandTint : c.surfaceAlt, borderWidth: f.active ? 1.5 : 0, borderColor: c.brand }}>
                 <Icon name={f.icon} size={19} color={c.brandSolid} strokeWidth={2.1} />
                 <Text size={15} lh={1.3} weight={700} numberOfLines={1}>
                   {f.value}
@@ -117,9 +146,11 @@ export function StationDetailView(p: StationDetailViewProps) {
             <View style={{ flex: 1.4 }}>
               <Button label={p.journeyLabel} icon="route" fullWidth height={52} onPress={p.onJourney} />
             </View>
+            {p.view3dLabel && p.onView3d ? (
             <View style={{ flex: 1 }}>
-              <Button label={p.view3dLabel} icon="layers" variant="secondary" fullWidth height={52} onPress={p.onView3d} />
-            </View>
+                <Button label={p.view3dLabel} icon="layers" variant="secondary" fullWidth height={52} onPress={p.onView3d} />
+              </View>
+            ) : null}
           </View>
         </View>
       </ScrollView>

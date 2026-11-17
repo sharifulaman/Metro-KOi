@@ -36,7 +36,7 @@ const WebView = RNWebView as unknown as ComponentType<
  * pinch the map freely. Taps on pins come back from the page as messages.
  */
 export function GoogleMapView(props: GoogleMapViewProps) {
-  const { children, height, testID, errorText, onStationPress, onTrainPress } = props;
+  const { children, height, testID, errorText, onStationPress, onTrainPress, onGatePress } = props;
   const { c, dark } = useTheme();
   const lang = useSettings((s) => s.lang);
   const win = useWindowDimensions();
@@ -55,6 +55,7 @@ export function GoogleMapView(props: GoogleMapViewProps) {
       const m = JSON.parse(e.nativeEvent.data) as { type: string; id?: string };
       if (m.type === 'station' && m.id) onStationPress?.(m.id);
       else if (m.type === 'train' && m.id) onTrainPress?.(m.id);
+      else if (m.type === 'gate' && m.id) onGatePress?.(m.id);
     } catch {
       // not ours
     }
@@ -88,4 +89,4 @@ export function GoogleMapView(props: GoogleMapViewProps) {
 }
 
 export { ZOOM_NEAR } from './payload';
-export type { GoogleMapViewProps, MapStation, MapTrain, MapUser } from './types';
+export type { GoogleMapViewProps, MapGate, MapStation, MapTrain, MapUser } from './types';

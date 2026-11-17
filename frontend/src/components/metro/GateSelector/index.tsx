@@ -12,7 +12,20 @@ import { Text } from '../../ui/Text';
 
 import type { GateSelectorProps } from './types';
 
+/** First landmark of the gate, trimmed so it fits beside the pin. */
+const shortLabel = (s?: string) => {
+  const f = s?.split(' · ')[0];
+  return f && f.length > 22 ? f.slice(0, 21) + '…' : f;
+};
+
 const PIN_POS = { NW: [70, 70], NE: [270, 70], SW: [70, 190], SE: [270, 190] } as const;
+
+/** Pin position: gates sharing a corner are spread sideways so they never sit on top of each other. */
+function pinPos(gates: GateSelectorProps['gates'], g: GateSelectorProps['gates'][number]) {
+  const [x, y] = PIN_POS[g.corner];
+  const k = gates.filter((o) => o.corner === g.corner).findIndex((o) => o.gate === g.gate);
+  return [x + k * 40 * (g.corner.endsWith('W') ? 1 : -1), y] as const;
+}
 
 /** One component for chips (route + 3D panel), cards (Gates screen) and pins (plan / scene). */
 export function GateSelector({ gates, selected, recommended, variant, onSelect, labels, testID }: GateSelectorProps) {
@@ -37,9 +50,9 @@ export function GateSelector({ gates, selected, recommended, variant, onSelect, 
           <Rect x={152} y={0} width={36} height={260} fill={c.mapRoad} />
           <Line x1={0} y1={130} x2={340} y2={130} stroke={c.brand} strokeWidth={6} />
           <Rect x={110} y={104} width={120} height={52} rx={10} fill={c.brandTint} stroke={c.brand} strokeWidth={2} />
-          {sel ? <WalkingPathLayer d={`M${PIN_POS[sel.corner][0]},${PIN_POS[sel.corner][1]} L170,130`} /> : null}
+          {sel ? <WalkingPathLayer d={`M${pinPos(gates, sel)[0]},${pinPos(gates, sel)[1]} L170,130`} /> : null}
           {gates.map((g) => (
-            <GatePin key={g.gate} x={PIN_POS[g.corner][0]} y={PIN_POS[g.corner][1]} gate={g.gate} selected={g.gate === selected} recommended={g.gate === recommended} onPress={() => onSelect(g.gate)} />
+            <GatePin key={g.gate} x={pinPos(gates, g)[0]} y={pinPos(gates, g)[1]} gate={g.gate} label={shortLabel(g.landmark)} selected={g.gate === selected} recommended={g.gate === recommended} onPress={() => onSelect(g.gate)} />
           ))}
         </Svg>
       </View>

@@ -89,7 +89,7 @@ export function JourneyDetailView(p: JourneyDetailViewProps) {
             </Text>
           </View>
         ) : null}
-        <Button label={p.action.label} icon={p.action.icon} fullWidth height={52} onPress={p.action.onPress} />
+        {p.action ? <Button label={p.action.label} icon={p.action.icon} fullWidth height={52} onPress={p.action.onPress} /> : null}
       </View>
     </View>
   );

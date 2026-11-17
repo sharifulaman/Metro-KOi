@@ -8,9 +8,8 @@ import { stationName, useStations } from '@/features/stations/useStations';
 import { useTimetable } from '@/features/timetable/useTimetable';
 import { useT } from '@/i18n';
 import { fmtClockRange, fmtNum } from '@/lib/fmt';
-import { bandsFor, currentBandIndex, dayTypeFor, dhakaClock, hhmmToSec, nextDateOfType, resolveDayType } from '@/lib/schedule';
+import { bandsFor, currentBandIndex, dayTypeFor, dhakaClock, hhmmToSec, resolveDayType } from '@/lib/schedule';
 import type { Direction, ServiceDayType } from '@/models';
-import { useClock } from '@/store/clock';
 
 /** Timetable (spec §10.7, board 7). Tapping a band plays it on the live map. */
 export default function TimetableScreen() {
@@ -25,11 +24,6 @@ export default function TimetableScreen() {
   const bands = bandsFor(tt, day, dir);
   const current = day === today ? currentBandIndex(bands, dhakaClock(now).sec) : -1;
   const [from, to] = dir === 'SB' ? [first, last] : [last, first];
-
-  const watch = (fromHHMM: string) => {
-    useClock.getState().start(nextDateOfType(tt, Date.now(), day, hhmmToSec(fromHHMM)), 10);
-    router.navigate('/');
-  };
 
   return (
     <Screen scroll gap={4}>
@@ -53,12 +47,10 @@ export default function TimetableScreen() {
                 {t('timetable.every', { n: fmtNum(b.headwayMin, lang) })}
               </Text>
             }
-            onPress={() => watch(b.from)}
             divider={i < bands.length - 1 && i !== current && i + 1 !== current}
           />
         ))}
       </Card>
-      <InfoNote icon="play" text={t('timetable.tapToWatch')} />
       <InfoNote text={t('timetable.holiday')} />
       <Text variant="micro" tone="muted">
         {t('timetable.note')} {t('timetable.source', { source: tt.source, date: fmtNum(tt.verifiedAt, lang) })}

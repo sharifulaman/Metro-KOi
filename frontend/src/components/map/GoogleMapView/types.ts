@@ -25,6 +25,16 @@ export interface MapTrain {
   };
 }
 
+/** A station gate drawn as a lettered pin with its landmark. */
+export interface MapGate {
+  id: string;
+  letter: string;
+  /** landmark under the pin */
+  label: string;
+  lat: number;
+  lng: number;
+}
+
 /** The rider's own position (blue dot + accuracy ring). */
 export interface MapUser {
   lat: number;
@@ -40,6 +50,10 @@ export interface GoogleMapViewProps {
   selectedTrain?: string;
   onStationPress?(id: string): void;
   onTrainPress?(id: string): void;
+  /** Gate pins (station page); tapping one reports its id. */
+  gates?: MapGate[];
+  selectedGate?: string;
+  onGatePress?(id: string): void;
   /** Floating UI over the map (search, pills, FAB). */
   children?: ReactNode;
   /** Bottom padding reserved for a sheet, in px. */

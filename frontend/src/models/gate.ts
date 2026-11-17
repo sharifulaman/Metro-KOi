@@ -23,6 +23,8 @@ export interface StationGate {
   openTo: string | null;
   /** Static walking estimate gate → platform, minutes (until measured). */
   walkMin: number | null;
+  /** true while lat/lng are an estimate (not a surveyed entrance point). */
+  approx?: boolean;
 }
 
 export type GateMode = 'entry' | 'exit';

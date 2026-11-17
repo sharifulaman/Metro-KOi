@@ -4,7 +4,7 @@ import type { Direction } from './timetable';
 /** Fare data (spec §4.5). `amounts` is TO FETCH from the official DMTCL chart. */
 export interface FaresFile {
   source: string;
-  status: 'official' | 'TO_FETCH';
+  status: 'official' | 'derived' | 'TO_FETCH';
   currency: 'BDT';
   /** Rapid Pass multiplier (0.9 = 10% off). */
   rapidPassMultiplier: number;

@@ -1,4 +1,5 @@
-import { View } from 'react-native';
+import { useEffect, useRef } from 'react';
+import { Animated, Easing, ScrollView, View, useWindowDimensions } from 'react-native';
 import Svg, { Circle, Defs, LinearGradient, Rect, Stop } from 'react-native-svg';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
@@ -12,22 +13,64 @@ import { NavHeader } from '../NavHeader';
 
 import type { ScanViewProps } from './types';
 
+/** A 0 → 1 → 0 loop (eased), optionally started after `delay` ms. */
+function useLoop(duration: number, delay = 0): Animated.Value {
+  const v = useRef(new Animated.Value(0)).current;
+  useEffect(() => {
+    const loop = Animated.loop(
+      Animated.sequence([
+        Animated.delay(delay),
+        Animated.timing(v, { toValue: 1, duration, easing: Easing.inOut(Easing.quad), useNativeDriver: true }),
+        Animated.timing(v, { toValue: 0, duration, easing: Easing.inOut(Easing.quad), useNativeDriver: true }),
+      ]),
+    );
+    loop.start();
+    return () => loop.stop();
+  }, [v, duration, delay]);
+  return v;
+}
+
 /** Hold-the-card screen (design ২): rings, a phone with its NFC mark, the card tilting in, two platform hints. */
 export function ScanView(p: ScanViewProps) {
   const { c } = useTheme();
   const insets = useSafeAreaInsets();
+  const win = useWindowDimensions();
+  const ring1 = useLoop(1100, 0);
+  const ring2 = useLoop(1100, 250);
+  const ring3 = useLoop(1100, 500);
+  const card = useLoop(1300);
+  const nfc = useLoop(900);
+  // the illustration is drawn on a 390 x 460 stage: shrink it on narrow or short screens instead of letting the rest collide with it
+  const k = Math.max(0.55, Math.min(1, win.width / 390, (win.height - 330) / 460));
   return (
     <View testID={p.testID} style={{ flex: 1, backgroundColor: c.bg }}>
       <NavHeader left={{ icon: 'close', label: p.closeLabel, onPress: p.onClose }} title={p.title} />
 
-      {/* the 390-wide stage the illustration was drawn on, centred */}
-      <View style={{ position: 'absolute', top: 0, left: 0, right: 0, alignItems: 'center' }} pointerEvents="none">
-        <View style={{ width: 390, height: 460, marginTop: insets.top }}>
-          <Svg width={390} height={460} style={{ position: 'absolute' }}>
-            <Circle cx={195} cy={270} r={169} stroke={c.brand} strokeWidth={2} fill="none" opacity={0.14} />
-            <Circle cx={195} cy={270} r={133} stroke={c.brand} strokeWidth={2} fill="none" opacity={0.24} />
-            <Circle cx={195} cy={270} r={99} stroke={c.brand} strokeWidth={2} fill="none" opacity={0.4} />
-          </Svg>
+      <ScrollView contentContainerStyle={{ flexGrow: 1, paddingBottom: 28 + insets.bottom }} showsVerticalScrollIndicator={false}>
+      <View pointerEvents="none" style={{ alignItems: 'center' }}>
+        <View style={{ width: 390 * k, height: 460 * k }}>
+        <View style={{ width: 390, height: 460, position: 'absolute', left: (-390 * (1 - k)) / 2, top: (-460 * (1 - k)) / 2, transform: [{ scale: k }] }}>
+          {([
+            { r: 169, v: ring3, lo: 0.1, hi: 0.3 },
+            { r: 133, v: ring2, lo: 0.18, hi: 0.4 },
+            { r: 99, v: ring1, lo: 0.3, hi: 0.6 },
+          ] as const).map((g) => (
+            <Animated.View
+              key={g.r}
+              style={{
+                position: 'absolute',
+                left: 195 - g.r,
+                top: 270 - g.r,
+                width: g.r * 2,
+                height: g.r * 2,
+                borderRadius: g.r,
+                borderWidth: 2,
+                borderColor: c.brand,
+                opacity: g.v.interpolate({ inputRange: [0, 1], outputRange: [g.lo, g.hi] }),
+                transform: [{ scale: g.v.interpolate({ inputRange: [0, 1], outputRange: [0.96, 1.05] }) }],
+              }}
+            />
+          ))}
           <View style={{ position: 'absolute', left: 113, top: 128, width: 164, height: 290, borderRadius: 30, boxShadow: '0 14px 30px rgba(14,26,22,0.3)', overflow: 'hidden' }}>
             <Svg width={164} height={290}>
               <Defs>
@@ -41,17 +84,18 @@ export function ScanView(p: ScanViewProps) {
             <View style={{ position: 'absolute', left: 14, top: 14, width: 46, height: 46, borderRadius: 14, backgroundColor: '#0B1210', borderWidth: 2, borderColor: '#3A4A44' }}>
               <View style={{ position: 'absolute', left: 10, top: 10, width: 22, height: 22, borderRadius: 11, backgroundColor: '#1A2723', borderWidth: 2, borderColor: '#4A5E57' }} />
             </View>
-            <View style={{ position: 'absolute', left: 50, top: 112, width: 64, height: 64, borderRadius: 32, backgroundColor: c.brand, alignItems: 'center', justifyContent: 'center' }}>
+            <Animated.View style={{ position: 'absolute', left: 50, top: 112, width: 64, height: 64, borderRadius: 32, backgroundColor: c.brand, alignItems: 'center', justifyContent: 'center', transform: [{ scale: nfc.interpolate({ inputRange: [0, 1], outputRange: [1, 1.12] }) }] }}>
               <Icon name="nfc" size={34} color="#04140E" strokeWidth={2.2} />
-            </View>
+            </Animated.View>
           </View>
-          <View style={{ position: 'absolute', left: 201, top: 318, transform: [{ rotate: '-14deg' }] }}>
+          <Animated.View style={{ position: 'absolute', left: 201, top: 318, transform: [{ translateX: card.interpolate({ inputRange: [0, 1], outputRange: [14, -22] }) }, { translateY: card.interpolate({ inputRange: [0, 1], outputRange: [10, -34] }) }, { rotate: card.interpolate({ inputRange: [0, 1], outputRange: ['-14deg', '-6deg'] }) }] }}>
             <CardArt name={p.card.name} tail={p.card.tail} typeLabel={p.card.typeLabel} color="green" width={163} />
-          </View>
+          </Animated.View>
+        </View>
         </View>
       </View>
 
-      <View style={{ position: 'absolute', left: 0, right: 0, top: 446 + insets.top, alignItems: 'center', paddingHorizontal: 32 }}>
+      <View style={{ alignItems: 'center', paddingHorizontal: 32 }}>
         <Text size={24} lh={1.3} weight={700} align="center">
           {p.heading}
         </Text>
@@ -62,7 +106,7 @@ export function ScanView(p: ScanViewProps) {
         </View>
       </View>
 
-      <View style={{ position: 'absolute', left: 24, right: 24, top: 576 + insets.top, gap: 8 }}>
+      <View style={{ marginHorizontal: 24, marginTop: 16, gap: 8 }}>
         {[
           { icon: 'phone' as const, text: p.androidHint },
           { icon: 'shieldPlain' as const, text: p.iosHint },
@@ -78,15 +122,11 @@ export function ScanView(p: ScanViewProps) {
         ))}
       </View>
 
-      <View style={{ position: 'absolute', left: 24, right: 24, bottom: 28 + insets.bottom, gap: 8 }}>
-        {p.error ? (
-          <Text size={13.5} lh={1.4} weight={600} tone="danger" align="center" testID="scan-error">
-            {p.error}
-          </Text>
-        ) : null}
+      <View style={{ flex: 1, minHeight: 16 }} />
+      <View style={{ marginHorizontal: 24, gap: 8 }}>
         {p.error ? <Button label={p.retryLabel} icon="nfc" fullWidth onPress={p.onRetry} /> : null}
-        <Button label={p.cancelLabel} variant="secondary" fullWidth onPress={p.onClose} />
       </View>
+      </ScrollView>
     </View>
   );
 }

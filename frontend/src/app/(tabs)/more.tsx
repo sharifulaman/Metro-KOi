@@ -5,6 +5,7 @@ import { ScreenHeader } from '@/components/metro';
 import { Card, IconTile, InfoNote, ListRow, Screen, SectionLabel, Segmented, SwitchRow, Text } from '@/components/ui';
 import { useT } from '@/i18n';
 import type { Lang, ThemeMode } from '@/models';
+import { enableNotifications } from '@/features/notify/notify';
 import { useSettings } from '@/store/settings';
 
 export default function MoreScreen() {
@@ -33,7 +34,7 @@ export default function MoreScreen() {
       />
       <Card padding={3}>
         <SwitchRow label={t('more.demo')} subtitle={t('more.demoSub')} value={demo} onValueChange={setDemo} divider testID="demo-switch" />
-        <SwitchRow label={t('more.notifications')} value={notifications} onValueChange={setNotifications} divider />
+        <SwitchRow label={t('more.notifications')} value={notifications} onValueChange={(on) => (on ? void enableNotifications().then(setNotifications) : setNotifications(false))} divider />
         <ListRow title={t('more.timetable')} leading={<IconTile icon="calendar" tone="neutral" />} chevron divider onPress={() => router.push('/timetable')} />
         <ListRow title={t('sim.more')} subtitle={t('sim.moreSub')} leading={<IconTile icon="box" tone="neutral" />} chevron divider onPress={() => router.push('/simulation')} testID="more-sim" />
         <ListRow title={t('more.privacy')} leading={<IconTile icon="shield" tone="neutral" />} subtitle={t('rider.explain3')} divider />

@@ -16,13 +16,17 @@ export function initI18n(lang: Lang): typeof i18n {
       interpolation: { escapeValue: false },
       returnNull: false,
     });
-  } else {
-    // refresh the bundles on every call so edited texts show after a fast refresh, not only after a full restart
-    i18n.addResourceBundle('bn', 'translation', bn, true, true);
-    i18n.addResourceBundle('en', 'translation', en, true, true);
-    if (i18n.language !== lang) void i18n.changeLanguage(lang);
+  } else if (i18n.language !== lang) {
+    void i18n.changeLanguage(lang);
   }
   return i18n;
+}
+
+// After a fast refresh this file runs again while i18n is already set up: load the edited texts here, at module
+// level. Doing it inside initI18n (called while rendering) updates other components mid-render and logs an error.
+if (i18n.isInitialized) {
+  i18n.addResourceBundle('bn', 'translation', bn, true, true);
+  i18n.addResourceBundle('en', 'translation', en, true, true);
 }
 
 /** `t` plus the current language, for fmt* helpers. */

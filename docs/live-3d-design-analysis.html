@@ -1,0 +1,252 @@
+<!doctype html>
+<html lang="bn"><head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Metro KOI — লাইভ ৩ডি ডিজাইন বিশ্লেষণ</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Hind+Siliguri:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+:root{--brand:#066B4A;--mint:#2BD39A;--tint:#DDF1E8;--live:#F59E0B;--liveTint:#FDEFC7;--ink:#0E1A16;--muted:#5B6B65;--bg:#F5F4EF;--card:#fff;--line:#E3E1DA}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font:15px/1.55 "Hind Siliguri",system-ui,sans-serif}
+header{padding:32px 24px 8px;max-width:1100px;margin:auto}
+h1{margin:0;font-size:26px}h2{font-size:20px;margin:36px 0 10px}h3{font-size:15px;margin:0 0 6px}
+.sub{color:var(--muted);margin:4px 0 0}
+main{max-width:1100px;margin:auto;padding:0 24px 64px}
+.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:14px}
+.card{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:16px}
+.card p,.card li{margin:4px 0;color:#2c3a35;font-size:14px}.card ul{padding-left:18px;margin:6px 0}
+.tag{display:inline-block;padding:1px 9px;border-radius:99px;font-size:12px;font-weight:600;background:var(--tint);color:var(--brand)}
+.tag.warn{background:var(--liveTint);color:#92580a}
+table{width:100%;border-collapse:collapse;font-size:14px;background:#fff;border-radius:16px;overflow:hidden;border:1px solid var(--line)}
+th,td{padding:9px 12px;text-align:left;border-bottom:1px solid var(--line);vertical-align:top}th{background:#EEF3F0;font-size:13px}
+tr:last-child td{border-bottom:0}
+.sw{display:inline-block;width:13px;height:13px;border-radius:4px;vertical-align:-2px;margin-right:5px;border:1px solid #0002}
+/* demo */
+.demo{display:grid;grid-template-columns:minmax(0,1fr) 300px;gap:14px}
+@media(max-width:860px){.demo{grid-template-columns:1fr}}
+.stage{position:relative;background:#EFEBE1;border-radius:20px;overflow:hidden;border:1px solid var(--line);height:520px}
+canvas{display:block;width:100%;height:100%}
+.ctl{position:absolute;right:12px;top:12px;display:flex;flex-direction:column;gap:8px}
+.ctl button,.bar button{font:600 13px "Hind Siliguri",sans-serif;border:0;background:rgba(255,255,255,.95);border-radius:99px;min-width:44px;height:44px;box-shadow:0 3px 12px #0e1a1629;cursor:pointer;color:var(--ink);padding:0 14px}
+.ctl button.on,.bar button.on{background:var(--brand);color:#fff}
+.bar{display:flex;gap:8px;flex-wrap:wrap;margin-top:12px;align-items:center}
+.bar button{height:36px;border:1px solid var(--line);box-shadow:none}
+.panel{background:#fff;border:1px solid var(--line);border-radius:20px;padding:16px}
+.big{font-size:34px;font-weight:700;line-height:1.1}
+.phase{display:inline-block;padding:2px 12px;border-radius:99px;font-weight:700;font-size:13px}
+.p-run{background:var(--liveTint);color:#92580a}.p-brake{background:#FDE2E2;color:#9b1c1c}.p-dwell{background:var(--tint);color:var(--brand)}.p-acc{background:#E1ECFB;color:#1d4f9a}
+.tl{display:flex;height:10px;border-radius:5px;overflow:hidden;margin:10px 0 4px;background:#eee}.tl i{display:block;height:100%}
+.row{display:flex;justify-content:space-between;border-top:1px solid var(--line);padding:7px 0;font-size:14px}.row b{font-variant-numeric:tabular-nums}
+code{background:#EEF3F0;padding:1px 6px;border-radius:6px;font-size:13px}
+</style></head>
+<body>
+<header>
+<h1>লাইভ পেজ · ৩ডি ডিজাইন বিশ্লেষণ</h1>
+<p class="sub">Metro KOI — কার্ড সেকশন UI ডিজাইনের ২২টি বোর্ড (লাইভ ১–৫, স্টেশন ১–৪, যাত্রা ১–৩, কার্ড ১–৯, মডেল ১–২) থেকে। নিচে ডিজাইনের বিশ্লেষণ, আর শেষে চলন্ত ট্রেনের ডেমো — এক স্টেশন থেকে আরেক স্টেশনে।</p>
+</header>
+<main>
+
+<h2>১. ডিজাইনে কী কী আছে</h2>
+<div class="grid">
+<div class="card"><span class="tag">লাইভ ১ · জুম ১২</span><h3>পুরো লাইন ৩ডি</h3>
+<ul><li>টিল্ট করা শহর, বিল্ডিং ব্লক, নদী/পার্ক হালকা রঙে</li><li>লাইন = সবুজ মোটা রেখা + সাদা বর্ডার; স্টেশন = সাদা বিন্দু (সবুজ রিং)</li><li>শুধু বড় স্টেশনের নাম-পিল (ফার্মগেট নির্বাচিত = গাঢ় সবুজ)</li><li>ট্রেন = কমলা রিং (লাইভ), ধূসর ড্যাশ রিং (আনুমানিক)</li><li>নিচে শিট: "লাইন ৬ · এখন চলছে", দুই দিকের পরের ট্রেন ও মিনিট</li></ul></div>
+<div class="card"><span class="tag">লাইভ ২ · জুম ১৪</span><h3>স্টেশন ও ট্রেন</h3>
+<ul><li>৩–৪টি স্টেশন ফ্রেমে, প্রতিটির নাম-পিল</li><li>ট্রেনের ট্যাগ: কালো পিল + কমলা বর্ডার = লাইভ; সাদা ড্যাশ = আনুমানিক</li><li>ট্যাগ লেখা: <code>SB-০৬৩০ · লাইভ</code></li></ul></div>
+<div class="card"><span class="tag">লাইভ ৩ · জুম ১৭</span><h3>স্টেশনে জুম</h3>
+<ul><li>উঁচু ভায়াডাক্টে আসল ট্রেনের কোচ, দুই প্ল্যাটফর্ম</li><li>গেট A B C D সবুজ পিন</li><li>প্ল্যাটফর্ম কলআউট: <b>ঢুকেছে / ছাড়বে</b> সময়, ট্রেন আইডি</li><li>"স্টেশনে ট্রেন আছে" পিল + ঘড়ি (০৮:৪২:২০)</li><li>নিচে শিট: প্ল্যাটফর্ম → গন্তব্য, "এখন ছাড়বে …", "~২৫ সেকেন্ড · থামবে …"</li></ul></div>
+<div class="card"><span class="tag">লাইভ ৪ · ৫</span><h3>বাঁক ও ছাদ</h3>
+<ul><li>জুম ১৩: লাইনের বাঁকে ট্রেন বাঁক ধরে ঘোরে (heading = পথের দিক)</li><li>জুম ১৫: স্টেশনের ছাদ/ক্যানোপি দেখা যায়</li></ul></div>
+<div class="card"><span class="tag">মডেল ২</span><h3>ট্রেন ঢোকা · থামা · ছাড়া</h3>
+<ul><li>০৮:৪১:৩৮ ডেকে ঢুকল (লাইনের গতিতে)</li><li>০৮:৪১:৪৯ ব্রেক শুরু → ২১ সেকেন্ডে থামবে</li><li>০৮:৪২:১০ থামল · দরজা খোলা · ২৫ সেকেন্ড</li><li>০৮:৪২:৩৫ ছাড়ল → গতি উঠছে (২১ সেকেন্ড)</li><li>০৮:৪২:৫৬ পুরো গতি · ০৮:৪৩:০৭ স্টেশন ফাঁকা</li></ul>
+<p><span class="tag warn">মূল তথ্য</span> ট্রেন "ওড়ে" না — প্রতিটি স্টেশনে <b>ব্রেক → দাঁড়ানো → গতি</b> চক্র আছে। এটাই ডেমোতে বানানো হয়েছে।</p></div>
+<div class="card"><span class="tag">স্টেশন / যাত্রা / কার্ড</span><h3>বাকি বোর্ড</h3>
+<ul><li>স্টেশন ১–৪: তালিকা, সার্ভিস বন্ধ, বিস্তারিত, অডিও ঘোষণা</li><li>যাত্রা ১–৩: পরিকল্পনা, বিস্তারিত, সার্ভিস বন্ধ</li><li>কার্ড ১–৯: হোম, স্ক্যান, সেভ, ব্যালেন্স ব্যর্থ, হাতে লেখা, ইতিহাস, ডার্ক মোড</li></ul></div>
+</div>
+
+<h2>২. ডিজাইন সিস্টেম (ছবি থেকে)</h2>
+<table>
+<tr><th>উপাদান</th><th>মান</th></tr>
+<tr><td>ফন্ট</td><td>Hind Siliguri (বাংলা ও ইংরেজি দুটোই), শিরোনাম ৭০০</td></tr>
+<tr><td>ব্র্যান্ড রং</td><td><span class="sw" style="background:#066B4A"></span>#066B4A গাঢ় সবুজ · <span class="sw" style="background:#2BD39A"></span>#2BD39A মিন্ট (নির্বাচিত পিলের আইকন) · <span class="sw" style="background:#DDF1E8"></span>টিন্ট</td></tr>
+<tr><td>লাইভ / আনুমানিক</td><td><span class="sw" style="background:#F59E0B"></span>#F59E0B কমলা = লাইভ · ধূসর ড্যাশ = আনুমানিক (সবসময় আলাদা — শুধু রঙে নয়, ড্যাশ ও লেখাতেও)</td></tr>
+<tr><td>আকার</td><td>শিট ২৮px উপরের কোণ; গ্লাস পিল ৯৯৯ রেডিয়াস; ফ্লোটিং ট্যাব বার (৫ ট্যাব: লাইভ, স্টেশন, যাত্রা, কার্ড, আরও)</td></tr>
+<tr><td>৩ডি ক্যামেরা</td><td>টিল্ট ~৬০°, heading = লাইন বরাবর; জুম ১২ → ১৭</td></tr>
+<tr><td>লেবেল নিয়ম</td><td>জুম &lt; ১৩.২ হলে স্টেশন = শুধু বিন্দু; জুম বাড়লে নাম-পিল; জুম ১৭-এ গেট ও প্ল্যাটফর্ম কলআউট</td></tr>
+</table>
+
+<h2>৩. এখনকার অ্যাপ বনাম ডিজাইন</h2>
+<table>
+<tr><th>বিষয়</th><th>এখন (page.ts / LiveReal)</th><th>ডিজাইন চায়</th><th>কাজ</th></tr>
+<tr><td>৩ডি বাটন</td><td>শুধু ম্যাপ টিল্ট করে (<code>tilt=true</code>)</td><td>টিল্ট + ট্রেনের আসল চেহারা + ক্যামেরা ট্রেন অনুসরণ</td><td>৩ডি-তে ট্রেন কোচ আইকন, ক্যামেরা ট্রেনের পেছনে</td></tr>
+<tr><td>ট্রেন মার্কার</td><td>গোল রিং (<code>.car</code>)</td><td>কোচের সারি, heading অনুযায়ী ঘোরা</td><td>৩ডি-তে লম্বা কোচ মার্কার, ম্যাপ heading বাদ দিয়ে ঘোরানো</td></tr>
+<tr><td>নড়াচড়া</td><td>৫০০ms টিকে লাফ, CSS ০.৪৫s লিনিয়ার</td><td>ব্রেক / দাঁড়ানো / গতি — মসৃণ</td><td>প্রতি ফ্রেমে ইন্টারপোলেশন (rAF), ট্রেনের <code>v</code> দিয়ে ডেড-রেকনিং</td></tr>
+<tr><td>স্টেশনে থামা</td><td>ট্যাগে টাইমার আছে</td><td>কলআউটে ঢুকেছে/ছাড়বে সময়</td><td>৩ডি জুমে প্ল্যাটফর্ম কলআউট (পরের ধাপ)</td></tr>
+<tr><td>ডেটা</td><td><code>useTrains</code> থেকে লাইভ + আনুমানিক ট্রেন, ইতিমধ্যে এক স্টেশন থেকে অন্য স্টেশনে চলে</td><td>একই</td><td>নতুন ডেটা লাগবে না</td></tr>
+</table>
+
+<h2>৪. চলন্ত ৩ডি ডেমো — স্টেশন থেকে স্টেশনে</h2>
+<p class="sub">নিচে ট্রেন সত্যিই চলে: ঢোকে → ব্রেক (২১ সে.) → দাঁড়ায় (২৫ সে.) → গতি ওঠে (২১ সে.) → পরের স্টেশন। সময়ের মান মডেল ২ থেকে।</p>
+<div class="demo" style="margin-top:12px">
+<div>
+ <div class="stage"><canvas id="cv"></canvas>
+  <div class="ctl"><button id="b3d" class="on">3D</button><button id="bfol" class="on" title="ট্রেন অনুসরণ">⌖</button></div>
+ </div>
+ <div class="bar">
+  <span>গতি:</span><button data-sp="1">১×</button><button data-sp="5" class="on">৫×</button><button data-sp="15">১৫×</button>
+  <span style="margin-left:8px">ট্রেন:</span><button data-tr="0" class="on">SB-০৬৩০ →</button><button data-tr="1">← NB-০৬১২</button>
+ </div>
+</div>
+<div class="panel">
+ <span id="ph" class="phase p-run">চলছে</span>
+ <div class="big" id="spd">০ কিমি/ঘ</div>
+ <div style="color:var(--muted)" id="seg">—</div>
+ <div class="tl" id="tl"></div>
+ <div style="display:flex;justify-content:space-between;font-size:12px;color:var(--muted)"><span>চলা</span><span>ব্রেক ২১</span><span>থামা ২৫</span><span>গতি ২১</span></div>
+ <div class="row"><span>পরের স্টেশন</span><b id="nx">—</b></div>
+ <div class="row"><span>থামবে/ছাড়বে</span><b id="eta">—</b></div>
+ <div class="row"><span>সিমুলেটেড সময়</span><b id="clk">—</b></div>
+ <p style="font-size:12px;color:var(--muted);margin:10px 0 0">স্টেশনে ক্লিক করলে ক্যামেরা সেখানে যায়। 3D বন্ধ করলে ওপর থেকে দেখা যাবে।</p>
+</div>
+</div>
+
+<h2>৫. অ্যাপে বসানোর ধাপ</h2>
+<div class="grid">
+<div class="card"><h3>ধাপ ১ · ৩ডি মার্কার</h3><p>page.ts-এ <code>tilt</code> চালু থাকলে ট্রেন = কোচের সারি, <code>heading − mapHeading</code> ঘোরানো।</p></div>
+<div class="card"><h3>ধাপ ২ · মসৃণ চলা</h3><p>প্রতি রেন্ডারে লাফ না দিয়ে rAF-এ আগের ও নতুন অবস্থানের মাঝে ইন্টারপোলেট।</p></div>
+<div class="card"><h3>ধাপ ৩ · ক্যামেরা অনুসরণ</h3><p>৩ডি চালু হলে নির্বাচিত ট্রেন (না থাকলে পরের ট্রেন) অনুসরণ — এক স্টেশন থেকে পরেরটায় যায়।</p></div>
+<div class="card"><h3>ধাপ ৪ · কলআউট (ঐচ্ছিক)</h3><p>জুম ১৭-এ প্ল্যাটফর্ম কলআউট: ঢুকেছে/ছাড়বে সময়, <code>dwell.timer</code> থেকে।</p></div>
+</div>
+</main>
+
+<script>
+(function(){
+const bn=s=>String(s).replace(/\d/g,d=>'০১২৩৪৫৬৭৮৯'[d]);
+const names=['উত্তরা উত্তর','আগারগাঁও','ফার্মগেট','শাহবাগ','মতিঝিল'];
+// world path (metres, x right, y down); gentle S-curve
+const ctrl=[[0,0],[900,260],[1900,360],[3000,200],[4100,620],[5200,1000]];
+// Catmull-Rom -> dense polyline
+function cr(p0,p1,p2,p3,t){const t2=t*t,t3=t2*t;return [0,1].map(i=>.5*((2*p1[i])+(-p0[i]+p2[i])*t+(2*p0[i]-5*p1[i]+4*p2[i]-p3[i])*t2+(-p0[i]+3*p1[i]-3*p2[i]+p3[i])*t3));}
+const pts=[];for(let i=0;i<ctrl.length-1;i++){const a=ctrl[Math.max(0,i-1)],b=ctrl[i],c=ctrl[i+1],d=ctrl[Math.min(ctrl.length-1,i+2)];for(let k=0;k<40;k++)pts.push(cr(a,b,c,d,k/40));}
+pts.push(ctrl[ctrl.length-1]);
+const cum=[0];for(let i=1;i<pts.length;i++)cum.push(cum[i-1]+Math.hypot(pts[i][0]-pts[i-1][0],pts[i][1]-pts[i-1][1]));
+const L=cum[cum.length-1];
+function at(s){s=Math.max(0,Math.min(L,s));let lo=0,hi=cum.length-1;while(hi-lo>1){const m=(lo+hi)>>1;cum[m]<=s?lo=m:hi=m;}
+ const f=(s-cum[lo])/((cum[hi]-cum[lo])||1),a=pts[lo],b=pts[hi];return{x:a[0]+(b[0]-a[0])*f,y:a[1]+(b[1]-a[1])*f,a:Math.atan2(b[1]-a[1],b[0]-a[0])};}
+const N=names.length,seg=L/(N-1),stS=names.map((_,i)=>i*seg);
+// motion profile per segment
+const VMAX=22,TA=21,TB=21,DW=25; // m/s, s, s, s
+const da=.5*VMAX*TA,db=.5*VMAX*TB,cruise=Math.max(0,seg-da-db),TC=cruise/VMAX;
+const SEG_T=TA+TC+TB,CYC=SEG_T+DW;
+// returns {s along segment 0..seg, v, phase, tInPhase}
+function prof(t){ // t in [0,CYC): accel,cruise,brake,dwell
+ if(t<TA){const k=t/TA;return{d:.5*VMAX*TA*k*k,v:VMAX*k,ph:'acc',left:TA-t};}
+ t-=TA;if(t<TC)return{d:da+VMAX*t,v:VMAX,ph:'run',left:TC-t};
+ t-=TC;if(t<TB){const k=t/TB;return{d:da+cruise+VMAX*TB*(k-.5*k*k),v:VMAX*(1-k),ph:'brake',left:TB-t};}
+ t-=TB;return{d:seg,v:0,ph:'dwell',left:DW-t};}
+function trainState(T,dir){ // T = total elapsed s for this train
+ const n=N-1,total=n*CYC; let u=((T%(2*total))+2*total)%(2*total); // out-and-back
+ let back=false; if(u>=total){u-=total;back=true;}
+ const si=Math.min(n-1,Math.floor(u/CYC)); const p=prof(u-si*CYC);
+ // after dwell at the last stop the loop flips; the last dwell is the terminus stop
+ let s=stS[si]+p.d,from=si,to=si+1;
+ if(back){s=L-s;from=n-si;to=n-si-1;}
+ return{s,v:p.v,ph:p.ph,left:p.left,from,to,back};}
+// ---- canvas
+const cv=document.getElementById('cv'),g=cv.getContext('2d');
+let W=0,H=0,dpr=1;function rs(){dpr=Math.min(2,devicePixelRatio||1);W=cv.clientWidth;H=cv.clientHeight;cv.width=W*dpr;cv.height=H*dpr;}
+addEventListener('resize',rs);rs();
+let tilt=1,tiltTarget=1,follow=true,speed=5,which=0,sim=40,cam={x:0,y:0},zoom=.17,last=performance.now();
+const blds=[];let sd=7;const rnd=()=>(sd=(sd*16807)%2147483647)/2147483647;
+for(let i=0;i<260;i++){const x=rnd()*5600-300,y=rnd()*1800-500;let ok=true;for(let k=0;k<pts.length;k+=4){if(Math.hypot(pts[k][0]-x,pts[k][1]-y)<150){ok=false;break;}}if(ok)blds.push({x,y,w:40+rnd()*70,d:40+rnd()*70,h:20+rnd()*110});}
+function P(x,y,z){ // world -> screen, tilt 0..1 (0 top-down, 1 ~58deg)
+ const th=(.15+tilt*.95)*Math.PI/2*.92+.0; // pitch
+ const sy=Math.sin(th),cz=Math.cos(th);
+ const dx=(x-cam.x)*zoom,dy=(y-cam.y)*zoom;
+ return[W/2+dx,H*.58+dy*sy-z*zoom*cz*1.0];}
+function poly(arr,fill,stroke,lw){g.beginPath();arr.forEach((p,i)=>i?g.lineTo(p[0],p[1]):g.moveTo(p[0],p[1]));g.closePath();if(fill){g.fillStyle=fill;g.fill();}if(stroke){g.strokeStyle=stroke;g.lineWidth=lw||1;g.stroke();}}
+function box(x,y,w,d,h,top,side){const a=P(x,y,h),b=P(x+w,y,h),c=P(x+w,y+d,h),e=P(x,y+d,h),a0=P(x,y+d,0),b0=P(x+w,y+d,0),c0=P(x+w,y,0);
+ poly([e,c,b0,a0],side);poly([b,c,b0,c0],shade(side,-14));poly([a,b,c,e],top);}
+function shade(h,k){const n=parseInt(h.slice(1),16);const f=v=>Math.max(0,Math.min(255,v+k));return'rgb('+f(n>>16)+','+f((n>>8)&255)+','+f(n&255)+')';}
+function stroke(path,w,col,z){g.beginPath();path.forEach((p,i)=>{const q=P(p[0],p[1],z||0);i?g.lineTo(q[0],q[1]):g.moveTo(q[0],q[1]);});g.lineJoin='round';g.lineCap='round';g.strokeStyle=col;g.lineWidth=w;g.stroke();}
+function coach(s,len,col,z){ // one coach: quad along path at chainage s
+ const a=at(s-len/2),b=at(s+len/2),m=at(s),nx=-Math.sin(m.a),ny=Math.cos(m.a),hw=11;
+ const q=(p,k,zz)=>P(p.x+nx*hw*k,p.y+ny*hw*k,zz);
+ const hh=z+26;
+ poly([q(a,-1,z),q(b,-1,z),q(b,-1,hh),q(a,-1,hh)],col.side);
+ poly([q(a,1,z),q(b,1,z),q(b,1,hh),q(a,1,hh)],shade(col.side,-18));
+ poly([q(a,-1,hh),q(b,-1,hh),q(b,1,hh),q(a,1,hh)],col.top);
+ // windows band
+ const w0=q(a,-1,z+13),w1=q(b,-1,z+13),w2=q(b,-1,z+20),w3=q(a,-1,z+20);poly([w0,w1,w2,w3],'#2f4a56');}
+const TR=[{id:'SB-০৬৩০',off:0,col:{side:'#0f8a5f',top:'#35b985'}},{id:'NB-০৬১২',off:0,col:{side:'#2f6fb5',top:'#5d9be0'}}];
+function frame(now){
+ hit=[];if(!follow&&selStation>=0){const p=at(stS[selStation]);cam.x+=(p.x-cam.x)*.08;cam.y+=(p.y-cam.y)*.08;}
+ const dt=Math.min(.1,(now-last)/1000);last=now;sim+=dt*speed;
+ tilt+=(tiltTarget-tilt)*Math.min(1,dt*6);
+ g.setTransform(dpr,0,0,dpr,0,0);g.clearRect(0,0,W,H);g.fillStyle='#EFEBE1';g.fillRect(0,0,W,H);
+ const total=(N-1)*CYC;
+ const st=[trainState(sim,0),trainState(sim+total*.9+17,1)]; // NB shifted so both are visible
+ // NB runs the other way: mirror positions so it's on the opposite platform side
+ const sel=st[which];const ci=at(sel.s);
+ if(follow){cam.x+=(ci.x-cam.x)*Math.min(1,dt*3);cam.y+=(ci.y-cam.y)*Math.min(1,dt*3);}
+ else if(selStation<0){cam.x+=(2650-cam.x)*Math.min(1,dt*3);cam.y+=(560-cam.y)*Math.min(1,dt*3);}
+ zoom+=((follow?(tilt>.5?.5:.36):.17)-zoom)*Math.min(1,dt*3);
+ // park/water blobs
+ g.fillStyle='#d9e6cf';[[1500,900,260],[3600,-100,200]].forEach(([x,y,r])=>{const c=P(x,y,0);g.beginPath();g.ellipse(c[0],c[1],r*zoom,r*zoom*Math.sin((.15+tilt*.95)*Math.PI/2*.92),0,0,7);g.fill();});
+ // buildings far->near
+ blds.slice().sort((a,b)=>a.y-b.y).forEach(b=>{box(b.x,b.y,b.w,b.d,b.h*2.2*tilt+2,'#f7f3ea','#e4ddcf');});
+ // viaduct + line
+ stroke(pts,22*zoom*3.3,'#00000018',0);
+ if(tilt>.1){stroke(pts,16*zoom*3.3,'#cfd8d3',0);stroke(pts,16*zoom*3.3,'#b9c5be',44*tilt);}
+ stroke(pts,12*zoom*3.3,'#ffffff',44*tilt);stroke(pts,7*zoom*3.3,'#0a8a5f',44*tilt);
+ // stations
+ const z0=44*tilt;
+ stS.forEach((s,i)=>{const p=at(s),c=P(p.x,p.y,z0);
+  // platform slab
+  const a=at(s-90),b=at(s+90),nx=-Math.sin(p.a),ny=Math.cos(p.a);
+  const q=(pt,k,z)=>P(pt.x+nx*k,pt.y+ny*k,z);
+  poly([q(a,-26,z0+2),q(b,-26,z0+2),q(b,26,z0+2),q(a,26,z0+2)],'#e9e5da','#c9c4b6',1);
+  if(tilt>.4){poly([q(a,-30,z0+34),q(b,-30,z0+34),q(b,30,z0+34),q(a,30,z0+34)],'#fff','#d5d0c3',1);}
+  g.beginPath();g.arc(c[0],c[1],6,0,7);g.fillStyle='#fff';g.fill();g.lineWidth=3;g.strokeStyle='#066B4A';g.stroke();
+  const t=(selStation===i);
+  g.font='700 13px "Hind Siliguri",sans-serif';const w=g.measureText(names[i]).width+30;
+  const lx=c[0]-w/2,ly=c[1]-(tilt>.4?62:34);
+  g.fillStyle=t?'#066B4A':'rgba(255,255,255,.96)';g.beginPath();g.roundRect(lx,ly,w,24,12);g.fill();
+  g.fillStyle=t?'#2BD39A':'#066B4A';g.beginPath();g.roundRect(lx+4,ly+4,16,16,5);g.fill();
+  g.fillStyle=t?'#fff':'#0E1A16';g.fillText(names[i],lx+24,ly+17);
+  hit.push({x:lx,y:ly,w:w,h:24,i});});
+ // trains
+ st.forEach((s,k)=>{
+  const col=TR[k].col;const cars=4,len=92,gap=4;
+  for(let c=cars-1;c>=0;c--){const off=(c-(cars-1)/2)*(len+gap)*(s.back?1:-1);coach(Math.max(0,Math.min(L,s.s+off)),len,col,z0+4);}
+  const h=at(s.s),hp=P(h.x,h.y,z0+60);
+  const txt=TR[k].id+' · '+(s.ph==='dwell'?'থেমে আছে':s.ph==='brake'?'থামছে':s.ph==='acc'?'ছাড়ছে':'চলছে');
+  g.font='700 12px "Hind Siliguri",sans-serif';const w=g.measureText(txt).width+26;
+  g.fillStyle='#0B0F0E';g.beginPath();g.roundRect(hp[0]-w/2,hp[1]-22,w,22,11);g.fill();g.lineWidth=1.5;g.strokeStyle=k===which?'#F2C230':'#F2C23080';g.stroke();
+  g.fillStyle='#F59E0B';g.beginPath();g.arc(hp[0]-w/2+11,hp[1]-11,3.5,0,7);g.fill();g.fillStyle='#fff';g.fillText(txt,hp[0]-w/2+19,hp[1]-6);});
+ // panel
+ const s=sel,fm=names[s.from],tt=names[s.to];
+ const ph=document.getElementById('ph');
+ const L2={run:['চলছে','p-run'],brake:['ব্রেক করছে','p-brake'],dwell:['স্টেশনে থেমে আছে','p-dwell'],acc:['গতি উঠছে','p-acc']}[s.ph];
+ ph.textContent=L2[0];ph.className='phase '+L2[1];
+ document.getElementById('spd').textContent=bn(Math.round(s.v*3.6))+' কিমি/ঘ';
+ document.getElementById('seg').textContent=s.ph==='dwell'?'স্টেশন: '+fm:fm+' → '+tt;
+ document.getElementById('nx').textContent=tt;
+ document.getElementById('eta').textContent=s.ph==='dwell'?'ছাড়বে '+bn(Math.ceil(s.left))+' সে.':s.ph==='brake'?'থামবে '+bn(Math.ceil(s.left))+' সে.':s.ph==='acc'?'পুরো গতি '+bn(Math.ceil(s.left))+' সে.':'ব্রেক '+bn(Math.ceil(s.left))+' সে. পর';
+ const T=Math.floor(sim)+8*3600+41*60+38;document.getElementById('clk').textContent=bn([T/3600%24|0,T/60%60|0,T%60].map(v=>String(v).padStart(2,'0')).join(':'));
+}
+let hit=[],selStation=-1;
+// reset hit list every frame start
+// build timeline bar
+(function(){const tl=document.getElementById('tl'),tot=TA+TC+TB+DW;[[TC,'#F59E0B'],[TB,'#e46a6a'],[DW,'#2BA36F'],[TA,'#5b8fe0']].forEach(([w,c])=>{const i=document.createElement('i');i.style.width=(w/tot*100)+'%';i.style.background=c;tl.appendChild(i);});})();
+cv.addEventListener('click',e=>{const r=cv.getBoundingClientRect(),x=e.clientX-r.left,y=e.clientY-r.top;
+ const h=hit.find(h=>x>=h.x&&x<=h.x+h.w&&y>=h.y&&y<=h.y+h.h);if(h){selStation=h.i;follow=false;document.getElementById('bfol').classList.remove('on');cam.target=true;}});
+document.getElementById('b3d').onclick=e=>{tiltTarget=tiltTarget?0:1;e.currentTarget.classList.toggle('on',!!tiltTarget);};
+document.getElementById('bfol').onclick=e=>{follow=!follow;selStation=-1;e.currentTarget.classList.toggle('on',follow);};
+document.querySelectorAll('[data-sp]').forEach(b=>b.onclick=()=>{speed=+b.dataset.sp;document.querySelectorAll('[data-sp]').forEach(x=>x.classList.toggle('on',x===b));});
+document.querySelectorAll('[data-tr]').forEach(b=>b.onclick=()=>{which=+b.dataset.tr;follow=true;selStation=-1;document.getElementById('bfol').classList.add('on');document.querySelectorAll('[data-tr]').forEach(x=>x.classList.toggle('on',x===b));});
+function loop(t){frame(t);requestAnimationFrame(loop);}
+requestAnimationFrame(t=>{last=t;loop(t);});
+})();
+</script>
+</body></html>

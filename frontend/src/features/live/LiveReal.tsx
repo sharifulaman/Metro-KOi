@@ -1,9 +1,10 @@
 import { useRouter } from 'expo-router';
 import { useEffect, useState } from 'react';
 
-import { GoogleMapView, ZOOM_NEAR, type MapTrain } from '@/components/map';
+import { GoogleMapView, ZOOM_NEAR, type MapGate, type MapHints, type MapTrain } from '@/components/map';
 import { BrandBar, NextTrainRow, RideBanner, SegmentProgress, Speedometer, StationHeader } from '@/components/metro';
 import { Button, Chip, GlassPill, IconButton, InfoNote, Screen, Sheet, Stack, StatusBadge, Text } from '@/components/ui';
+import { useStationGates } from '@/features/gates/useStationGates';
 import { usePlayback } from '@/features/map/usePlayback';
 import { nearestStation, useUserLocation } from '@/features/map/useUserLocation';
 import { fractionOf, trainSegment, useTrains } from '@/features/map/useTrains';
@@ -13,8 +14,8 @@ import { useDepartures } from '@/features/stations/useDepartures';
 import { stationAltName, stationName, useStations } from '@/features/stations/useStations';
 import { useT } from '@/i18n';
 import { config } from '@/lib/config';
-import { fmtDistance, fmtEta, fmtEtaAt, fmtMmSs, fmtNum } from '@/lib/fmt';
-import { etaToStation } from '@/lib/schedule';
+import { fmtClock, fmtDistance, fmtEta, fmtEtaAt, fmtHMS, fmtMmSs, fmtNum } from '@/lib/fmt';
+import { dhakaClock, etaToStation } from '@/lib/schedule';
 import type { Direction, Train } from '@/models';
 import { useSettings } from '@/store/settings';
 
@@ -38,6 +39,7 @@ export function LiveReal() {
   const [followNext, setFollowNext] = useState(false);
   const [recenter, setRecenter] = useState(0);
   const [view3d, setView3d] = useState(false);
+  const [selGate, setSelGate] = useState<string | undefined>();
   const [userFocus, setUserFocus] = useState<{ lat: number; lng: number } | null>(null);
   const [locNote, setLocNote] = useState(false);
   const { user, request: requestLocation } = useUserLocation();
@@ -66,10 +68,24 @@ export function LiveReal() {
   // follow the selected train; otherwise frame the station in focus
   const mapFocus = train ? fractionOf(model, train.s) : focusIdx >= 0 ? fractionOf(model, model.chainage[focusIdx]) : 0.5;
 
+  // platform number: Motijheel (the terminus) uses platform 1 for both arriving and departing trains, elsewhere Motijheel-bound = 1, Uttara-bound = 2
+  const lastIdx = model.stationIds.length - 1;
+  const platformNo = (dir: Direction, idx: number) => (idx === lastIdx ? 1 : dir === 'SB' ? 1 : 2);
+
   // every train carries a tag; a train standing at a station says so
   const mapTrains: MapTrain[] = trains.map((tr) => {
-    const base = { id: tr.id, dir: tr.dir, state: tr.state, f: fractionOf(model, tr.s) };
-    if (tr.dwellLeftSec != null) return { ...base, label: t('live.atStationTag', { id: tr.id }), dwell: { timer: fmtMmSs(tr.dwellLeftSec, lang), progress: tr.dwellLeftSec / model.dwellSec } };
+    const base = { id: tr.id, dir: tr.dir, state: tr.state, f: fractionOf(model, tr.s), women: t('live.womenCoach') };
+    if (tr.dwellLeftSec != null) {
+      const sg = trainSegment(model, tr);
+      const callout = {
+        title: `${t('common.platform', { n: fmtNum(platformNo(tr.dir, sg.fromIdx), lang) })} · ${tr.id}`,
+        rows: [
+          [t('live.leavesIn'), fmtMmSs(tr.dwellLeftSec, lang)],
+          [t('live.nextStationIs', { name: nameAt(sg.toIdx) }), ''],
+        ] as [string, string][],
+      };
+      return { ...base, callout, label: t('live.atStationTag', { id: tr.id }), dwell: { timer: fmtMmSs(tr.dwellLeftSec, lang), progress: tr.dwellLeftSec / model.dwellSec } };
+    }
     return { ...base, label: tagFor(tr.state, tr.id) };
   });
 
@@ -150,20 +166,94 @@ export function LiveReal() {
   const iTo = sess?.toStationId ? model.stationIds.indexOf(sess.toStationId) : -1;
   const liveRoute = sess && iFrom >= 0 && iTo >= 0 ? { from: fractionOf(model, model.chainage[iFrom]), to: fractionOf(model, model.chainage[iTo]) } : null;
 
+  // gate pins (A–D, with their landmark) for the station the map is framing: the one a followed train is at, else the focus station
+  const gateStationId = (() => {
+    if (!(near || view3d)) return undefined;
+    const at = train ? train.s : model.chainage[focusIdx];
+    if (at == null) return undefined;
+    let best = 0;
+    model.chainage.forEach((c, i) => {
+      if (Math.abs(c - at) < Math.abs(model.chainage[best] - at)) best = i;
+    });
+    return Math.abs(model.chainage[best] - at) <= 450 ? model.stationIds[best] : undefined;
+  })();
+  const { gates: stationGates } = useStationGates(gateStationId ?? '');
+  const mapGates: MapGate[] = stationGates.flatMap((g) =>
+    g.lat != null && g.lng != null ? [{ id: `${g.stationId}:${g.gate}`, letter: g.gate, label: ((lang === 'bn' ? g.landmarkBn : g.landmarkEn) ?? '').split(' · ')[0], lat: g.lat, lng: g.lng }] : [],
+  );
+
+  // 3D: hint cards along the track for the followed train around the station it is entering, standing at or just leaving (design "model 2")
+  const hints: MapHints | null = (() => {
+    if (!view3d || !train || !seg) return null;
+    const idx = seg.atStation ? seg.fromIdx : seg.progress > 0.12 ? seg.toIdx : -1;
+    const sid = idx >= 0 ? model.stationIds[idx] : undefined;
+    if (!sid) return null;
+    const dw = model.dwellSec;
+    let tStop: number | null = null;
+    if (train.dwellLeftSec != null && seg.atStation) tStop = now + (train.dwellLeftSec - dw) * 1000;
+    else {
+      const eta = etaToStation(model, train, sid);
+      if (eta != null) tStop = now + eta * 1000;
+    }
+    if (tStop == null) return null;
+    const at = (sec: number) => tStop + sec * 1000;
+    const h = (sec: number) => fmtHMS(at(sec), lang);
+    const past = (sec: number) => at(sec) < now;
+    const platform = t('common.platform', { n: fmtNum(platformNo(train.dir, idx), lang) });
+    return {
+      stationId: sid,
+      trainId: train.id,
+      dir: train.dir,
+      items: [
+        { off: -300, title: t('live.hint.entered', { id: train.id }), rows: [[t('live.hint.enteredRow'), h(-32)]], past: past(-32) },
+        { off: -231, title: t('live.hint.brake'), time: h(-21), past: past(-21) },
+        { off: 0, title: t('live.hint.standing', { platform }), rows: [[t('live.hint.stopped'), h(0)], [t('live.hint.leaves'), h(dw)]], past: past(0) },
+        { off: 120, title: t('live.hint.gone'), rows: [[t('live.hint.left'), h(dw)], [t('live.hint.clear'), h(dw + 32)]], past: past(dw) },
+        { off: 231, title: t('live.hint.full'), time: h(dw + 21), past: past(dw + 21) },
+      ],
+    };
+  })();
+
   const closedUntil = playback.closedUntil;
+
+  // line closed: a train waits at each terminal for its first run (both on platform 1 at their terminus)
+  const parked: MapTrain[] = closedUntil
+    ? (['SB', 'NB'] as const).map((dir) => {
+        const c = dhakaClock(closedUntil);
+        const hh = String(Math.floor(c.sec / 3600)).padStart(2, '0');
+        const mm = String(Math.floor((c.sec % 3600) / 60)).padStart(2, '0');
+        const id = `${dir}-${hh}${mm}`;
+        const at = fmtClock(c.sec, lang);
+        const platform = t('common.platform', { n: fmtNum(platformNo(dir, dir === 'SB' ? 0 : lastIdx), lang) });
+        return {
+          id,
+          dir,
+          state: 'ESTIMATED',
+          f: dir === 'SB' ? 0 : 1,
+          women: t('live.womenCoach'),
+          label: t('live.parkedTag', { id, time: at }),
+          callout: { title: `${platform} · ${id}`, rows: [[t('live.hint.leaves'), at]] as [string, string][] },
+        } satisfies MapTrain;
+      })
+    : [];
   const zoomLevel = near ? 15 : 12;
 
   return (
     <Screen bleed>
       <GoogleMapView
         stations={list.map((s, i) => ({ id: s.id, label: stationName(s, lang), f: fractionOf(model, model.chainage[i]) }))}
-        trains={mapTrains}
+        trains={[...mapTrains, ...parked]}
         selectedStation={selStation ?? (train ? undefined : focusId)}
         selectedTrain={selTrain}
         zoom={near || view3d ? ZOOM_NEAR : 1}
         focus={mapFocus}
         focusPoint={userFocus ?? undefined}
         route={liveRoute}
+        gates={mapGates}
+        hints={hints}
+        womenLabel={t('live.womenCoach')}
+        selectedGate={selGate}
+        onGatePress={(id) => setSelGate((cur) => (cur === id ? undefined : id))}
         user={user}
         tilt={view3d}
         recenterKey={recenter}
@@ -194,7 +284,18 @@ export function LiveReal() {
               {nearest && !train && collapsed ? <GlassPill size="sm" icon="locate" label={t('live.youAre', { m: fmtDistance(nearest.metres, lang), name: nearestName })} testID="near-you" /> : null}
             </Stack>
             <Stack gap={2}>
-              <IconButton icon="box" label={view3d ? '2D' : '3D'} size="sm" elevated active={view3d} accessibilityLabel={t(view3d ? 'live.tilt2d' : 'live.tilt3d')} onPress={() => setView3d((v) => !v)} testID="open-3d" />
+              <IconButton icon="box" label={view3d ? '2D' : '3D'} size="sm" elevated active={view3d} accessibilityLabel={t(view3d ? 'live.tilt2d' : 'live.tilt3d')} onPress={() => {
+                  // entering 3D: follow the next train so it can be watched going station to station
+                  if (!view3d) {
+                    setSelStation(undefined);
+                    setUserFocus(null);
+                    setNear(true);
+                    // nothing running (line closed): go to the train waiting at Uttara North
+                    if (trains.length === 0 && parked[0]) setSelTrain(parked[0].id);
+                    else setFollowNext(true);
+                  }
+                  setView3d((v) => !v);
+                }} testID="open-3d" />
               <IconButton icon="locate" size="sm" elevated active={!!userFocus} accessibilityLabel={t('live.locate')} onPress={() => void locate()} testID="locate" />
               <IconButton icon={near ? 'zoomOut' : 'zoomIn'} size="sm" elevated accessibilityLabel={t(near ? 'live.zoomOut' : 'live.zoomIn')} onPress={() => setNear((v) => !v)} testID="zoom" />
             </Stack>

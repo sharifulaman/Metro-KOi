@@ -118,6 +118,13 @@ export function fmtHM(ms: number, lang: Lang): string {
   return fmtNum(`${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}`, lang);
 }
 
+/** "০৮:৪১:৩৮" / "08:41:38": 24-hour Dhaka time with seconds (train hints). */
+export function fmtHMS(ms: number, lang: Lang): string {
+  const sec = secOfDayFromMs(ms);
+  const p = (n: number) => String(n).padStart(2, '0');
+  return fmtNum(`${p(Math.floor(sec / 3600))}:${p(Math.floor((sec % 3600) / 60))}:${p(sec % 60)}`, lang);
+}
+
 /** "−৳ ৪০" / "+৳ ৫০০": a fare or recharge with its sign, as the design writes it. */
 export function fmtTakaSigned(n: number, sign: '−' | '+', lang: Lang): string {
   return `${sign}৳ ${fmtNum(n.toLocaleString('en-US'), lang)}`;

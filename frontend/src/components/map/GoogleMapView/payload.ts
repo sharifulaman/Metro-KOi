@@ -12,7 +12,9 @@ export interface MapPayload {
   errorText: string;
   theme: Pick<Palette, 'bg' | 'surface' | 'ink' | 'inkMuted' | 'brand' | 'brandDeep' | 'onBrand' | 'live' | 'liveTint' | 'onLiveTint' | 'estimated' | 'trainSB' | 'trainNB' | 'mapGround' | 'mapRoad'>;
   stations: { id: string; label: string; lat: number; lng: number; terminal: boolean }[];
-  trains: { id: string; dir: 'SB' | 'NB'; state: string; lat: number; lng: number; heading: number; label?: string; timer?: string; progress?: number }[];
+  trains: { id: string; dir: 'SB' | 'NB'; state: string; lat: number; lng: number; heading: number; label?: string; women?: string; callout?: { title: string; rows: [string, string][] }; timer?: string; progress?: number }[];
+  hints: GoogleMapViewProps['hints'] | null;
+  womenLabel: string | null;
   gates: { id: string; letter: string; label: string; lat: number; lng: number }[];
   selectedGate?: string;
   user: { lat: number; lng: number; accuracy: number } | null;
@@ -93,12 +95,16 @@ export function buildPayload(p: GoogleMapViewProps, c: Palette, dark: boolean, r
         // SB runs towards Motijheel (increasing f), NB the other way
         heading: t.dir === 'SB' ? g.bearing : (g.bearing + 180) % 360,
         label: t.label,
+        women: t.women,
+        callout: t.callout,
         timer: t.dwell?.timer,
         progress: t.dwell?.progress,
       };
     }),
     gates: (p.gates ?? []).map((g) => ({ id: g.id, letter: g.letter, label: g.label, lat: g.lat, lng: g.lng })),
     selectedGate: p.selectedGate,
+    hints: p.hints ?? null,
+    womenLabel: p.womenLabel ?? null,
     route,
     user: p.user ? { lat: p.user.lat, lng: p.user.lng, accuracy: p.user.accuracy ?? 0 } : null,
     selectedStation: p.selectedStation,

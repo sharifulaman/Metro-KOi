@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react';
 
 import { AppProviders, AppStack } from '@/components/AppShell';
 import { useLiveConnection } from '@/features/live/useLiveConnection';
+import { useNearStationAlert } from '@/features/notify/useNearStationAlert';
 import { initI18n } from '@/i18n';
 import { useClock } from '@/store/clock';
 import { useSettings } from '@/store/settings';
@@ -16,6 +17,7 @@ function Root() {
   const segments = useSegments();
   initI18n(lang);
   useLiveConnection();
+  useNearStationAlert();
 
   useEffect(() => useClock.getState().stop(), []);
 

@@ -16,6 +16,10 @@ export interface MapTrain {
   f: number;
   /** floating tag above the train, e.g. "T-17 · Live" (omit for no tag) */
   label?: string;
+  /** set when the first (lead) coach is the women's compartment: the text of its tag, e.g. "Women" */
+  women?: string;
+  /** 3D view: a card beside the train, e.g. "Platform 1 · SB-0630" with "Leaves in / 0:14" rows (design "live 3") */
+  callout?: { title: string; rows: [string, string][] };
   /** standing at a station: the departure countdown shown in the tag */
   dwell?: {
     /** "0:14", already formatted */
@@ -35,6 +39,23 @@ export interface MapGate {
   lng: number;
 }
 
+/** Hint cards along the track around a station for one train (3D): entered, braking, stopped, left, full speed. */
+export interface MapHints {
+  stationId: string;
+  trainId: string;
+  dir: Direction;
+  items: {
+    /** metres from the station along the train's travel (negative = before it) */
+    off: number;
+    title: string;
+    /** pill style when there are no rows */
+    time?: string;
+    rows?: [string, string][];
+    /** already happened */
+    past?: boolean;
+  }[];
+}
+
 /** The rider's own position (blue dot + accuracy ring). */
 export interface MapUser {
   lat: number;
@@ -52,6 +73,10 @@ export interface GoogleMapViewProps {
   onTrainPress?(id: string): void;
   /** Gate pins (station page); tapping one reports its id. */
   gates?: MapGate[];
+  /** 3D: the train hint cards (design "model 2") */
+  hints?: MapHints | null;
+  /** label of the women's coach zone on the platform (3D), e.g. "Women" */
+  womenLabel?: string;
   selectedGate?: string;
   onGatePress?(id: string): void;
   /** Floating UI over the map (search, pills, FAB). */

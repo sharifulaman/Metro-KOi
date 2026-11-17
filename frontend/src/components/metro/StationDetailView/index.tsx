@@ -23,12 +23,12 @@ const blur = Platform.OS === 'web' ? ({ backdropFilter: 'blur(12px)' } as object
 
 /** Station detail (design ১৫): 3D map header, both directions' next trains, facts, journey / 3D buttons. */
 export function StationDetailView(p: StationDetailViewProps) {
-  const { c, size } = useTheme();
+  const { c } = useTheme();
   const insets = useSafeAreaInsets();
   const glass = { position: 'absolute' as const, top: 22 + insets.top, width: 46, height: 46, borderRadius: 23, alignItems: 'center' as const, justifyContent: 'center' as const, backgroundColor: c.glassMap, boxShadow: '0 4px 14px rgba(14,26,22,0.16)' };
   return (
     <View testID={p.testID} style={{ flex: 1, backgroundColor: c.bg }}>
-      <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom: size.tabBar + insets.bottom + 40 }}>
+      <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom: insets.bottom + 16 }}>
         <View style={{ height: 262, overflow: 'hidden' }}>
           {p.map ? <View style={{ position: 'absolute', left: 0, right: 0, top: 0, bottom: 0 }}>{p.map}</View> : <Image source={ART} resizeMode="stretch" style={{ position: 'absolute', left: 0, top: -70, width: '100%', height: 844 }} />}
           <Svg width="100%" height={70} pointerEvents="none" style={{ position: 'absolute', left: 0, right: 0, bottom: 0 }} preserveAspectRatio="none">
@@ -102,7 +102,7 @@ export function StationDetailView(p: StationDetailViewProps) {
           </Text>
 
           {p.dirs.map((d, di) => (
-            <View key={d.key} testID={'platform-' + d.key} style={{ marginTop: di === 0 ? 24 : 12, padding: 12, borderRadius: 22, backgroundColor: c.surface, borderWidth: 1, borderColor: c.outline }}>
+            <View key={d.key} testID={'platform-' + d.key} style={{ marginTop: di === 0 ? 12 : 8, padding: 12, borderRadius: 22, backgroundColor: c.surface, borderWidth: 1, borderColor: c.outline }}>
               <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 8, paddingHorizontal: 2 }}>
                 <Text size={15} lh={1.4} weight={700}>
                   {d.title}
@@ -128,7 +128,7 @@ export function StationDetailView(p: StationDetailViewProps) {
             </View>
           ))}
 
-          <View style={{ flexDirection: 'row', gap: 8, marginTop: 6 }}>
+          <View style={{ flexDirection: 'row', gap: 8, marginTop: 2 }}>
             {p.facts.map((f) => (
               <Pressable key={f.label} disabled={!f.onPress} onPress={f.onPress} accessibilityRole={f.onPress ? 'button' : undefined} style={{ flex: 1, gap: 2, paddingVertical: 10, paddingHorizontal: 12, borderRadius: 16, backgroundColor: f.active ? c.brandTint : c.surfaceAlt, borderWidth: f.active ? 1.5 : 0, borderColor: c.brand }}>
                 <Icon name={f.icon} size={19} color={c.brandSolid} strokeWidth={2.1} />
@@ -142,7 +142,7 @@ export function StationDetailView(p: StationDetailViewProps) {
             ))}
           </View>
 
-          <View style={{ flexDirection: 'row', gap: 10, marginTop: 4 }}>
+          <View style={{ flexDirection: 'row', gap: 10, marginTop: 0 }}>
             <View style={{ flex: 1.4 }}>
               <Button label={p.journeyLabel} icon="route" fullWidth height={52} onPress={p.onJourney} />
             </View>

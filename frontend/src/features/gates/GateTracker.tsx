@@ -147,9 +147,11 @@ export function GateTrackerPanel({ stationHint }: { stationHint?: string | null 
                 </View>
                 <View style={{ flex: 1 }}>
                   <Text weight={600}>{landmark(g)}</Text>
-                  <Text variant="label" tone="muted">
-                    {d != null ? t('gateTrack.away', { d: fmtDistance(d, lang) }) : t('gateTrack.needLocation')}
-                  </Text>
+                  {d != null ? (
+                    <Text variant="label" tone="muted">
+                      {fmtDistance(d, lang)}
+                    </Text>
+                  ) : null}
                 </View>
                 {g.gate === closest ? <Chip label={t('gates.nearest')} tone="brand" /> : null}
               </View>

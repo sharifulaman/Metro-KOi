@@ -127,7 +127,7 @@ export function JourneyOptionCard(p: JourneyOptionCardProps) {
         <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 8, marginTop: 12, paddingVertical: 8, paddingHorizontal: 12, borderRadius: 14, backgroundColor: c.surfaceAlt }}>
           <View style={{ flex: 1, flexDirection: 'row', alignItems: 'center', gap: 7 }}>
             <Icon name="train" size={16} strokeWidth={2.1} />
-            <Text size={13} lh={1.4} weight={600} numberOfLines={1}>
+            <Text size={13} lh={1.4} weight={600} numberOfLines={2}>
               {p.platformText}
             </Text>
           </View>
@@ -139,28 +139,18 @@ export function JourneyOptionCard(p: JourneyOptionCardProps) {
         </View>
       ) : null}
 
-      {p.action || p.share ? (
+      {p.action || p.extra ? (
         <View style={{ flexDirection: 'row', gap: 10, marginTop: 12 }}>
           {p.action ? (
             <View style={{ flex: 1 }}>
               <Button label={p.action.label} icon={p.action.icon} fullWidth height={50} onPress={p.action.onPress} />
             </View>
           ) : null}
-          {p.share ? (
-            <Pressable
-              accessibilityRole="button"
-              accessibilityLabel={p.share.label}
-              onPress={p.share.onPress}
-              style={{ width: 50, height: 50, borderRadius: 25, borderWidth: 1.5, borderColor: c.outline, backgroundColor: c.surface, alignItems: 'center', justifyContent: 'center' }}
-            >
-              <Icon name="share" size={20} strokeWidth={2.1} />
-            </Pressable>
+          {p.extra ? (
+            <View style={{ flex: 1 }}>
+              <Button label={p.extra.label} icon={p.extra.icon} variant="secondary" fullWidth height={50} onPress={p.extra.onPress} />
+            </View>
           ) : null}
-        </View>
-      ) : null}
-      {p.extra ? (
-        <View style={{ marginTop: 10 }}>
-          <Button label={p.extra.label} icon={p.extra.icon} variant="secondary" fullWidth height={50} onPress={p.extra.onPress} />
         </View>
       ) : null}
     </Pressable>

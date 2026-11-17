@@ -39,6 +39,19 @@ html,body,#m{margin:0;height:100%;width:100%;overflow:hidden;-webkit-tap-highlig
 .tr .car{width:24px;height:24px;border-radius:50%;box-sizing:border-box;border:2px solid var(--live);background:rgba(245,158,11,.16)}
 .tr.est .car{border:2px dashed var(--estimated);background:rgba(255,255,255,.4)}
 .tr.sel .car{width:36px;height:36px}
+.coach{display:none;position:absolute;left:50%;top:50%;width:15px;margin:-34px 0 0 -7.5px;flex-direction:column;gap:1px;pointer-events:none;will-change:transform}
+.coach i{display:block;height:17px;border-radius:3px;background:var(--dir);border:1.5px solid #fff;box-shadow:0 3px 5px rgba(14,26,22,.4)}
+.coach i:first-child{border-radius:8px 8px 3px 3px}
+.coach i:last-child{border-radius:3px 3px 6px 6px}
+.co{display:none;position:absolute;left:30px;bottom:6px;min-width:128px;padding:6px 11px 7px;border-radius:14px;background:#0B0F0E;border:2px solid #F2C230;color:#fff;box-shadow:0 4px 14px rgba(14,26,22,.4);font-size:11.5px;line-height:1.35;white-space:nowrap;pointer-events:none}
+.co b{display:flex;align-items:center;gap:6px;font-size:12.5px;font-weight:800}
+.co b u{width:7px;height:7px;border-radius:50%;background:#F59E0B;text-decoration:none}
+.co div{display:flex;justify-content:space-between;gap:14px;color:#d6dedb}
+.co div span:last-child{color:#fff;font-weight:800;font-variant-numeric:tabular-nums}
+.t3d .co{display:block}.t3d .tr.hasco .tag{display:none}
+.t3d .coach{display:flex}.t3d .tr .car{display:none}
+.t3d .tr.dw .coach i{box-shadow:0 0 0 2.5px var(--ring),0 3px 5px rgba(14,26,22,.4)}
+.t3d .tr.est .coach i{border-style:dashed}
 </style></head>
 <body><div id="m"></div><div id="err" hidden></div>
 <script>
@@ -81,6 +94,7 @@ window.__init=function(){
   var casing=new google.maps.Polyline({map:map,path:LINE,strokeWeight:10,strokeOpacity:1,zIndex:1});
   var line=new google.maps.Polyline({map:map,path:LINE,strokeWeight:5,strokeOpacity:1,zIndex:2});
   window.__line=[casing,line];
+  map.addListener('heading_changed',function(){Object.keys(trains).forEach(function(k){rot(trains[k]);});});
   map.addListener('zoom_changed',function(){
     var d=document.body;d.classList.add('nz');setTimeout(function(){d.classList.remove('nz');},450);
     d.classList.toggle('dots',map.getZoom()<13.2);
@@ -120,8 +134,13 @@ function trainHtml(t){
   if(t.label){
     tag='<div class="tag">'+(est?'':'<u></u>')+esc(t.label)+'</div>';
   }
-  return tag+'<div class="car"></div>';
+  var co='';
+  if(t.callout){
+    co='<div class="co"><b><u></u>'+esc(t.callout.title)+'</b>'+t.callout.rows.map(function(r){return '<div><span>'+esc(r[0])+'</span><span>'+esc(r[1])+'</span></div>';}).join('')+'</div>';
+  }
+  return tag+co+'<div class="car"></div><div class="coach"><i></i><i></i><i></i></div>';
 }
+function rot(o){var c=o.el.querySelector('.coach');if(c)c.style.transform='rotate('+(o.hdg-(map.getHeading()||0))+'deg)';}
 function esc(s){return String(s).replace(/[&<>"]/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c];});}
 
 function syncTrains(p){
@@ -135,7 +154,7 @@ function syncTrains(p){
       o=trains[t.id]={el:el,pin:new Pin(el,t,3),html:''};
     }
     var dw=t.timer!=null,est=t.state!=='LIVE';
-    var cls='pin tr'+(est?' est':'')+(dw?' dw':'')+(p.selectedTrain===t.id?' sel':'');
+    var cls='pin tr'+(est?' est':'')+(dw?' dw':'')+(t.callout?' hasco':'')+(p.selectedTrain===t.id?' sel':'');
     if(o.el.className!==cls)o.el.className=cls;
     var h=trainHtml(t);
     if(o.html!==h){o.html=h;o.el.innerHTML=h;}
@@ -143,6 +162,7 @@ function syncTrains(p){
     o.el.style.setProperty('--dir',t.dir==='SB'?p.theme.trainSB:p.theme.trainNB);
     o.el.style.setProperty('--ring',dw?p.theme.brand:p.theme.live);
     css(o.el,p.theme);
+    o.hdg=t.heading||0;rot(o);
     o.pin.move(t);
   });
   Object.keys(trains).forEach(function(id){if(!seen[id]){trains[id].pin.setMap(null);delete trains[id];}});
@@ -192,6 +212,7 @@ function syncRoute(p){
 function setTilt(v){
   if(v.tilt===tiltOn&&placed)return;
   tiltOn=v.tilt;
+  document.body.classList.toggle('t3d',!!v.tilt);
   map.setTilt(v.tilt?60:0);
   map.setHeading(v.tilt?v.heading:0);
 }

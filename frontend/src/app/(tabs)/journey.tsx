@@ -1,6 +1,5 @@
 import { useRouter } from 'expo-router';
 import { useState } from 'react';
-import { Share } from 'react-native';
 
 import { JourneyView, type JourneyBadge, type JourneyOptionCardProps } from '@/components/metro';
 import { ListRow, Sheet, Text } from '@/components/ui';
@@ -85,7 +84,7 @@ export default function JourneyScreen() {
   // waitSec is measured from the chosen leave time; show it from now
   const waitOf = (o: JourneyOption) => (demo ? o.waitSec : o.waitSec + laterMin * 60);
   // big times as in the design: "৫:৪৮" (Bangla drops the period word), "5:48 AM"
-  const clock = (sec: number) => (lang === 'bn' ? fmtClock(sec, lang).split(' ').slice(1).join(' ') : fmtClock(sec, lang));
+  const clock = (sec: number) => (lang === 'bn' ? fmtClock(sec, lang).split(' ').slice(1).join(' ') : fmtClock(sec, lang).split(' ')[0]);
   const badgeOf = (o: JourneyOption): JourneyBadge => (closed ? 'schedule' : o.source === 'live' ? 'live' : 'estimated');
   const badgeLabel = (b: JourneyBadge) => (b === 'live' ? t('common.live') : b === 'schedule' ? t('journey.scheduleBadge') : t('common.estimated'));
   const whenText = (o: JourneyOption) => {
@@ -100,11 +99,6 @@ export default function JourneyScreen() {
       pathname: '/journey-detail',
       params: { from: from ?? '', to: to ?? '', depart: String(o.departSec), train: o.trainId, wait: String(waitOf(o)), badge: badgeOf(o), tomorrow: closed ? '1' : '' },
     });
-
-  const shareEta = () => {
-    if (!best) return;
-    void Share.share({ message: `${name(from)} → ${name(to)}: ${t('journey.leaves', { time: fmtClock(best.departSec, lang) })}, ${t('journey.arrives', { time: fmtClock(best.arriveSec, lang), dur: fmtDuration(best.durationSec, lang) })}` });
-  };
 
   // starts the trip at once and comes back here with it running
   const startJourney = () => {
@@ -131,7 +125,6 @@ export default function JourneyScreen() {
           platformText: t('journey.platformShort', { n: fmtNum(best.direction === 'SB' ? 1 : 2, lang), dir: dirText(best) }),
           platformMeta: closed ? t('journey.byTimetable') : best.trainId,
           action: closed ? { label: t('journey.details'), icon: 'list', onPress: () => open(best) } : { label: t('journey.track'), icon: 'pin', onPress: () => router.push(`/train/${best.trainId}`) },
-          share: { label: t('journey.share'), onPress: shareEta },
           // start the trip: go live as a rider on this train and watch it on the Live map
           extra: closed ? undefined : { label: t('journey.start'), icon: 'train', onPress: startJourney },
         }

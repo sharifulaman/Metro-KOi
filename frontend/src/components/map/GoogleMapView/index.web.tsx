@@ -23,7 +23,7 @@ export function GoogleMapView(props: GoogleMapViewProps) {
   const frame = useRef<HTMLIFrameElement | null>(null);
   const reserved = (props.bottomInset ?? 0) + (props.reserveSheet ? win.height * layout.dockedSheet : 0);
 
-  const payload = buildPayload(props, c, dark, reserved);
+  const payload = { ...buildPayload(props, c, dark, reserved), lang };
   // 3D: our own city page (no Google Maps, no key needed); otherwise the Google map
   const city = payload.view.tilt;
   // the three.js scene needs its library from the CDN; offline it reports an error and the canvas page takes over
@@ -37,17 +37,18 @@ export function GoogleMapView(props: GoogleMapViewProps) {
   const post = () => frame.current?.contentWindow?.postMessage(message, '*');
   useEffect(post);
 
-  const handlers = useRef({ onStationPress, onTrainPress, onGatePress });
-  handlers.current = { onStationPress, onTrainPress, onGatePress };
+  const handlers = useRef({ onStationPress, onTrainPress, onGatePress, onMapStatus: props.onMapStatus });
+  handlers.current = { onStationPress, onTrainPress, onGatePress, onMapStatus: props.onMapStatus };
   useEffect(() => {
     const listen = (e: MessageEvent) => {
       if (e.source !== frame.current?.contentWindow || typeof e.data !== 'string') return;
       try {
-        const m = JSON.parse(e.data) as { type: string; id?: string; kind?: string };
+        const m = JSON.parse(e.data) as { type: string; id?: string; kind?: string; state?: string };
         if (m.type === 'error' && m.kind === 'engine') setEngineFailed(true);
         else if (m.type === 'station' && m.id) handlers.current.onStationPress?.(m.id);
         else if (m.type === 'train' && m.id) handlers.current.onTrainPress?.(m.id);
         else if (m.type === 'gate' && m.id) handlers.current.onGatePress?.(m.id);
+        else if (m.type === 'osm' && m.state) handlers.current.onMapStatus?.(m.state as 'loading' | 'ok' | 'fail');
       } catch {
         // not ours
       }

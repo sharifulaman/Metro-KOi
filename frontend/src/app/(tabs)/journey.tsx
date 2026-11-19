@@ -32,8 +32,11 @@ export default function JourneyScreen() {
   const rider = useRiderSession();
   const startRide = useStartRide();
   const demo = useSettings((s) => s.demo !== false);
-  const [from, setFrom] = useState<string | null>('farmgate');
-  const [to, setTo] = useState<string | null>('motijheel');
+  // the last From / To the rider set is saved and comes back next time
+  const from = useSettings((s) => s.tripFrom);
+  const to = useSettings((s) => s.tripTo);
+  const setFrom = useSettings((s) => s.setTripFrom);
+  const setTo = useSettings((s) => s.setTripTo);
   const [picking, setPicking] = useState<Field | null>(null);
   const [laterMin, setLaterMin] = useState(0);
   const [showLater, setShowLater] = useState(false);

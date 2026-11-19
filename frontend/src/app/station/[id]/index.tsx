@@ -1,13 +1,13 @@
 import { useLocalSearchParams, useRouter } from 'expo-router';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 
 import { EmptyState, StationDetailView } from '@/components/metro';
+import type { MapGate } from '@/components/map';
 import { Screen } from '@/components/ui';
 import { useStationGates } from '@/features/gates/useStationGates';
-import { useUserLocation } from '@/features/map/useUserLocation';
+import { useScreenLocation } from '@/features/map/useUserLocation';
 import { StationDemo } from '@/features/stations/StationDemo';
 import { StationMap } from '@/features/stations/StationMap';
-import { StationModel3D } from '@/features/stations/StationModel3D';
 import { useDepartures } from '@/features/stations/useDepartures';
 import { stationAltName, stationName, useStations } from '@/features/stations/useStations';
 import { useT } from '@/i18n';
@@ -26,7 +26,11 @@ function StationReal() {
   const toggleFavourite = useSettings((s) => s.toggleFavourite);
   const deps = useDepartures(id, 3);
   const { gates } = useStationGates(id);
-  const { user } = useUserLocation();
+  const { user, status, request } = useScreenLocation({ fast: true });
+  // "from you": ask for location once, then the distance follows the rider every second
+  useEffect(() => {
+    if (status === 'unknown') void request();
+  }, [status, request]);
   const [tilt, setTilt] = useState(false);
   const [gatesOn, setGatesOn] = useState(false);
   const [platformsOn, setPlatformsOn] = useState(false);
@@ -61,17 +65,11 @@ function StationReal() {
     return list.length > 0 ? list : [{ value: '—', caption: t('station.noService'), live: false }];
   };
 
-  // gates on the 3D model: lettered, each with its landmark
-  const modelGates = gates.map((g) => ({
-    letter: g.gate,
-    label: ((lang === 'bn' ? g.landmarkBn : g.landmarkEn) ?? '').split(' · ')[0],
-    corner: g.corner,
-    selected: gate === g.gate,
-    onPress: () => setGate(g.gate),
-  }));
+  // gates on the 3D scene: lettered pins on the station's gate kiosks, each with its landmark
+  const mapGates: MapGate[] = gates.flatMap((g) =>
+    g.lat != null && g.lng != null ? [{ id: `${g.stationId}:${g.gate}`, letter: g.gate, label: ((lang === 'bn' ? g.landmarkBn : g.landmarkEn) ?? '').split(' · ')[0], lat: g.lat, lng: g.lng }] : [],
+  );
 
-  // the train standing at (or about to reach) the station, for the tag on the 3D picture
-  const arriving = (['SB', 'NB'] as const).map((dir) => deps.byDir[dir][0]).find((d) => d && d.trainId && d.etaSec < 60);
   const away = user ? Math.round(haversineM(user.lat, user.lng, st.lat as number, st.lng as number)) : null;
   const threeD = tilt || gatesOn || platformsOn;
   const toggle3d = () => {
@@ -87,10 +85,14 @@ function StationReal() {
       testID="station-detail"
       map={
         threeD ? (
-          <StationModel3D
-            trainTag={arriving?.trainId ? `${arriving.trainId} · ${t('live.trainAtStationShort')}` : undefined}
-            gates={gatesOn ? modelGates : undefined}
-            signs={platformsOn ? { south: `${t('common.platform', { n: fmtNum(1, lang) })} · ${t('timetable.SB')}`, north: `${t('common.platform', { n: fmtNum(2, lang) })} · ${t('timetable.NB')}` } : undefined}
+          <StationMap
+            stationId={st.id}
+            tilt
+            zoom={16}
+            gates={gatesOn ? mapGates : undefined}
+            selectedGate={gate ? `${st.id}:${gate}` : undefined}
+            onGatePress={(gid) => setGate((cur) => (cur === gid.split(':')[1] ? undefined : gid.split(':')[1]))}
+            platformSigns={platformsOn ? { SB: `${t('common.platform', { n: fmtNum(1, lang) })} · ${t('timetable.SB')}`, NB: `${t('common.platform', { n: fmtNum(2, lang) })} · ${t('timetable.NB')}` } : undefined}
           />
         ) : (
           <StationMap stationId={st.id} />

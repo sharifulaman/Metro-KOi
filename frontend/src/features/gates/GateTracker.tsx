@@ -3,7 +3,7 @@ import { Pressable, ScrollView, View } from 'react-native';
 import Svg, { Circle, Path } from 'react-native-svg';
 
 import { Button, Card, Chip, InfoNote, Text } from '@/components/ui';
-import { useUserLocation } from '@/features/map/useUserLocation';
+import { useScreenLocation } from '@/features/map/useUserLocation';
 import { stationName, useStations } from '@/features/stations/useStations';
 import { useT } from '@/i18n';
 import { fmtDistance } from '@/lib/fmt';
@@ -22,7 +22,7 @@ export function GateTrackerPanel({ stationHint }: { stationHint?: string | null 
   const { t, lang } = useT();
   const { c } = useTheme();
   const { list, byId } = useStations();
-  const { user, status, request } = useUserLocation();
+  const { user, status, request } = useScreenLocation();
   const [manual, setManual] = useState<string | null>(null);
   const [picked, setPicked] = useState<Gate | null>(null);
 

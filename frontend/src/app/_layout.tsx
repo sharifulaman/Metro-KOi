@@ -5,7 +5,7 @@ import { useEffect, useState } from 'react';
 import { AppProviders, AppStack } from '@/components/AppShell';
 import { useLiveConnection } from '@/features/live/useLiveConnection';
 import { useNearStationAlert } from '@/features/notify/useNearStationAlert';
-import { initI18n } from '@/i18n';
+import { initI18n, useI18nLanguage } from '@/i18n';
 import { useClock } from '@/store/clock';
 import { useSettings } from '@/store/settings';
 import { useAppFonts } from '@/theme/fonts';
@@ -16,6 +16,7 @@ function Root() {
   const router = useRouter();
   const segments = useSegments();
   initI18n(lang);
+  useI18nLanguage(lang);
   useLiveConnection();
   useNearStationAlert();
 

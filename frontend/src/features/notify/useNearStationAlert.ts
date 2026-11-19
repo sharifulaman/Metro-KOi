@@ -22,7 +22,7 @@ const last: { id: string | null; at: number } = { id: null, at: 0 };
  */
 export function useNearStationAlert() {
   const enabled = useSettings((s) => s.notifications);
-  const { user } = useUserLocation();
+  const { user } = useUserLocation({ enabled, slow: true });
   const { list } = useStations();
   const { t, lang } = useT();
 

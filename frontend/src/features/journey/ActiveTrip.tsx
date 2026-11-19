@@ -5,7 +5,7 @@ import { SegmentProgress } from '@/components/metro';
 import { Button, Card, Chip, IconButton, Screen, Stack, StatusBadge, Text } from '@/components/ui';
 import { fractionOf, LOCAL_TRAIN_ID, trainSegment, useTrains } from '@/features/map/useTrains';
 import { snapToLine } from '@/lib/lineGeo';
-import { useUserLocation } from '@/features/map/useUserLocation';
+import { useScreenLocation } from '@/features/map/useUserLocation';
 import { useRiderSession } from '@/features/rider/useRiderSession';
 import { stationName, useStations } from '@/features/stations/useStations';
 import { useT } from '@/i18n';
@@ -23,7 +23,7 @@ export function ActiveTrip() {
   const { trains, model } = useTrains(500);
   const rider = useRiderSession();
   const connection = useLive((s) => s.connection);
-  const { user } = useUserLocation();
+  const { user } = useScreenLocation();
   const [view3d, setView3d] = useState(false);
   const session = rider.session;
   if (!session) return null;

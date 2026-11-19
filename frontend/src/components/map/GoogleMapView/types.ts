@@ -77,6 +77,12 @@ export interface GoogleMapViewProps {
   hints?: MapHints | null;
   /** label of the women's coach zone on the platform (3D), e.g. "Women" */
   womenLabel?: string;
+  /** 3D: mark the two platforms of the focused station (coloured edge + a label each) with these texts */
+  platformSigns?: { SB: string; NB: string };
+  /** 3D: draw the real map (OpenStreetMap buildings, streets, place names); false = the simple generated city. Default true. */
+  realMap?: boolean;
+  /** 3D: whether the real map data is loading / loaded / could not be fetched */
+  onMapStatus?(state: 'loading' | 'ok' | 'fail'): void;
   selectedGate?: string;
   onGatePress?(id: string): void;
   /** Floating UI over the map (search, pills, FAB). */

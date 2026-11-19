@@ -11,10 +11,14 @@ export interface MapPayload {
   dark: boolean;
   errorText: string;
   theme: Pick<Palette, 'bg' | 'surface' | 'ink' | 'inkMuted' | 'brand' | 'brandDeep' | 'onBrand' | 'live' | 'liveTint' | 'onLiveTint' | 'estimated' | 'trainSB' | 'trainNB' | 'mapGround' | 'mapRoad'>;
-  stations: { id: string; label: string; lat: number; lng: number; terminal: boolean }[];
+  stations: { id: string; label: string; lat: number; lng: number; terminal: boolean; bearing: number }[];
   trains: { id: string; dir: 'SB' | 'NB'; state: string; lat: number; lng: number; heading: number; label?: string; women?: string; callout?: { title: string; rows: [string, string][] }; timer?: string; progress?: number }[];
   hints: GoogleMapViewProps['hints'] | null;
   womenLabel: string | null;
+  platformSigns: { SB: string; NB: string } | null;
+  realMap: boolean;
+  /** app language: names on the 3D map (streets, landmarks) follow it */
+  lang?: string;
   gates: { id: string; letter: string; label: string; lat: number; lng: number }[];
   selectedGate?: string;
   user: { lat: number; lng: number; accuracy: number } | null;
@@ -82,7 +86,7 @@ export function buildPayload(p: GoogleMapViewProps, c: Palette, dark: boolean, r
     },
     stations: p.stations.map((s, i) => {
       const g = geoAt(s.f);
-      return { id: s.id, label: s.label, lat: g.lat, lng: g.lng, terminal: i === 0 || i === last };
+      return { id: s.id, label: s.label, lat: g.lat, lng: g.lng, terminal: i === 0 || i === last, bearing: Math.round(g.bearing) };
     }),
     trains: p.trains.map((t) => {
       const g = geoAt(t.f);
@@ -105,6 +109,8 @@ export function buildPayload(p: GoogleMapViewProps, c: Palette, dark: boolean, r
     selectedGate: p.selectedGate,
     hints: p.hints ?? null,
     womenLabel: p.womenLabel ?? null,
+    platformSigns: p.platformSigns ?? null,
+    realMap: p.realMap !== false,
     route,
     user: p.user ? { lat: p.user.lat, lng: p.user.lng, accuracy: p.user.accuracy ?? 0 } : null,
     selectedStation: p.selectedStation,

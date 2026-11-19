@@ -46,7 +46,7 @@ export function GoogleMapView(props: GoogleMapViewProps) {
   const [loaded, setLoaded] = useState(false);
   const reserved = (props.bottomInset ?? 0) + (props.reserveSheet ? win.height * layout.dockedSheet : 0);
 
-  const payload = buildPayload(props, c, dark, reserved);
+  const payload = { ...buildPayload(props, c, dark, reserved), lang };
   // 3D: our own city page (no Google Maps, no key needed); otherwise the Google map
   const city = payload.view.tilt;
   // the three.js scene needs its library from the CDN; offline it reports an error and the canvas page takes over
@@ -63,11 +63,12 @@ export function GoogleMapView(props: GoogleMapViewProps) {
 
   const onMessage = (e: WebViewMessageEvent) => {
     try {
-      const m = JSON.parse(e.nativeEvent.data) as { type: string; id?: string; kind?: string };
+      const m = JSON.parse(e.nativeEvent.data) as { type: string; id?: string; kind?: string; state?: string };
       if (m.type === 'error' && m.kind === 'engine') setEngineFailed(true);
       else if (m.type === 'station' && m.id) onStationPress?.(m.id);
       else if (m.type === 'train' && m.id) onTrainPress?.(m.id);
       else if (m.type === 'gate' && m.id) onGatePress?.(m.id);
+      else if (m.type === 'osm' && m.state) props.onMapStatus?.(m.state as 'loading' | 'ok' | 'fail');
     } catch {
       // not ours
     }

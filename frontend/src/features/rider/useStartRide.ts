@@ -1,8 +1,7 @@
 import { useRouter } from 'expo-router';
 import { useCallback } from 'react';
-import { Alert } from 'react-native';
-
 import { useT } from '@/i18n';
+import { openAppSettings, showAlert } from '@/lib/alert';
 import { useRider } from '@/store/rider';
 
 import { useRiderSession, type RideOptions } from './useRiderSession';
@@ -24,7 +23,12 @@ export function useStartRide() {
         return;
       }
       const st = useRider.getState();
-      Alert.alert(st.permissionDenied ? t('rider.denied') : t('rider.tooFar'));
+      showAlert(
+        t('rider.cantLive'),
+        st.permissionDenied ? t('rider.denied') : st.tooFar ? t('rider.tooFar') : t('rider.refused'),
+        t('rider.ok'),
+        st.permissionDenied ? { label: t('rider.openSettings'), onPress: openAppSettings } : undefined,
+      );
     },
     [rider, router, t],
   );

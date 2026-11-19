@@ -1,10 +1,11 @@
 import { useRouter } from 'expo-router';
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 
 import { StationsView, type TimelineStation } from '@/components/metro';
 import { DEMO_NEAREST, DEMO_STATION_ETAS, DEMO_TRAIN } from '@/data/demoStations';
 import { useNow } from '@/features/common/useNow';
-import { trainSegment, useTrains } from '@/features/map/useTrains';
+import { nearestStation, useScreenLocation } from '@/features/map/useUserLocation';
+import { fractionOf, trainSegment, useTrains } from '@/features/map/useTrains';
 import { stationAltName, stationName, useStations } from '@/features/stations/useStations';
 import { useRunModel, useTimetable } from '@/features/timetable/useTimetable';
 import { useT } from '@/i18n';
@@ -73,7 +74,14 @@ export default function StationsScreen() {
     return { afterIndex: seg.fromIdx === seg.toIdx ? seg.fromIdx : lo, progress, live: tr.state !== 'ESTIMATED' };
   }, [demo, trains, dir, model]);
 
-  const focus = demo ? byId[DEMO_NEAREST.stationId] : byId[favourites[0] ?? config.defaultStationId];
+  // nearest station by the rider's location (asks once); the saved favourite / default station only when there is no fix
+  const { user, status, request } = useScreenLocation();
+  useEffect(() => {
+    if (!demo && status === 'unknown') void request();
+  }, [demo, status, request]);
+  const nearest = !demo && user ? nearestStation(user, model.chainage.map((m) => fractionOf(model, m))) : null;
+  const nearestId = nearest ? model.stationIds[nearest.index] : undefined;
+  const focus = demo ? byId[DEMO_NEAREST.stationId] : byId[nearestId ?? favourites[0] ?? config.defaultStationId];
   const focusIndex = focus ? list.findIndex((s) => s.id === focus.id) : -1;
   const focusEta = focus && !closedUntil ? nextAt(focus.id, focusIndex) : undefined;
   const firstTrainLabel = closedUntil ? fmtClock(dhakaClock(closedUntil).sec, lang) : '';
@@ -85,7 +93,11 @@ export default function StationsScreen() {
           mode: 'nearest' as const,
           caption: t('stations.nearestTitle'),
           title: stationName(focus, lang),
-          subtitle: demo ? t('stations.walkInfo', { m: fmtNum(DEMO_NEAREST.walkMeters, lang), min: fmtNum(DEMO_NEAREST.walkMinutes, lang) }) : stationAltName(focus, lang),
+          subtitle: demo
+            ? t('stations.walkInfo', { m: fmtNum(DEMO_NEAREST.walkMeters, lang), min: fmtNum(DEMO_NEAREST.walkMinutes, lang) })
+            : nearest
+              ? t('stations.walkInfo', { m: fmtNum(Math.round(nearest.metres), lang), min: fmtNum(Math.max(1, Math.ceil(nearest.metres / 80)), lang) })
+              : stationAltName(focus, lang),
           eta: focusEta ? { label: demo ? t('common.minutes', { n: fmtNum(DEMO_NEAREST.etaMin, lang) }) : focusEta.label, live: demo ? true : focusEta.kind === 'live', badge: demo || focusEta.kind === 'live' ? t('common.live') : t('common.estimated') } : undefined,
           onPress: () => router.push('/station/' + focus.id),
         }

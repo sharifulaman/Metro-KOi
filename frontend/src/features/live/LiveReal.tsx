@@ -1,12 +1,13 @@
-import { useRouter } from 'expo-router';
-import { useEffect, useState } from 'react';
+import { useFocusEffect, useRouter } from 'expo-router';
+import { useCallback, useEffect, useState } from 'react';
+import { BackHandler } from 'react-native';
 
 import { GoogleMapView, ZOOM_NEAR, type MapGate, type MapHints, type MapTrain } from '@/components/map';
 import { BrandBar, NextTrainRow, RideBanner, SegmentProgress, Speedometer, StationHeader } from '@/components/metro';
 import { Button, Chip, GlassPill, IconButton, InfoNote, Screen, Sheet, Stack, StatusBadge, Text } from '@/components/ui';
 import { useStationGates } from '@/features/gates/useStationGates';
 import { usePlayback } from '@/features/map/usePlayback';
-import { nearestStation, useUserLocation } from '@/features/map/useUserLocation';
+import { nearestStation, useScreenLocation } from '@/features/map/useUserLocation';
 import { fractionOf, trainSegment, useTrains } from '@/features/map/useTrains';
 import { useRiderSession } from '@/features/rider/useRiderSession';
 import { useStartRide } from '@/features/rider/useStartRide';
@@ -39,10 +40,16 @@ export function LiveReal() {
   const [followNext, setFollowNext] = useState(false);
   const [recenter, setRecenter] = useState(0);
   const [view3d, setView3d] = useState(false);
+  // 3D: the real map (OpenStreetMap buildings, streets, place names) can be switched off; the choice is remembered
+  const realMap = useSettings((s) => s.realMap3d);
+  const setRealMap = useSettings((s) => s.setRealMap3d);
+  const [mapStatus, setMapStatus] = useState<'loading' | 'ok' | 'fail' | undefined>();
   const [selGate, setSelGate] = useState<string | undefined>();
+  /** show only trains reported live by riders (hide the timetable's estimated ones) */
+  const [liveOnly, setLiveOnly] = useState(false);
   const [userFocus, setUserFocus] = useState<{ lat: number; lng: number } | null>(null);
   const [locNote, setLocNote] = useState(false);
-  const { user, request: requestLocation } = useUserLocation();
+  const { user, request: requestLocation } = useScreenLocation({ fast: true });
 
   // standing at / near a station: the sheet follows that station by itself and updates as the rider moves
   const nearest = user ? nearestStation(user, model.chainage.map((m) => fractionOf(model, m))) : null;
@@ -53,7 +60,9 @@ export function LiveReal() {
     if (nearbyId) setSelStation(undefined);
   }
 
-  const focusId = selStation ?? nearbyId ?? favourites[0] ?? config.defaultStationId;
+  // the station the sheet shows: one the rider picked, else the nearest to their location, else the saved favourite / default
+  const nearestId = nearest ? model.stationIds[nearest.index] : undefined;
+  const focusId = selStation ?? nearbyId ?? nearestId ?? favourites[0] ?? config.defaultStationId;
   const focus = byId[focusId];
   const focusIdx = model.stationIds.indexOf(focusId);
   const deps = useDepartures(focusId, 1);
@@ -73,7 +82,8 @@ export function LiveReal() {
   const platformNo = (dir: Direction, idx: number) => (idx === lastIdx ? 1 : dir === 'SB' ? 1 : 2);
 
   // every train carries a tag; a train standing at a station says so
-  const mapTrains: MapTrain[] = trains.map((tr) => {
+  const shown = liveOnly ? trains.filter((tr) => tr.state !== 'ESTIMATED') : trains;
+  const mapTrains: MapTrain[] = shown.map((tr) => {
     const base = { id: tr.id, dir: tr.dir, state: tr.state, f: fractionOf(model, tr.s), women: t('live.womenCoach') };
     if (tr.dwellLeftSec != null) {
       const sg = trainSegment(model, tr);
@@ -156,6 +166,18 @@ export function LiveReal() {
     setUserFocus(fix ? { lat: fix.lat, lng: fix.lng } : null);
     setRecenter((n) => n + 1);
   };
+  /** locate is a switch: a second tap turns it off and goes back to the normal view */
+  const stopLocate = () => {
+    setUserFocus(null);
+    setLocNote(false);
+    setRecenter((n) => n + 1);
+  };
+  // while it is on, the map follows the rider as their position updates
+  useEffect(() => {
+    if (userFocus && user) setUserFocus({ lat: user.lat, lng: user.lng });
+    // only a new position should move the view
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [user]);
 
   // "I'm on this train": share my position so others see it live (only possible near the line)
   const goLive = (tr: Train) => void startRide({ direction: tr.dir });
@@ -166,9 +188,9 @@ export function LiveReal() {
   const iTo = sess?.toStationId ? model.stationIds.indexOf(sess.toStationId) : -1;
   const liveRoute = sess && iFrom >= 0 && iTo >= 0 ? { from: fractionOf(model, model.chainage[iFrom]), to: fractionOf(model, model.chainage[iTo]) } : null;
 
-  // gate pins (A–D, with their landmark) for the station the map is framing: the one a followed train is at, else the focus station
+  // 3D only: gate pins A-D with their landmark names, for the station the camera is on (the one a followed train is at, else the focus station)
   const gateStationId = (() => {
-    if (!(near || view3d)) return undefined;
+    if (!view3d) return undefined;
     const at = train ? train.s : model.chainage[focusIdx];
     if (at == null) return undefined;
     let best = 0;
@@ -214,10 +236,28 @@ export function LiveReal() {
     };
   })();
 
+  // back (button or swipe gesture) steps out one layer at a time: train detail -> 3D -> picked station; only then does it leave the screen
+  const canStepBack = !!selGate || !!selTrain || view3d || !!selStation;
+  useFocusEffect(
+    useCallback(() => {
+      if (!canStepBack) return undefined;
+      const sub = BackHandler.addEventListener('hardwareBackPress', () => {
+        if (selGate) setSelGate(undefined);
+        else if (selTrain) {
+          setSelTrain(undefined);
+          setFollowNext(false);
+        } else if (view3d) setView3d(false);
+        else setSelStation(undefined);
+        return true;
+      });
+      return () => sub.remove();
+    }, [canStepBack, selGate, selTrain, view3d, selStation]),
+  );
+
   const closedUntil = playback.closedUntil;
 
   // line closed: a train waits at each terminal for its first run (both on platform 1 at their terminus)
-  const parked: MapTrain[] = closedUntil
+  const parked: MapTrain[] = closedUntil && !liveOnly
     ? (['SB', 'NB'] as const).map((dir) => {
         const c = dhakaClock(closedUntil);
         const hh = String(Math.floor(c.sec / 3600)).padStart(2, '0');
@@ -236,7 +276,6 @@ export function LiveReal() {
         } satisfies MapTrain;
       })
     : [];
-  const zoomLevel = near ? 15 : 12;
 
   return (
     <Screen bleed>
@@ -249,11 +288,13 @@ export function LiveReal() {
         focus={mapFocus}
         focusPoint={userFocus ?? undefined}
         route={liveRoute}
-        gates={mapGates}
         hints={hints}
-        womenLabel={t('live.womenCoach')}
+        gates={view3d ? mapGates : undefined}
+        realMap={realMap}
+        onMapStatus={setMapStatus}
         selectedGate={selGate}
         onGatePress={(id) => setSelGate((cur) => (cur === id ? undefined : id))}
+        womenLabel={t('live.womenCoach')}
         user={user}
         tilt={view3d}
         recenterKey={recenter}
@@ -279,7 +320,8 @@ export function LiveReal() {
           <Stack direction="row" gap={2} justify="between" align="start">
             <Stack gap={2}>
               <Stack direction="row" gap={2} align="center">
-                <GlassPill size="sm" icon="train" label={t('live.trainsCount', { count: trains.length })} testID="counts" />
+                <GlassPill size="sm" icon="train" label={t('live.trainsCount', { count: shown.length })} testID="counts" />
+                <GlassPill size="sm" dot={liveOnly ? undefined : 'live'} label={t('common.live')} active={liveOnly} onPress={() => setLiveOnly((v) => !v)} accessibilityLabel={t('common.live')} testID="live-only" />
               </Stack>
               {nearest && !train && collapsed ? <GlassPill size="sm" icon="locate" label={t('live.youAre', { m: fmtDistance(nearest.metres, lang), name: nearestName })} testID="near-you" /> : null}
             </Stack>
@@ -296,11 +338,15 @@ export function LiveReal() {
                   }
                   setView3d((v) => !v);
                 }} testID="open-3d" />
-              <IconButton icon="locate" size="sm" elevated active={!!userFocus} accessibilityLabel={t('live.locate')} onPress={() => void locate()} testID="locate" />
+              {view3d ? (
+                <IconButton icon="map" size="sm" elevated active={realMap} accessibilityLabel={t(realMap ? 'live.realMapOff' : 'live.realMapOn')} onPress={() => setRealMap(!realMap)} testID="real-map" />
+              ) : null}
+              <IconButton icon="locate" size="sm" elevated active={!!userFocus} accessibilityLabel={t('live.locate')} onPress={() => (userFocus ? stopLocate() : void locate())} testID="locate" />
               <IconButton icon={near ? 'zoomOut' : 'zoomIn'} size="sm" elevated accessibilityLabel={t(near ? 'live.zoomOut' : 'live.zoomIn')} onPress={() => setNear((v) => !v)} testID="zoom" />
             </Stack>
           </Stack>
           {locNote ? <InfoNote icon="gpsOff" tone="danger" text={t('live.locationOff')} /> : null}
+          {view3d && realMap && mapStatus === 'fail' ? <InfoNote icon="map" tone="danger" text={t('live.mapDataFail')} /> : null}
           {geometry === 'TO_FETCH' ? <InfoNote icon="map" text={t('live.schematicNote')} /> : null}
         </Stack>
 
@@ -323,7 +369,6 @@ export function LiveReal() {
             ) : (
               <Stack />
             )}
-            {collapsed ? <GlassPill size="sm" icon="layers" label={t('live.zoomBadge', { z: fmtNum(zoomLevel, lang), what: near ? t('live.zoomCity') : t('live.zoomWhole') })} /> : null}
           </Stack>
           <Sheet docked withTabBar collapsed={collapsed} onToggle={() => setCollapsed((v) => !v)} maxHeight={0.5} peek={null}>
             {train && seg ? (
@@ -345,7 +390,8 @@ export function LiveReal() {
                     </Text>
                     <StatusBadge kind={train.dwellLeftSec != null ? 'stop' : train.state === 'ESTIMATED' ? 'estimated' : 'live'} />
                   </Stack>
-                  <Speedometer value={trainKmh(train)} unit={t('live.kmh')} valueLabel={fmtNum(Math.round(trainKmh(train)), lang)} size={112} testID="speedometer" />
+                  {/* the speed comes from a rider's phone: show it only while someone is live on this train, never for a timetable estimate */}
+                  {train.state === 'LIVE' ? <Speedometer value={trainKmh(train)} unit={t('live.kmh')} valueLabel={fmtNum(Math.round(trainKmh(train)), lang)} size={112} testID="speedometer" /> : null}
                 </Stack>
                 <SegmentProgress
                   fromLabel={nameAt(seg.fromIdx)}

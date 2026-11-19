@@ -1,5 +1,8 @@
 import { LINE_PATH } from '@/lib/lineGeo';
 
+import { STATION_SIZE_M, STATION_SPRITE } from './stationSprite';
+import { TRAIN_SPRITE } from './trainSprite';
+
 /**
  * The HTML page that hosts Google Maps (Maps JavaScript API). It is shown in a
  * WebView on phones and an iframe on the web, and is driven through one
@@ -33,25 +36,26 @@ html,body,#m{margin:0;height:100%;width:100%;overflow:hidden;-webkit-tap-highlig
 .gt.sel .gn{background:var(--brandDeep);color:#fff}
 .me{width:18px;height:18px;border-radius:50%;background:#1A73E8;border:3px solid #fff;box-sizing:border-box;box-shadow:0 0 0 1px rgba(14,26,22,.18),0 2px 8px rgba(14,26,22,.4)}
 .tr{display:flex;flex-direction:column;align-items:center}
-.tr .tag{position:absolute;bottom:28px;display:flex;align-items:center;gap:6px;padding:3px 10px;border-radius:999px;background:var(--ink);border:1.5px solid var(--live);color:var(--surface);font-size:11.5px;font-weight:700;white-space:nowrap}
+.tr .tag{position:absolute;bottom:38px;display:flex;align-items:center;gap:6px;padding:3px 10px;border-radius:999px;background:var(--ink);border:1.5px solid var(--live);color:var(--surface);font-size:11.5px;font-weight:700;white-space:nowrap}
 .tr .tag u{display:inline-block;width:7px;height:7px;border-radius:50%;background:var(--live);text-decoration:none}
 .tr.est .tag{background:var(--surface);border:1.5px dashed var(--estimated);color:var(--inkMuted)}
 .tr .car{width:24px;height:24px;border-radius:50%;box-sizing:border-box;border:2px solid var(--live);background:rgba(245,158,11,.16)}
 .tr.est .car{border:2px dashed var(--estimated);background:rgba(255,255,255,.4)}
 .tr.sel .car{width:36px;height:36px}
-.coach{display:none;position:absolute;left:50%;top:50%;width:15px;margin:-34px 0 0 -7.5px;flex-direction:column;gap:1px;pointer-events:none;will-change:transform}
-.coach i{display:block;height:17px;border-radius:3px;background:var(--dir);border:1.5px solid #fff;box-shadow:0 3px 5px rgba(14,26,22,.4)}
-.coach i:first-child{border-radius:8px 8px 3px 3px}
-.coach i:last-child{border-radius:3px 3px 6px 6px}
+.coach{display:block;position:absolute;left:50%;top:50%;width:13px;height:70px;margin:-35px 0 0 -6.5px;background:url(${TRAIN_SPRITE}) center/100% 100% no-repeat;pointer-events:none;will-change:transform;filter:drop-shadow(0 0 1px rgba(11,26,21,.9)) drop-shadow(0 2px 3px rgba(14,26,22,.4))}
+.coach::before{content:'';position:absolute;left:50%;top:-8px;margin-left:-5px;border:5px solid transparent;border-top:0;border-bottom:8px solid var(--ring)}
+.tr .car{display:none}
+.stmod{position:absolute;left:50%;top:50%;width:calc(var(--ms,0)*${STATION_SIZE_M.w}px);height:calc(var(--ms,0)*${STATION_SIZE_M.l}px);margin:calc(var(--ms,0)*-${STATION_SIZE_M.l / 2}px) 0 0 calc(var(--ms,0)*-${STATION_SIZE_M.w / 2}px);background:url(${STATION_SPRITE}) center/100% 100% no-repeat;pointer-events:none;will-change:transform;filter:drop-shadow(0 1px 2px rgba(14,26,22,.35))}
+.nomod .stmod{display:none}
+.dots .coach{width:7px;height:38px;margin:-19px 0 0 -3.5px}.dots .coach::before{top:-6px;margin-left:-4px;border-width:4px;border-top:0;border-bottom-width:6px}
+.tr.dw .coach,.tr.sel .coach{filter:drop-shadow(0 0 1px rgba(11,26,21,.9)) drop-shadow(0 0 4px var(--ring)) drop-shadow(0 0 4px var(--ring))}
+.tr.est .coach{opacity:.78}
 .co{display:none;position:absolute;left:30px;bottom:6px;min-width:128px;padding:6px 11px 7px;border-radius:14px;background:#0B0F0E;border:2px solid #F2C230;color:#fff;box-shadow:0 4px 14px rgba(14,26,22,.4);font-size:11.5px;line-height:1.35;white-space:nowrap;pointer-events:none}
 .co b{display:flex;align-items:center;gap:6px;font-size:12.5px;font-weight:800}
 .co b u{width:7px;height:7px;border-radius:50%;background:#F59E0B;text-decoration:none}
 .co div{display:flex;justify-content:space-between;gap:14px;color:#d6dedb}
 .co div span:last-child{color:#fff;font-weight:800;font-variant-numeric:tabular-nums}
 .t3d .co{display:block}.t3d .tr.hasco .tag{display:none}
-.t3d .coach{display:flex}.t3d .tr .car{display:none}
-.t3d .tr.dw .coach i{box-shadow:0 0 0 2.5px var(--ring),0 3px 5px rgba(14,26,22,.4)}
-.t3d .tr.est .coach i{border-style:dashed}
 </style></head>
 <body><div id="m"></div><div id="err" hidden></div>
 <script>
@@ -94,8 +98,9 @@ window.__init=function(){
   var casing=new google.maps.Polyline({map:map,path:LINE,strokeWeight:10,strokeOpacity:1,zIndex:1});
   var line=new google.maps.Polyline({map:map,path:LINE,strokeWeight:5,strokeOpacity:1,zIndex:2});
   window.__line=[casing,line];
-  map.addListener('heading_changed',function(){Object.keys(trains).forEach(function(k){rot(trains[k]);});});
+  map.addListener('heading_changed',function(){Object.keys(trains).forEach(function(k){rot(trains[k]);});Object.keys(stations).forEach(function(k){rotSt(stations[k]);});});
   map.addListener('zoom_changed',function(){
+    updMod();
     var d=document.body;d.classList.add('nz');setTimeout(function(){d.classList.remove('nz');},450);
     d.classList.toggle('dots',map.getZoom()<13.2);
   });
@@ -115,13 +120,13 @@ function syncStations(p){
     seen[s.id]=1;
     var o=stations[s.id];
     if(!o){
-      var el=document.createElement('div');el.className='pin';el.innerHTML='<div class="st"><i><svg viewBox="0 0 24 24"><path d="M7 3h10a3 3 0 0 1 3 3v9a3 3 0 0 1-3 3H7a3 3 0 0 1-3-3V6a3 3 0 0 1 3-3Zm0 3v5h10V6H7Zm1 9a1.5 1.5 0 1 0 0 .1Zm8 0a1.5 1.5 0 1 0 0 .1ZM8 19l-2 3h2.4l1.2-2Zm8 0-1.6 1 1.2 2H18Z"/></svg></i><b></b></div>';
+      var el=document.createElement('div');el.className='pin';el.innerHTML='<div class="stmod"></div><div class="st"><i><svg viewBox="0 0 24 24"><path d="M7 3h10a3 3 0 0 1 3 3v9a3 3 0 0 1-3 3H7a3 3 0 0 1-3-3V6a3 3 0 0 1 3-3Zm0 3v5h10V6H7Zm1 9a1.5 1.5 0 1 0 0 .1Zm8 0a1.5 1.5 0 1 0 0 .1ZM8 19l-2 3h2.4l1.2-2Zm8 0-1.6 1 1.2 2H18Z"/></svg></i><b></b></div>';
       el.addEventListener('click',function(ev){ev.stopPropagation();send({type:'station',id:s.id});});
       o=stations[s.id]={el:el,pin:new Pin(el,s,1)};
     }
     o.el.querySelector('b').textContent=s.label;
-    var box=o.el.firstChild;
-    box.className='st'+(s.terminal?' term':'')+(p.selectedStation===s.id?' sel':'');
+    var box=o.el.querySelector('.st');o.bearing=s.bearing||0;rotSt(o);
+    box.className='st'+(s.terminal?' term':'')+(p.selectedStation===s.id?' sel':'');placeSt(o);
     o.el.style.zIndex=p.selectedStation===s.id?4:1;
     css(o.el,p.theme);
   });
@@ -138,8 +143,20 @@ function trainHtml(t){
   if(t.callout){
     co='<div class="co"><b><u></u>'+esc(t.callout.title)+'</b>'+t.callout.rows.map(function(r){return '<div><span>'+esc(r[0])+'</span><span>'+esc(r[1])+'</span></div>';}).join('')+'</div>';
   }
-  return tag+co+'<div class="car"></div><div class="coach"><i></i><i></i><i></i></div>';
+  return tag+co+'<div class="car"></div><div class="coach"></div>';
 }
+function rotSt(o){var m=o.el.querySelector('.stmod');if(m)m.style.transform='rotate('+((o.bearing||0)-(map.getHeading()||0))+'deg)';placeSt(o);}
+var MS=0;
+/* while the station model is drawn, the name pill moves off it: sideways from the track (towards the top of the screen), far enough that the model's width and the pill's own size clear */
+function placeSt(o){
+  var box=o.el.querySelector('.st');if(!box)return;
+  if(document.body.classList.contains('nomod')||!MS){box.style.transform='';return;}
+  var a=((o.bearing||0)-(map.getHeading()||0))*Math.PI/180,nx=Math.cos(a),ny=Math.sin(a);
+  if(ny>0.001||(Math.abs(ny)<=0.001&&nx<0)){nx=-nx;ny=-ny;}
+  var hw=(box.offsetWidth||90)/2,hh=(box.offsetHeight||26)/2,d=26*MS+Math.abs(nx)*hw+Math.abs(ny)*hh+6;
+  box.style.transform='translate('+(nx*d).toFixed(1)+'px,'+(ny*d).toFixed(1)+'px)';
+}
+function updMod(){var z=map.getZoom(),mpp=156543.03*Math.cos(23.8*Math.PI/180)/Math.pow(2,z);MS=1/mpp;document.body.style.setProperty('--ms',String(MS));document.body.classList.toggle('nomod',z<14.2);Object.keys(stations).forEach(function(k){placeSt(stations[k]);});}
 function rot(o){var c=o.el.querySelector('.coach');if(c)c.style.transform='rotate('+(o.hdg-(map.getHeading()||0))+'deg)';}
 function esc(s){return String(s).replace(/[&<>"]/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c];});}
 
@@ -179,7 +196,7 @@ function syncGates(p){
       el.addEventListener('click',function(ev){ev.stopPropagation();send({type:'gate',id:g.id});});
       o=gatePins[g.id]={el:el,pin:new Pin(el,g,7),html:''};
     }
-    var h='<div class="gt'+(p.selectedGate===g.id?' sel':'')+'"><div class="gl">'+esc(g.letter)+'</div><div class="gn">'+esc(g.label)+'</div></div>';
+    var h='<div class="gt'+(p.selectedGate===g.id?' sel':'')+'"><div class="gl">'+esc(g.letter)+'</div>'+(g.label?'<div class="gn">'+esc(g.label)+'</div>':'')+'</div>';
     if(o.html!==h){o.html=h;o.el.innerHTML=h;}
     o.el.style.zIndex=p.selectedGate===g.id?9:7;
     css(o.el,p.theme);
@@ -248,6 +265,7 @@ function apply(p){
   window.__line[0].setOptions({strokeColor:p.theme.surface});
   window.__line[1].setOptions({strokeColor:p.theme.brand});
   document.body.classList.toggle('dots',map.getZoom()<13.2);
+  updMod();
   syncRoute(p);
   syncStations(p);
   syncTrains(p);

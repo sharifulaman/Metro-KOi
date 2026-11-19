@@ -7,6 +7,8 @@ export interface GlassPillProps {
   icon?: IconName;
   /** 32px (default) or the smaller 28px badge */
   size?: 'md' | 'sm';
+  /** toggle look: filled brand colour (a filter that is on) */
+  active?: boolean;
   onPress?: () => void;
   testID?: string;
   accessibilityLabel?: string;

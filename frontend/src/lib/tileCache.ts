@@ -43,3 +43,8 @@ export function putTile(key: string, data: string): void {
     // storage full or unavailable: the map still works, it just is not saved
   }
 }
+
+/** How many map tiles are saved on this phone. */
+export function tileCount(): number {
+  return readIndex().length;
+}

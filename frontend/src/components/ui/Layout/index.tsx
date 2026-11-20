@@ -17,7 +17,7 @@ export function Spacer({ size = 4, flex }: SpacerProps) {
 }
 
 /** Safe area + app background (spec §9.4 `Screen`). */
-export function Screen({ children, scroll, bleed, gap = 4, withTabBar, testID }: ScreenProps) {
+export function Screen({ children, scroll, fill, bleed, gap = 4, withTabBar, testID }: ScreenProps) {
   const { c, space, size } = useTheme();
   const insets = useSafeAreaInsets();
   const { gutter } = useResponsive();
@@ -33,7 +33,7 @@ export function Screen({ children, scroll, bleed, gap = 4, withTabBar, testID }:
   return (
     <View testID={testID} style={{ flex: 1, backgroundColor: c.bg }}>
       {scroll ? (
-        <ScrollView contentContainerStyle={pad} keyboardShouldPersistTaps="handled">
+        <ScrollView contentContainerStyle={fill ? { ...pad, flexGrow: 1 } : pad} keyboardShouldPersistTaps="handled">
           {children}
         </ScrollView>
       ) : (

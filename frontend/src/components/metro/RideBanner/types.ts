@@ -6,5 +6,7 @@ export interface RideBannerProps {
   onStop(): void;
   stopLabel: string;
   onPress?: () => void;
+  /** true (default) = position is being shared: green banner; false = checking / offline: ash-grey banner */
+  live?: boolean;
   testID?: string;
 }

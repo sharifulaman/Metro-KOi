@@ -52,7 +52,7 @@ export function ActiveTrip() {
   const src = mine?.state === 'ESTIMATED' ? 'schedule' : 'live';
 
   return (
-    <Screen scroll gap={4} withTabBar>
+    <Screen scroll fill gap={4} withTabBar>
       <Stack direction="row" justify="between" align="center">
         <Stack>
           <Text variant="display">{t('trip.title')}</Text>
@@ -64,17 +64,16 @@ export function ActiveTrip() {
                 : ''}
           </Text>
         </Stack>
-        <Chip label={rider.sharing ? t('rider.sharing') : connection !== 'live' ? t('trip.local') : t('rider.waiting')} tone="brand" icon="train" />
+        <Chip label={rider.sharing ? t('rider.sharing') : connection !== 'live' ? t('trip.local') : t('rider.waiting')} tone={rider.sharing ? 'brand' : 'neutral'} icon="train" />
       </Stack>
 
-      <Stack>
+      <Stack flex minH={280}>
         <GoogleMapView
-          height={300}
           stations={list.map((s, i) => ({ id: s.id, label: stationName(s, lang), f: fractionOf(model, model.chainage[i]) }))}
           trains={trains.map((x) => ({ id: x.id, dir: x.dir, state: x.state, f: fractionOf(model, x.s), label: x.id === mine?.id || x.id === LOCAL_TRAIN_ID ? x.id : undefined }))}
           selectedTrain={mine?.id}
           route={route}
-          user={user}
+          // no blue dot while live: the rider is the "YOU" train on the map
           // 3D: tilted street view of the stretch you are on, stations and the track ahead drawn
           zoom={view3d ? ZOOM_NEAR : 1}
           focus={userF ?? undefined}

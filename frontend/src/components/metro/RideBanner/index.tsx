@@ -3,13 +3,12 @@ import { Pressable, View } from 'react-native';
 import { useTheme } from '@/theme/useTheme';
 
 import { Icon } from '../../ui/Icon';
-import { LiveDot } from '../../ui/StatusBadge';
 import { Text } from '../../ui/Text';
 
 import type { RideBannerProps } from './types';
 
-/** Persistent "Sharing location" indicator with one-tap stop (spec §8). */
-export function RideBanner({ title, subtitle, onStop, stopLabel, onPress, testID }: RideBannerProps) {
+/** Persistent "Sharing location" indicator with one-tap stop (spec §8). Green while the position is really being shared, ash-grey while it is not (checking, offline). */
+export function RideBanner({ title, subtitle, onStop, stopLabel, onPress, live = true, testID }: RideBannerProps) {
   const { c, space, radius, shadow } = useTheme();
   return (
     <Pressable
@@ -17,9 +16,9 @@ export function RideBanner({ title, subtitle, onStop, stopLabel, onPress, testID
       onPress={onPress}
       disabled={!onPress}
       accessibilityRole={onPress ? 'button' : undefined}
-      style={[{ flexDirection: 'row', alignItems: 'center', gap: space[3], padding: space[3], borderRadius: radius.card, backgroundColor: c.ink }, shadow.float]}
+      style={[{ flexDirection: 'row', alignItems: 'center', gap: space[3], padding: space[3], borderRadius: radius.card, backgroundColor: live ? c.brandDeep : c.estimated }, shadow.float]}
     >
-      <LiveDot size={9} />
+      <View style={{ width: 10, height: 10, borderRadius: 5, backgroundColor: c.onBrand, opacity: live ? 1 : 0.55 }} />
       <View style={{ flex: 1 }}>
         <Text variant="label" tone="inverse" weight={700} numberOfLines={1}>
           {title}

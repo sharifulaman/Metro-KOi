@@ -67,3 +67,4 @@ export type { GateCompassRow, GateCompassViewProps } from './GateCompassView';
 export { DirectionEtaCard } from './DirectionEtaCard';
 export type { EtaTile } from './DirectionEtaCard';
 export { InfoTile } from './InfoTile';
+export { AlertSlider } from './AlertSlider';

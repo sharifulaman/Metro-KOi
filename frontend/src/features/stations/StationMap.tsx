@@ -3,6 +3,7 @@ import { fractionOf, useTrains } from '@/features/map/useTrains';
 import { useScreenLocation } from '@/features/map/useUserLocation';
 import { stationName, useStations } from '@/features/stations/useStations';
 import { useT } from '@/i18n';
+import { useRider } from '@/store/rider';
 
 /** The real map around one station: the line, every station, the trains, and the rider's own dot. 2D, or tilted 3D with buildings. */
 export function StationMap({ stationId, height, tilt, zoom = ZOOM_NEAR, gates, selectedGate, onGatePress, platformSigns }: { stationId: string; height?: number; tilt?: boolean; zoom?: number; gates?: MapGate[]; selectedGate?: string; onGatePress?(id: string): void; platformSigns?: Record<'SB' | 'NB', string> }) {
@@ -10,6 +11,7 @@ export function StationMap({ stationId, height, tilt, zoom = ZOOM_NEAR, gates, s
   const { list, byId } = useStations();
   const { trains, model } = useTrains(1000);
   const { user } = useScreenLocation();
+  const riding = useRider((s) => !!s.session);
   const idx = model.stationIds.indexOf(stationId);
   return (
     <GoogleMapView
@@ -26,7 +28,7 @@ export function StationMap({ stationId, height, tilt, zoom = ZOOM_NEAR, gates, s
       }))}
       selectedStation={stationId}
       platformSigns={platformSigns}
-      user={user}
+      user={riding ? undefined : user}
       tilt={tilt}
       gates={gates}
       selectedGate={selectedGate}

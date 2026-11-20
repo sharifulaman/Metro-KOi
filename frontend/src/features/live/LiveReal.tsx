@@ -3,7 +3,7 @@ import { useCallback, useEffect, useState } from 'react';
 import { BackHandler } from 'react-native';
 
 import { GoogleMapView, ZOOM_NEAR, type MapGate, type MapHints, type MapTrain } from '@/components/map';
-import { BrandBar, NextTrainRow, RideBanner, SegmentProgress, Speedometer, StationHeader } from '@/components/metro';
+import { AlertSlider, BrandBar, NextTrainRow, RideBanner, SegmentProgress, Speedometer, StationHeader } from '@/components/metro';
 import { Button, Chip, GlassPill, IconButton, InfoNote, Screen, Sheet, Stack, StatusBadge, Text } from '@/components/ui';
 import { useStationGates } from '@/features/gates/useStationGates';
 import { usePlayback } from '@/features/map/usePlayback';
@@ -12,6 +12,7 @@ import { fractionOf, trainSegment, useTrains } from '@/features/map/useTrains';
 import { useRiderSession } from '@/features/rider/useRiderSession';
 import { useStartRide } from '@/features/rider/useStartRide';
 import { useDepartures } from '@/features/stations/useDepartures';
+import { useBestTrain } from '@/features/stations/useBestTrain';
 import { stationAltName, stationName, useStations } from '@/features/stations/useStations';
 import { useT } from '@/i18n';
 import { config } from '@/lib/config';
@@ -66,6 +67,9 @@ export function LiveReal() {
   const focus = byId[focusId];
   const focusIdx = model.stationIds.indexOf(focusId);
   const deps = useDepartures(focusId, 1);
+  // suggestion: the train to take from the station the rider is at / walking to, by the time now (walk ~80 m/min, only when the sheet shows their nearest station)
+  const walkSec = nearest && focusId === nearestId ? Math.round((nearest.metres / 80) * 60) : null;
+  const { best, byDir: bestByDir } = useBestTrain(focusId, walkSec);
   const train = trains.find((x) => x.id === selTrain);
   const seg = train ? trainSegment(model, train) : null;
   const nameAt = (i: number) => (byId[model.stationIds[i]] ? stationName(byId[model.stationIds[i]], lang) : '');
@@ -295,7 +299,8 @@ export function LiveReal() {
         selectedGate={selGate}
         onGatePress={(id) => setSelGate((cur) => (cur === id ? undefined : id))}
         womenLabel={t('live.womenCoach')}
-        user={user}
+        // the rider's own dot is hidden while they ride: they are the "YOU" train
+        user={rider.session ? undefined : user}
         tilt={view3d}
         recenterKey={recenter}
         topInset={playback.active ? 330 : 200}
@@ -355,6 +360,7 @@ export function LiveReal() {
             {rider.session ? (
               <Stack flex>
                 <RideBanner
+                  live={rider.sharing}
                   title={`${t('rider.sharing')}${rider.sharing ? '' : ' · ' + t('rider.waiting')}`}
                   subtitle={
                     rider.session.fromStationId && rider.session.toStationId
@@ -441,15 +447,25 @@ export function LiveReal() {
                   nextLabel={t('live.nextStation')}
                   testID="station-header"
                 />
-                {closedUntil ? (
-                  <>
-                    <InfoNote icon="clock" text={`${t('live.closedTitle')} · ${t('live.closedBody', { time: playback.timeLabel(closedUntil), station: stationName(first, lang) })}`} />
-                  </>
-                ) : null}
+                <AlertSlider testID="alerts">
+                  {closedUntil ? <InfoNote icon="clock" text={`${t('live.closedTitle')} · ${t('live.closedBody', { time: playback.timeLabel(closedUntil), station: stationName(first, lang) })}`} /> : null}
+                  {(['SB', 'NB'] as const).map((dir) => {
+                    const b = bestByDir[dir];
+                    if (!b) return null;
+                    const walkMin = fmtNum(Math.max(1, Math.round((walkSec ?? 0) / 60)), lang);
+                    const label = b.closed ? t('live.bestNext') : b === best ? t('live.bestNow') : t('live.bestLater');
+                    const leave =
+                      !b.closed && b.leaveInSec != null
+                        ? ' · ' + (b.leaveInSec < 60 ? t('live.bestHurry', { walk: walkMin }) : t('live.bestLeave', { min: fmtNum(Math.floor(b.leaveInSec / 60), lang), walk: walkMin }))
+                        : '';
+                    const when = b.closed ? fmtClock(b.atSec, lang) : fmtEtaAt(b.etaSec, b.atSec, b.source, lang);
+                    return <InfoNote key={dir} icon="train" tone="brand" text={`${label}: ${t('live.bestLine', { dir: t(`timetable.${dir}`), n: fmtNum(b.platform, lang), when })}${leave}`} />;
+                  })}
+                </AlertSlider>
                 {(['SB', 'NB'] as const)
                   .filter((dir) => !deps.isTerminusFor[dir])
                   .map((dir, i, arr) => {
-                    const d = deps.byDir[dir][0];
+                    const d = deps.byDir[dir][0] ?? bestByDir[dir] ?? undefined;
                     const standing = standingAt(dir);
                     const platform = t('common.platform', { n: fmtNum(dir === 'SB' ? 1 : 2, lang) });
                     return (

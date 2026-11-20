@@ -17,7 +17,7 @@ const overlayStyle: Record<NonNullable<StackProps['overlay']>, ViewStyle> = {
   fill: { position: 'absolute', top: 0, bottom: 0, left: 0, right: 0 },
 };
 
-export function Stack({ children, direction = 'column', gap = 0, pad, padX, padY, align, justify, wrap, flex, equal, overlay, safe, testID }: StackProps) {
+export function Stack({ children, direction = 'column', gap = 0, pad, padX, padY, align, justify, wrap, flex, minH, equal, overlay, safe, testID }: StackProps) {
   const insets = useSafeAreaInsets();
   const py = padY != null ? space[padY] : pad != null ? space[pad] : 0;
   return (
@@ -35,6 +35,7 @@ export function Stack({ children, direction = 'column', gap = 0, pad, padX, padY
           justifyContent: justify ? justifyMap[justify] : undefined,
           flexWrap: wrap ? 'wrap' : undefined,
           flex: flex ? 1 : undefined,
+          minHeight: minH,
           flexShrink: direction === 'row' ? 1 : undefined,
         },
         overlay ? overlayStyle[overlay] : null,

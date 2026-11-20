@@ -37,6 +37,7 @@ export default function MoreScreen() {
         <SwitchRow label={t('more.notifications')} value={notifications} onValueChange={(on) => (on ? void enableNotifications().then(setNotifications) : setNotifications(false))} divider />
         <ListRow title={t('more.timetable')} leading={<IconTile icon="calendar" tone="neutral" />} chevron divider onPress={() => router.push('/timetable')} />
         <ListRow title={t('sim.more')} subtitle={t('sim.moreSub')} leading={<IconTile icon="box" tone="neutral" />} chevron divider onPress={() => router.push('/simulation')} testID="more-sim" />
+        <ListRow title={t('more.database')} subtitle={t('more.databaseSub')} leading={<IconTile icon="layers" tone="neutral" />} chevron divider onPress={() => router.push('/database')} testID="more-db" />
         <ListRow title={t('more.privacy')} leading={<IconTile icon="shield" tone="neutral" />} subtitle={t('rider.explain3')} divider />
         <ListRow title={t('more.about')} leading={<IconTile icon="info" tone="neutral" />} chevron divider onPress={() => setShowCredits((v) => !v)} />
         {showCredits ? <Text variant="label" tone="muted">{t('more.credits')}</Text> : null}

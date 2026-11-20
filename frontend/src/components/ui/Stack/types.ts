@@ -17,6 +17,8 @@ export interface StackProps {
   justify?: 'start' | 'center' | 'end' | 'between';
   wrap?: boolean;
   flex?: boolean;
+  /** smallest height in px (a flex child that should still stay usable on a short phone) */
+  minH?: number;
   /** direction="row": give every direct child equal width (e.g. two side-by-side buttons) */
   equal?: boolean;
   /** Float over a map/scene: pinned to an edge of the nearest positioned parent. */

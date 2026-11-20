@@ -9,13 +9,13 @@ import type { InfoNoteProps } from './types';
 
 export function InfoNote({ text, icon = 'info', tone = 'neutral', action, testID }: InfoNoteProps) {
   const { c, radius, space } = useTheme();
-  const bg = tone === 'live' ? c.liveTint : tone === 'danger' ? c.dangerTint : c.surfaceAlt;
+  const bg = tone === 'brand' ? c.brandTint : tone === 'live' ? c.liveTint : tone === 'danger' ? c.dangerTint : c.surfaceAlt;
   const fg = tone === 'live' ? 'live' : tone === 'danger' ? 'danger' : 'muted';
   return (
     <View testID={testID} style={{ flexDirection: 'row', gap: space[3], padding: space[3], borderRadius: radius.note, backgroundColor: bg, alignItems: 'flex-start' }}>
-      <Icon name={icon} size={18} tone={fg} />
+      <Icon name={icon} size={18} tone={fg} color={tone === 'brand' ? c.onBrandTint : undefined} />
       <View style={{ flex: 1, gap: space[1] }}>
-        <Text variant="label" tone={fg === 'muted' ? 'muted' : fg}>
+        <Text variant="label" tone={fg === 'muted' ? 'muted' : fg} color={tone === 'brand' ? c.onBrandTint : undefined}>
           {text}
         </Text>
         {action ? (

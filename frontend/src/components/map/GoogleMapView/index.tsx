@@ -5,6 +5,7 @@ import type { WebViewMessageEvent } from 'react-native-webview';
 import type { WebViewSharedProps } from 'react-native-webview/lib/WebViewTypes';
 
 import { config } from '@/lib/config';
+import { getTile, putTile } from '@/lib/tileCache';
 import { useSettings } from '@/store/settings';
 import { layout } from '@/theme/tokens';
 import { useTheme } from '@/theme/useTheme';
@@ -46,14 +47,21 @@ export function GoogleMapView(props: GoogleMapViewProps) {
   const [loaded, setLoaded] = useState(false);
   const reserved = (props.bottomInset ?? 0) + (props.reserveSheet ? win.height * layout.dockedSheet : 0);
 
-  const payload = { ...buildPayload(props, c, dark, reserved), lang };
-  // 3D: our own city page (no Google Maps, no key needed); otherwise the Google map
-  const city = payload.view.tilt;
+  const base = { ...buildPayload(props, c, dark, reserved), lang };
+  // 3D: our own scene (no Google Maps, no key needed); otherwise the Google map
+  const city = base.view.tilt;
   // the three.js scene needs its library from the CDN; offline it reports an error and the canvas page takes over
   const [engineFailed, setEngineFailed] = useState(false);
-  const mode = city ? (engineFailed ? 'city' : 'scene') : 'google';
+  // 2D with no internet / no key / a rejected key: Google cannot draw, so the offline scene (flat, top-down) takes over; 3D tries Google again next time
+  const [googleFailed, setGoogleFailed] = useState(false);
+  useEffect(() => {
+    if (city) setGoogleFailed(false);
+  }, [city]);
+  const offline2d = !city && (googleFailed || !config.googleMapsKey);
+  const mode = city ? (engineFailed ? 'city' : 'scene') : offline2d ? (engineFailed ? 'city' : 'flat') : 'google';
+  const payload = mode === 'flat' ? { ...base, view: { ...base.view, flat: true } } : base;
   const html = useMemo(
-    () => (mode === 'scene' ? scenePage(dark) : mode === 'city' ? cityPage(dark) : mapPage(config.googleMapsKey, lang, config.googleMapId, dark)),
+    () => (mode === 'scene' || mode === 'flat' ? scenePage(dark) : mode === 'city' ? cityPage(dark) : mapPage(config.googleMapsKey, lang, config.googleMapId, dark)),
     [mode, lang, dark],
   );
   const script = `window.__set(${JSON.stringify(payload)});true;`;
@@ -63,8 +71,11 @@ export function GoogleMapView(props: GoogleMapViewProps) {
 
   const onMessage = (e: WebViewMessageEvent) => {
     try {
-      const m = JSON.parse(e.nativeEvent.data) as { type: string; id?: string; kind?: string; state?: string };
+      const m = JSON.parse(e.nativeEvent.data) as { type: string; id?: string; kind?: string; state?: string; n?: number; key?: string; data?: string };
       if (m.type === 'error' && m.kind === 'engine') setEngineFailed(true);
+      else if (m.type === 'error' && (m.kind === 'load' || m.kind === 'auth')) setGoogleFailed(true);
+      else if (m.type === 'tileGet' && m.key != null && m.n != null) ref.current?.injectJavaScript(`window.__tile(${m.n},${JSON.stringify(getTile(m.key))});true;`);
+      else if (m.type === 'tilePut' && m.key && m.data) putTile(m.key, m.data);
       else if (m.type === 'station' && m.id) onStationPress?.(m.id);
       else if (m.type === 'train' && m.id) onTrainPress?.(m.id);
       else if (m.type === 'gate' && m.id) onGatePress?.(m.id);
@@ -76,7 +87,7 @@ export function GoogleMapView(props: GoogleMapViewProps) {
 
   return (
     <View testID={testID} style={[{ overflow: 'hidden', backgroundColor: c.mapGround }, height != null ? { height } : { flex: 1 }]}>
-      {config.googleMapsKey || city ? (
+      {config.googleMapsKey || city || offline2d ? (
         <WebView
           key={mode}
           ref={ref}

@@ -2,10 +2,15 @@
 // (or localStorage on web) where the native module is absent, e.g. Expo Go.
 import type { StateStorage } from 'zustand/middleware';
 
-interface KV {
+export interface KV {
   getString(key: string): string | undefined;
   set(key: string, value: string): void;
   remove(key: string): boolean | void;
+}
+
+/** A small named key-value store (MMKV on a device build; memory / localStorage elsewhere). */
+export function kvStore(id: string): KV {
+  return makeStore(id);
 }
 
 function makeStore(id: string): KV {

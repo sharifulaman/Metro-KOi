@@ -1,5 +1,7 @@
 import { LINE_PATH } from '@/lib/lineGeo';
 
+import { THREE_SRC } from './threeSource';
+
 /**
  * The live 3D page (three.js). It uses the same models as the Simulation tab
  * (assets/sim/station-to-station.html): the arched station with glass, platforms,
@@ -9,8 +11,9 @@ import { LINE_PATH } from '@/lib/lineGeo';
  * page). Trains glide along the track, the camera follows the selected train.
  * Drag = pan, pinch / wheel = zoom. Station pills, train tags and the platform callout
  * are drawn on a 2D canvas over the scene (crisp at the device pixel ratio).
- * three.js comes from the CDN like the simulation; if it cannot load (offline) the page
- * reports {type:'error',kind:'engine'} and the app falls back to cityPage.
+ * three.js is bundled with the app (threeSource.ts, `npm run build:three`), so the scene needs no internet; map tiles are saved
+ * on the device after the first fetch (tileCache.ts), so places already seen still draw offline. If the engine still cannot
+ * start the page reports {type:'error',kind:'engine'} and the app falls back to cityPage.
  * (The script avoids backticks, `${` and backslashes: it lives in a TS template.)
  */
 export function scenePage(dark: boolean): string {
@@ -21,7 +24,7 @@ export function scenePage(dark: boolean): string {
 <style>html,body{margin:0;height:100%;overflow:hidden;background:${dark ? '#10181A' : '#EAF1EC'};-webkit-tap-highlight-color:transparent}
 #gl,#ov{position:absolute;left:0;top:0;width:100%;height:100%;display:block}#gl{touch-action:none}#ov{pointer-events:none}</style>
 </head><body><canvas id="gl"></canvas><canvas id="ov"></canvas>
-<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/build/three.min.js"></script>
+<script>${THREE_SRC.split('</script').join('<\\/script')}</script>
 <script>
 var LL=${path},DARK=${dark ? 'true' : 'false'};
 function send(m){var s=JSON.stringify(m);if(window.ReactNativeWebView)window.ReactNativeWebView.postMessage(s);else parent.postMessage(s,'*');}
@@ -382,6 +385,7 @@ window.__set=function(p){
   var sig=(p.view&&p.view.key)+'|'+p.selectedTrain+'|'+p.selectedStation,vk=String(p.view&&p.view.key);
   if(sig!==lastSig){if(lastSig&&vk!==lastKey){zmul=1;hOff=0;PITCH=.7;}lastKey=vk;pan.x=0;pan.z=0;lastSig=sig;}
   S=p;
+  var fl=!!(p.view&&p.view.flat);if(fl!==flatMode){flatMode=fl;PITCH=fl?1.4:.7;}
   STN=p.stations.map(function(s){var x=mx(s.lng),y=my(s.lat);return {id:s.id,label:s.label,s:snap(x,y),term:s.terminal};});
   GT=(p.gates||[]).map(function(g){return {id:g.id,letter:g.letter,label:g.label,x:mx(g.lng),z:-my(g.lat)};});
   snapGates();
@@ -398,7 +402,7 @@ window.__set=function(p){
   });
   Object.keys(TR).forEach(function(k){if(!seen[k]){TR[k].T.cars.forEach(function(c){scene.remove(c);});delete TR[k];}});
 };
-window.addEventListener('message',function(e){if(e.source!==parent)return;try{window.__set(JSON.parse(e.data));}catch(_){}});
+window.addEventListener('message',function(e){if(e.source!==parent)return;try{var d=JSON.parse(e.data);if(d&&d.__tile)window.__tile(d.__tile[0],d.__tile[1]);else window.__set(d);}catch(_){}});
 
 /* ---------- real map data (OpenStreetMap through Overpass): buildings, streets, parks, water and place names around the camera ---------- */
 var OSM={tiles:{},busy:false,on:false,labels:[],last:0},TILE=600,procMeshes=[],procShown=true;
@@ -419,6 +423,27 @@ function inPoly(x,z,pts){var c=false,n=pts.length;for(var i=0,j=n-1;i<n;j=i++){i
 function tileQuery(t){
   var S1=latOf((t.tz+1)*TILE),N1=latOf(t.tz*TILE),W1=lngOf(t.tx*TILE),E1=lngOf((t.tx+1)*TILE),bb='('+S1.toFixed(6)+','+W1.toFixed(6)+','+N1.toFixed(6)+','+E1.toFixed(6)+')';
   return '[out:json][timeout:25];(way["building"]'+bb+';way["highway"~"^(motorway|trunk|primary|secondary|tertiary|unclassified|residential|living_street|service)$"]'+bb+';way["leisure"~"^(park|garden)$"]'+bb+';way["natural"="water"]'+bb+';node["name"]["amenity"~"^(hospital|clinic|school|college|university|bank|police|marketplace|place_of_worship|fire_station|bus_station)$"]'+bb+';node["name"]["shop"="mall"]'+bb+';way["name"]["amenity"~"^(hospital|school|college|university|marketplace)$"]'+bb+';);out geom tags;';
+}
+/* tiles are kept on the device by the app: the page asks for a tile by key and hands one over after fetching it */
+var tileWait={},tileSeq=0;
+function cacheGet(key){return new Promise(function(res){var n=++tileSeq;tileWait[n]=res;send({type:'tileGet',n:n,key:key});setTimeout(function(){if(tileWait[n]){delete tileWait[n];res(null);}},2500);});}
+window.__tile=function(n,json){var r=tileWait[n];if(!r)return;delete tileWait[n];var v=null;try{v=json?JSON.parse(json):null;}catch(e){}r(v);};
+function cachePut(key,obj){try{send({type:'tilePut',key:key,data:JSON.stringify(obj)});}catch(e){}}
+var KEEP=['building','height','building:levels','highway','name','name:bn','name:en','leisure','natural','amenity','shop'];
+function packEls(els){return els.map(function(e){var t={},tg=e.tags||{},i,o;for(i=0;i<KEEP.length;i++)if(tg[KEEP[i]]!==undefined)t[KEEP[i]]=tg[KEEP[i]];
+  o={y:e.type==='node'?0:1,i:e.id,t:t};
+  if(e.type==='node'){o.a=e.lat;o.o=e.lon;}else if(e.geometry){var g=[];for(i=0;i<e.geometry.length;i++)g.push(+e.geometry[i].lat.toFixed(6),+e.geometry[i].lon.toFixed(6));o.g=g;}
+  return o;});}
+function unpackEls(pk){return pk.map(function(o){var e={type:o.y?'way':'node',id:o.i,tags:o.t},g=o.g||[],j;if(!o.y){e.lat=o.a;e.lon=o.o;}else{e.geometry=[];for(j=0;j+1<g.length;j+=2)e.geometry.push({lat:g[j],lon:g[j+1]});}return e;});}
+/* a tile: from the device when saved (fast, works offline), else from the network and then saved; an old saved tile still beats no tile */
+function loadTile(t,now){
+  var key=t.tx+','+t.tz;
+  function done(els){t.state='done';try{buildTile(t,els);OSM.on=true;osmReport('ok');}catch(e){t.state='fail';t.at=now;}}
+  return cacheGet(key).then(function(c){
+    if(c&&c.e&&c.at&&(Date.now()-c.at)<21*864e5){done(unpackEls(c.e));return null;}
+    return overpass(tileQuery(t)).then(function(j){var els=j.elements||[];done(els);cachePut(key,{at:Date.now(),e:packEls(els)});})
+      .catch(function(){if(c&&c.e){done(unpackEls(c.e));}else{t.state='fail';t.at=now;if(!OSM.on)osmReport('fail');}});
+  });
 }
 function overpass(q,k){
   k=k||0;
@@ -513,10 +538,7 @@ function osmTick(now){
       var d=Math.hypot((t.tx+.5)*TILE-cam.x,(t.tz+.5)*TILE-cam.z);if(d<bd){bd=d;best=t;}});
     if(best){
       OSM.busy=true;best.state='loading';if(!OSM.on)osmReport('loading');
-      overpass(tileQuery(best)).then(function(j){
-        best.state='done';
-        try{buildTile(best,j.elements||[]);OSM.on=true;osmReport('ok');}catch(e){best.state='fail';best.at=now;}
-      }).catch(function(){best.state='fail';best.at=now;if(!OSM.on)osmReport('fail');}).then(function(){OSM.busy=false;});
+      loadTile(best,now).then(function(){OSM.busy=false;},function(){OSM.busy=false;});
     }
   }
   /* keep memory bounded: drop the tiles farthest from the camera beyond 30 */
@@ -569,7 +591,7 @@ function drawUser(){
 }
 
 /* ---------- gestures: drag = pan, pinch / wheel = zoom, short touch = tap ---------- */
-var hits=[],ptr={},moved=0,pinch=0,D0=340,PITCH=.7,hb=0,hOff=0,pinchA=0,pinchY=0,rot=false;
+var hits=[],ptr={},moved=0,pinch=0,D0=340,PITCH=.7,hb=0,hOff=0,pinchA=0,pinchY=0,rot=false,flatMode=false;
 function ptrs(){return Object.keys(ptr).map(function(k){return ptr[k];});}
 function tap(x,y){for(var i=hits.length-1;i>=0;i--){var h=hits[i];if(x>=h.x&&x<=h.x+h.w&&y>=h.y&&y<=h.y+h.h){send({type:h.type,id:h.id});return;}}}
 function panBy(dx,dy){
@@ -589,8 +611,8 @@ gl.addEventListener('pointermove',function(e){
   var o=ptr[e.pointerId];if(!o)return;var p=ptrs();
   if(p.length>=2){o.x=e.clientX;o.y=e.clientY;var d=Math.hypot(p[0].x-p[1].x,p[0].y-p[1].y);if(pinch>0&&d>0)zoomBy(d/pinch);pinch=d;moved=99;
     var an=Math.atan2(p[1].y-p[0].y,p[1].x-p[0].x),da=((an-pinchA+3*Math.PI)%(2*Math.PI))-Math.PI;pinchA=an;hOff-=da*180/Math.PI;
-    var my2=(p[0].y+p[1].y)/2;PITCH=Math.max(.3,Math.min(1.3,PITCH+(my2-pinchY)*.004));pinchY=my2;}
-  else{var dx=e.clientX-o.x,dy=e.clientY-o.y;o.x=e.clientX;o.y=e.clientY;moved=Math.max(moved,Math.hypot(e.clientX-o.x0,e.clientY-o.y0));if(moved>=8){if(rot){hOff-=dx*.4;PITCH=Math.max(.3,Math.min(1.3,PITCH+dy*.004));}else panBy(dx,dy);}}
+    var my2=(p[0].y+p[1].y)/2;PITCH=Math.max(.3,Math.min(1.5,PITCH+(my2-pinchY)*.004));pinchY=my2;}
+  else{var dx=e.clientX-o.x,dy=e.clientY-o.y;o.x=e.clientX;o.y=e.clientY;moved=Math.max(moved,Math.hypot(e.clientX-o.x0,e.clientY-o.y0));if(moved>=8){if(rot){hOff-=dx*.4;PITCH=Math.max(.3,Math.min(1.5,PITCH+dy*.004));}else panBy(dx,dy);}}
 });
 gl.addEventListener('pointerup',function(e){var o=ptr[e.pointerId];if(!o)return;var wasTap=moved<8&&Object.keys(ptr).length===1;delete ptr[e.pointerId];pinch=0;if(wasTap)tap(e.clientX,e.clientY);});
 gl.addEventListener('pointercancel',function(e){delete ptr[e.pointerId];pinch=0;});
@@ -750,6 +772,7 @@ function frame(now){
   var sel=S.selectedTrain&&TR[S.selectedTrain],tx,tz,thd;
   if(sel){tx=sel.pos.x;tz=sel.pos.z;thd=sel.br*180/Math.PI+(sel.d.dir==='NB'?180:0);}
   else{tx=mx(v.lng);tz=-my(v.lat);thd=v.heading;}
+  if(flatMode)thd=0;
   tx+=pan.x;tz+=pan.z;
   if(!cam.init||Math.hypot(tx-cam.x,tz-cam.z)>1500||Object.keys(ptr).length){cam.x=tx;cam.z=tz;cam.h=thd;cam.init=true;}
   k=Math.min(1,dt*4);cam.x+=(tx-cam.x)*k;cam.z+=(tz-cam.z)*k;cam.h=angLerp(cam.h,thd,Math.min(1,dt*2.5));

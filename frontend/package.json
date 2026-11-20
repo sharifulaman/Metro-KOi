@@ -51,6 +51,7 @@
     "check:ui": "node scripts/check-ui-rules.mjs",
     "verify": "npm run typecheck && npm test && npm run check:ui",
     "build:sim": "node scripts/build-sim.mjs",
+    "build:three": "node scripts/build-three.mjs",
     "lint": "expo lint"
   },
   "private": true

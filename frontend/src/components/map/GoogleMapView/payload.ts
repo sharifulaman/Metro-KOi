@@ -29,6 +29,8 @@ export interface MapPayload {
   view: {
     /** tilted 3D view */
     tilt: boolean;
+    /** top-down, north-up (the offline stand-in for the Google 2D map) */
+    flat?: boolean;
     /** compass heading for the 3D view (looks along the line) */
     heading: number;
     mode: 'fit' | 'focus';

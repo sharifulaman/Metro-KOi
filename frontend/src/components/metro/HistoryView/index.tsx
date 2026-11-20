@@ -1,5 +1,6 @@
 import { Pressable, ScrollView, View } from 'react-native';
 
+import { useResponsive } from '@/theme/useResponsive';
 import { useTheme } from '@/theme/useTheme';
 
 import { Icon } from '../../ui/Icon';
@@ -13,11 +14,12 @@ import type { HistoryViewProps } from './types';
 /** Trip history (design ৮): month summary, privacy note + clear link, All/Trips/Recharges pill, day groups. */
 export function HistoryView(p: HistoryViewProps) {
   const { c, size } = useTheme();
+  const { gutter } = useResponsive();
   return (
     <ScrollView testID={p.testID} style={{ flex: 1, backgroundColor: c.bg }} contentContainerStyle={{ paddingBottom: size.tabBar + 16 }} showsVerticalScrollIndicator={false}>
       <NavHeader left={{ icon: 'back', label: p.backLabel, onPress: p.onBack }} title={p.title} />
 
-      <View style={{ marginTop: 16, marginHorizontal: 20, paddingHorizontal: 18, paddingVertical: 16, borderRadius: 24, backgroundColor: c.brandDeep, flexDirection: 'row', justifyContent: 'space-between' }}>
+      <View style={{ marginTop: 16, marginHorizontal: gutter, paddingHorizontal: 18, paddingVertical: 16, borderRadius: 24, backgroundColor: c.brandDeep, flexDirection: 'row', justifyContent: 'space-between' }}>
         <View>
           <Text size={13} lh={1.4} weight={400} color="rgba(255,255,255,0.85)">
             {p.tripsLabel}
@@ -52,7 +54,7 @@ export function HistoryView(p: HistoryViewProps) {
         ) : null}
       </View>
 
-      <View accessibilityRole="tablist" style={{ flexDirection: 'row', marginTop: 14, marginHorizontal: 20, padding: 4, borderRadius: 999, backgroundColor: c.surfaceAlt }}>
+      <View accessibilityRole="tablist" style={{ flexDirection: 'row', marginTop: 14, marginHorizontal: gutter, padding: 4, borderRadius: 999, backgroundColor: c.surfaceAlt }}>
         {p.tabs.map((tab) => {
           const sel = tab.value === p.filter;
           return (
@@ -72,18 +74,18 @@ export function HistoryView(p: HistoryViewProps) {
       </View>
 
       {p.groups.length === 0 ? (
-        <View style={{ marginHorizontal: 20 }}>
+        <View style={{ marginHorizontal: gutter }}>
           <EmptyState icon="history" title={p.emptyTitle} body={p.emptyBody} />
         </View>
       ) : (
         p.groups.map((g) => (
           <View key={g.key}>
-            <View style={{ marginTop: 14, marginBottom: 6, marginHorizontal: 20 }}>
+            <View style={{ marginTop: 14, marginBottom: 6, marginHorizontal: gutter }}>
               <Text size={13} lh={1.4} weight={700} tone="muted">
                 {g.label}
               </Text>
             </View>
-            <View style={{ marginHorizontal: 20, borderRadius: 22, borderWidth: 1, borderColor: c.divider, backgroundColor: c.surface }}>
+            <View style={{ marginHorizontal: gutter, borderRadius: 22, borderWidth: 1, borderColor: c.divider, backgroundColor: c.surface }}>
               {g.rows.map((r, i) => (
                 <TransactionRow key={r.id} kind={r.kind} title={r.title} time={r.time} amount={r.amount} divider={i < g.rows.length - 1} />
               ))}

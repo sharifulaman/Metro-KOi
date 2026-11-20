@@ -38,7 +38,7 @@ export function FoundView(p: FoundViewProps) {
         <View style={{ flexGrow: 1, backgroundColor: c.surface, borderTopLeftRadius: 28, borderTopRightRadius: 28, paddingTop: 12, paddingHorizontal: 24, paddingBottom: 40, boxShadow: '0 -8px 28px rgba(14,26,22,0.12)' }}>
           <View style={{ width: 40, height: 4, borderRadius: 2, backgroundColor: c.outline, alignSelf: 'center', marginBottom: 16 }} />
           <View style={{ alignItems: 'center' }}>
-            <CardArt name={p.card.name || ' '} tail={p.card.tail} typeLabel={p.card.typeLabel} color={p.color} width={280} />
+            <CardArt name={p.card.name || ' '} tail={p.card.tail} typeLabel={p.card.typeLabel} color={p.color} rapidPass={p.card.rapidPass} width={280} />
           </View>
           <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginTop: 14 }}>
             <View>

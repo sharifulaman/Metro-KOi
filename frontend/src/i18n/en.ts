@@ -407,7 +407,7 @@ export const en = {
     manualOptionBody: "Just a name and the last 4 digits. The balance won't show, but trips still save.",
     manualTitle: 'Save by hand',
     editTitle: 'Edit card',
-    last4Label: 'Last 4 digits',
+    last4Label: 'Card code (RP…) or last 4 digits',
     noFullNumberNote: "You don't need the full card number. The name, colour and last 4 digits are saved only on this phone.",
     scanInsteadCta: 'Scan to save instead',
     savedCardsTitle: 'Saved cards',

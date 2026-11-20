@@ -39,7 +39,7 @@ export default function CardFoundScreen() {
   return (
     <FoundView
       title={t('card.foundTitle')}
-      card={{ name: chosenName, tail: fmtNum(last.cardTail, lang), typeLabel: t('card.' + last.cardType) }}
+      card={{ name: chosenName, tail: fmtNum(last.cardTail, lang), typeLabel: t('card.' + last.cardType), rapidPass: last.cardType === 'rapid_pass' }}
       color={color}
       balanceLabel={t('card.balance')}
       amount={known ? fmtNum((last.balanceBdt as number).toLocaleString('en-US'), lang) : null}

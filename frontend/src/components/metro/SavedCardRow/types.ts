@@ -6,6 +6,7 @@ export interface SavedCardRowProps {
   tailText: string;
   typeLabel: string;
   tail: string;
+  rapidPass?: boolean;
   color: CardColor;
   /** "৳ ৩৪০"; null → the "no balance info" badge */
   balance: string | null;

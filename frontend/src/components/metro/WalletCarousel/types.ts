@@ -6,6 +6,7 @@ export interface WalletCarouselCard {
   tail: string;
   typeLabel: string;
   color: CardColor;
+  rapidPass?: boolean;
 }
 
 export interface WalletCarouselProps {

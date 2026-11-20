@@ -89,7 +89,7 @@ export function ScanView(p: ScanViewProps) {
             </Animated.View>
           </View>
           <Animated.View style={{ position: 'absolute', left: 201, top: 318, transform: [{ translateX: card.interpolate({ inputRange: [0, 1], outputRange: [14, -22] }) }, { translateY: card.interpolate({ inputRange: [0, 1], outputRange: [10, -34] }) }, { rotate: card.interpolate({ inputRange: [0, 1], outputRange: ['-14deg', '-6deg'] }) }] }}>
-            <CardArt name={p.card.name} tail={p.card.tail} typeLabel={p.card.typeLabel} color="green" width={163} />
+            <CardArt name={p.card.name} tail={p.card.tail} typeLabel={p.card.typeLabel} color="green" rapidPass={p.card.rapidPass} width={163} />
           </Animated.View>
         </View>
         </View>

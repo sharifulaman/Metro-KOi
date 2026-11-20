@@ -409,7 +409,7 @@ export const bn: Dict = {
     manualOptionBody: 'শুধু নাম ও শেষ ৪ সংখ্যা। ব্যালেন্স দেখা যাবে না, যাত্রার ইতিহাস জমা হবে',
     manualTitle: 'হাতে লিখে সেভ',
     editTitle: 'কার্ড সম্পাদনা',
-    last4Label: 'শেষ ৪ সংখ্যা',
+    last4Label: 'কার্ড কোড (RP…) বা শেষ ৪ সংখ্যা',
     noFullNumberNote: 'পুরো কার্ড নম্বর লাগবে না। নাম, রঙ ও শেষ ৪ সংখ্যা শুধু এই ফোনে সেভ হয়।',
     scanInsteadCta: 'স্ক্যান করে সেভ করুন',
     savedCardsTitle: 'সেভ করা কার্ড',

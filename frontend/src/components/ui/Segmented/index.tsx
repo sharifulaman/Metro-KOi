@@ -51,9 +51,11 @@ export function Segmented<T extends string>({ options, value, onChange, variant 
             ]}
           >
             {o.icon ? <Icon name={o.icon} size={16} tone={tone} /> : null}
-            <Text variant="label" weight={sel ? 700 : 500} tone={tone} numberOfLines={1}>
-              {o.label}
-            </Text>
+            <View style={{ flexShrink: 1, minWidth: 0 }}>
+              <Text variant="label" weight={sel ? 700 : 500} tone={tone} numberOfLines={2} align="center">
+                {o.label}
+              </Text>
+            </View>
           </Pressable>
         );
       })}

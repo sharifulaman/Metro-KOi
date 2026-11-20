@@ -2,6 +2,7 @@ import { ScrollView, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { space as spaceScale } from '@/theme/tokens';
+import { MAX_CONTENT_W, useResponsive } from '@/theme/useResponsive';
 import { useTheme } from '@/theme/useTheme';
 
 import type { DividerProps, ScreenProps, SpacerProps } from './types';
@@ -19,6 +20,7 @@ export function Spacer({ size = 4, flex }: SpacerProps) {
 export function Screen({ children, scroll, bleed, gap = 4, withTabBar, testID }: ScreenProps) {
   const { c, space, size } = useTheme();
   const insets = useSafeAreaInsets();
+  const { gutter } = useResponsive();
   const bottom = (withTabBar ? size.tabBar : 0) + insets.bottom + space[4];
   if (bleed) {
     return (
@@ -27,7 +29,7 @@ export function Screen({ children, scroll, bleed, gap = 4, withTabBar, testID }:
       </View>
     );
   }
-  const pad = { paddingTop: insets.top + space[3], paddingHorizontal: space[5], paddingBottom: bottom, gap: space[gap] };
+  const pad = { paddingTop: insets.top + space[3], paddingHorizontal: gutter, paddingBottom: bottom, gap: space[gap], width: '100%' as const, maxWidth: MAX_CONTENT_W, alignSelf: 'center' as const };
   return (
     <View testID={testID} style={{ flex: 1, backgroundColor: c.bg }}>
       {scroll ? (

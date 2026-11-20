@@ -1,6 +1,7 @@
 import { Pressable, ScrollView, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
+import { useResponsive } from '@/theme/useResponsive';
 import { useTheme } from '@/theme/useTheme';
 
 import { Button } from '../../ui/Button';
@@ -14,13 +15,14 @@ const ROW = 62;
 /** Journey details (design ১৭): green summary card, every stop of the trip on a rail, and the boarding action. */
 export function JourneyDetailView(p: JourneyDetailViewProps) {
   const { c } = useTheme();
+  const { gutter } = useResponsive();
   const insets = useSafeAreaInsets();
   const round = { width: 46, height: 46, borderRadius: 23, borderWidth: 1.5, borderColor: c.outline, backgroundColor: c.surface, alignItems: 'center' as const, justifyContent: 'center' as const };
   const n = p.stops.length;
   return (
     <View testID={p.testID} style={{ flex: 1, backgroundColor: c.bg }}>
       <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingTop: insets.top + 22, paddingBottom: 24 }}>
-        <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 20 }}>
+        <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: gutter }}>
           <Pressable accessibilityRole="button" accessibilityLabel={p.backLabel} onPress={p.onBack} style={round}>
             <Icon name="back" size={22} />
           </Pressable>
@@ -32,7 +34,7 @@ export function JourneyDetailView(p: JourneyDetailViewProps) {
           </Pressable>
         </View>
 
-        <View style={{ marginTop: 16, marginHorizontal: 20, padding: 16, borderRadius: 24, backgroundColor: c.brandSolid }}>
+        <View style={{ marginTop: 16, marginHorizontal: gutter, padding: 16, borderRadius: 24, backgroundColor: c.brandSolid }}>
           <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 8 }}>
             <Text size={13} lh={1.4} weight={600} color={c.onBrandSolid} numberOfLines={1}>
               {p.route}
@@ -52,7 +54,7 @@ export function JourneyDetailView(p: JourneyDetailViewProps) {
           </Text>
         </View>
 
-        <View style={{ marginTop: 16, marginHorizontal: 20, paddingVertical: 6, borderRadius: 24, backgroundColor: c.surface, borderWidth: 1, borderColor: c.outline }}>
+        <View style={{ marginTop: 16, marginHorizontal: gutter, paddingVertical: 6, borderRadius: 24, backgroundColor: c.surface, borderWidth: 1, borderColor: c.outline }}>
           <View>
             <View style={{ position: 'absolute', left: 29, top: ROW / 2, height: (n - 1) * ROW, width: 3, borderRadius: 2, backgroundColor: c.brand, opacity: 0.4 }} />
             {p.stops.map((s) => {
@@ -80,7 +82,7 @@ export function JourneyDetailView(p: JourneyDetailViewProps) {
         </View>
       </ScrollView>
 
-      <View style={{ paddingHorizontal: 20, paddingTop: 8, paddingBottom: insets.bottom + 16, gap: 8 }}>
+      <View style={{ paddingHorizontal: gutter, paddingTop: 8, paddingBottom: insets.bottom + 16, gap: 8 }}>
         {p.waitNote ? (
           <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10, paddingHorizontal: 4 }}>
             <Icon name="clock" size={15} color={c.inkMuted} strokeWidth={2.2} />

@@ -216,4 +216,5 @@ export const typeScale: Record<TextVariant, { size: number; line: number; weight
   countdown: { size: 32, line: 36, weight: 700 },
 };
 
-export const BANGLA_LINE_FACTOR = 1.35;
+/** Bangla needs room for the matra above and the vowel signs below the line. */
+export const BANGLA_LINE_FACTOR = 1.4;

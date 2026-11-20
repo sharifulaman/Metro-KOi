@@ -19,14 +19,14 @@ export function ManualCardView(p: ManualCardViewProps) {
     <ScrollView testID={p.testID} style={{ flex: 1, backgroundColor: c.bg }} contentContainerStyle={{ paddingBottom: 40 }} keyboardShouldPersistTaps="handled" showsVerticalScrollIndicator={false}>
       <NavHeader left={{ icon: 'close', label: p.closeLabel, onPress: p.onClose }} title={p.title} />
       <View style={{ alignItems: 'center', marginTop: 18 }}>
-        <CardArt name={p.preview.name} tail={p.preview.tail} typeLabel={p.preview.typeLabel} color={p.color} width={261} />
+        <CardArt name={p.preview.name} tail={p.preview.tail} typeLabel={p.preview.typeLabel} color={p.color} rapidPass={p.preview.rapidPass} width={261} />
       </View>
       <View style={{ paddingHorizontal: 24 }}>
         <View style={{ marginTop: 14 }}>
           <TextField label={p.nameLabel} value={p.name} onChangeText={p.onName} maxLength={30} testID="manual-name" />
         </View>
         <View style={{ marginTop: 14 }}>
-          <TextField label={p.tailLabel} value={p.tail} onChangeText={p.onTail} keyboardType="numeric" maxLength={4} testID="manual-tail" />
+          <TextField label={p.tailLabel} value={p.tail} onChangeText={p.onTail} keyboardType="default" maxLength={20} testID="manual-tail" />
         </View>
         <View style={{ marginTop: 14 }}>
           <Text size={13} lh={1.4} weight={600} tone="muted">

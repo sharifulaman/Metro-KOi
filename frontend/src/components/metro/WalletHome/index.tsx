@@ -1,6 +1,7 @@
 import { Pressable, ScrollView, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
+import { useResponsive } from '@/theme/useResponsive';
 import { useTheme } from '@/theme/useTheme';
 
 import { Badge } from '../../ui/Badge';
@@ -18,6 +19,7 @@ import type { WalletHomeProps } from './types';
  */
 export function WalletHome(p: WalletHomeProps) {
   const { c, size } = useTheme();
+  const { gutter } = useResponsive();
   const insets = useSafeAreaInsets();
   const known = p.balance.amount != null;
   return (
@@ -61,7 +63,7 @@ export function WalletHome(p: WalletHomeProps) {
         <WalletCarousel cards={p.cards} index={p.index} onIndexChange={p.onIndexChange} hideDots={known} />
       </View>
 
-      <View style={{ marginTop: 14, marginHorizontal: 24, paddingHorizontal: 16, paddingVertical: 14, borderRadius: 22, borderWidth: 1, borderColor: c.divider, backgroundColor: c.surface }}>
+      <View style={{ marginTop: 14, marginHorizontal: 24, paddingHorizontal: Math.max(12, gutter - 4), paddingVertical: 14, borderRadius: 22, borderWidth: 1, borderColor: c.divider, backgroundColor: c.surface }}>
         <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
           <Text size={13.5} lh={1.4} tone="muted" weight={400}>
             {p.balance.label}
@@ -102,13 +104,14 @@ export function WalletHome(p: WalletHomeProps) {
         </View>
       ) : null}
 
-      <View style={{ marginTop: 14, marginHorizontal: 24 }}>
+      <View style={{ marginTop: 14, marginHorizontal: gutter + 4 }}>
         <Button label={p.scanLabel} icon="nfc" fullWidth onPress={p.onScan} testID="wallet-scan" />
-        <View style={{ flexDirection: 'row', gap: 10, marginTop: 8 }}>
-          <View style={{ flex: 1 }}>
+        {/* two buttons share a row only when each has room for its label on one line; otherwise they stack full width */}
+        <View style={{ flexDirection: 'row', flexWrap: 'wrap', columnGap: 10, rowGap: 8, marginTop: 8 }}>
+          <View style={{ flexGrow: 1, flexBasis: 170, minWidth: 0 }}>
             <Button label={p.historyLabel} icon="clock" variant="secondary" size="md" fullWidth onPress={p.onHistory} />
           </View>
-          <View style={{ flex: 1 }}>
+          <View style={{ flexGrow: 1, flexBasis: 170, minWidth: 0 }}>
             <Button label={p.editLabel} icon="edit" variant="secondary" size="md" fullWidth onPress={p.onEdit} />
           </View>
         </View>

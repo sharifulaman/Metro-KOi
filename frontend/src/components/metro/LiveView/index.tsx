@@ -4,6 +4,7 @@ import Svg, { Defs, LinearGradient, Rect, Stop } from 'react-native-svg';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { STAGES, STAGE_ORDER, STAGE_ZOOM, type LiveStage } from '@/data/demoLive';
+import { useResponsive } from '@/theme/useResponsive';
 import { useTheme } from '@/theme/useTheme';
 
 import { Badge } from '../../ui/Badge';
@@ -140,6 +141,7 @@ function GatePin({ x, y, letter }: { x: number; y: number; letter: string }) {
 /** Live map (design ১০ · ১১ · ১২): the 3D city at three zoom levels with its pins, trains, controls and next-trains sheet. */
 export function LiveView(p: LiveViewProps) {
   const { c, size } = useTheme();
+  const { gutter } = useResponsive();
   const insets = useSafeAreaInsets();
   const { width } = useWindowDimensions();
   const layout = STAGES[p.stage];
@@ -304,7 +306,7 @@ export function LiveView(p: LiveViewProps) {
         {/* ---- the sheet ---- */}
         <View style={{ position: 'absolute', left: 0, right: 0, top: layout.ui.sheet, bottom: 0, backgroundColor: c.surface, borderTopLeftRadius: 28, borderTopRightRadius: 28, boxShadow: '0 -8px 28px rgba(14,26,22,0.14)', paddingTop: 10 }}>
           <View style={{ width: 40, height: 4, borderRadius: 2, backgroundColor: c.outline, alignSelf: 'center', marginBottom: 12 }} />
-          <ScrollView contentContainerStyle={{ paddingHorizontal: 20, paddingBottom: size.tabBar + 24 }} showsVerticalScrollIndicator={false}>
+          <ScrollView contentContainerStyle={{ paddingHorizontal: gutter, paddingBottom: size.tabBar + 24 }} showsVerticalScrollIndicator={false}>
             {p.stage === 'overview' ? (
               <>
                 <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>

@@ -39,7 +39,7 @@ export default function CardScreen() {
       addLabel={t('card.addCard')}
       savedLabel={t('card.savedLabel', { n: fmtNum(cards.length, lang) })}
       viewAllLabel={t('card.viewAll')}
-      cards={cards.map((c) => ({ id: c.id, name: c.name, tail: c.tail, typeLabel: t(`card.${c.cardType}`), color: c.color }))}
+      cards={cards.map((c) => ({ id: c.id, name: c.name, tail: c.tail, typeLabel: t(`card.${c.cardType}`), color: c.color, rapidPass: c.cardType === 'rapid_pass' }))}
       index={index}
       onIndexChange={setIndex}
       balance={{

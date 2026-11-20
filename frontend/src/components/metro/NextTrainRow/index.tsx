@@ -22,17 +22,17 @@ export function NextTrainRow({ direction, title, subtitle, eta, source = 'schedu
       style={{ minHeight: size.rowLg, flexDirection: 'row', alignItems: 'center', gap: space[3], paddingVertical: space[2], borderBottomWidth: divider ? 1 : 0, borderBottomColor: c.divider }}
     >
       <IconTile icon="train" tone="brand" />
-      <View style={{ flex: 1 }}>
-        <Text weight={700} numberOfLines={1}>
+      <View style={{ flex: 1, minWidth: 0 }}>
+        <Text weight={700} numberOfLines={2}>
           {title}
         </Text>
         {subtitle ? (
-          <Text variant="label" tone="muted" numberOfLines={1}>
+          <Text variant="label" tone="muted" numberOfLines={2}>
             {subtitle}
           </Text>
         ) : null}
       </View>
-      <View style={{ alignItems: 'flex-end', gap: 2 }}>
+      <View style={{ alignItems: 'flex-end', gap: 2, flexShrink: 0 }}>
         {dwell ? (
           <>
             <Text variant="title" weight={700} tone="live" numeric>

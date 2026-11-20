@@ -6,6 +6,7 @@ export interface WalletHomeCard {
   tail: string;
   typeLabel: string;
   color: CardColor;
+  rapidPass?: boolean;
 }
 
 export interface WalletHomeTrip {

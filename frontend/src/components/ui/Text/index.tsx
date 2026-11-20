@@ -1,7 +1,8 @@
+import { Children, type ReactNode } from 'react';
 import { Text as RNText } from 'react-native';
 
 import { useSettings } from '@/store/settings';
-import { fontFamily } from '@/theme/fonts';
+import { bnSize, fontFamily, hasBengali } from '@/theme/fonts';
 import { BANGLA_LINE_FACTOR, typeScale, type Palette } from '@/theme/tokens';
 import { useTheme } from '@/theme/useTheme';
 
@@ -18,13 +19,32 @@ const toneKey: Record<TextTone, keyof Palette> = {
   estimated: 'estimated',
 };
 
+/** The plain text of a node: strings and numbers only (enough to tell which script is shown). */
+function plainText(children: ReactNode): string {
+  let out = '';
+  Children.forEach(children, (ch) => {
+    if (typeof ch === 'string' || typeof ch === 'number') out += ch;
+  });
+  return out;
+}
+
 export function Text({ variant = 'body', tone = 'ink', numeric, weight, size, lh, tracking, color, align, numberOfLines, children, testID, accessibilityLabel }: TextProps) {
   const { c } = useTheme();
   const lang = useSettings((s) => s.lang);
   const ts = typeScale[variant];
   const w = weight ?? ts.weight;
-  const fs = size ?? ts.size;
-  const lineHeight = lh != null ? Math.round(fs * lh) : size != null ? Math.round(fs * (lang === 'bn' ? BANGLA_LINE_FACTOR : 1.35)) : lang === 'bn' ? Math.max(ts.line, Math.round(ts.size * BANGLA_LINE_FACTOR)) : ts.line;
+  const text = plainText(children);
+  // Bangla app, or Bangla text inside the English app (station names, names typed by the user)
+  const bangla = lang === 'bn' || hasBengali(text);
+  const base = size ?? ts.size;
+  const fs = bangla ? bnSize(base) : base;
+  const lineHeight = bangla
+    ? Math.round(fs * Math.max(BANGLA_LINE_FACTOR, lh ?? 0, 1.4))
+    : lh != null
+      ? Math.round(fs * lh)
+      : size != null
+        ? Math.round(fs * 1.35)
+        : ts.line;
   return (
     <RNText
       testID={testID}
@@ -36,7 +56,7 @@ export function Text({ variant = 'body', tone = 'ink', numeric, weight, size, lh
         fontSize: fs,
         letterSpacing: tracking,
         lineHeight,
-        fontFamily: fontFamily(lang, w, numeric || variant === 'countdown'),
+        fontFamily: fontFamily(lang, w, numeric || variant === 'countdown', text),
         fontVariant: numeric || variant === 'countdown' ? ['tabular-nums'] : undefined,
         textAlign: align,
       }}

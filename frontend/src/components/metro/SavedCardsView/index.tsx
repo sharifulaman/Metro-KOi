@@ -1,6 +1,7 @@
 import { ScrollView, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
+import { useResponsive } from '@/theme/useResponsive';
 import { useTheme } from '@/theme/useTheme';
 
 import { Button } from '../../ui/Button';
@@ -14,12 +15,13 @@ import type { SavedCardsViewProps } from './types';
 /** Saved cards (design ৭): one white list card, privacy note, and "Add a new card" above the tab bar. */
 export function SavedCardsView(p: SavedCardsViewProps) {
   const { c, size } = useTheme();
+  const { gutter } = useResponsive();
   const insets = useSafeAreaInsets();
   return (
     <View testID={p.testID} style={{ flex: 1, backgroundColor: c.bg }}>
       <ScrollView contentContainerStyle={{ paddingBottom: size.tabBar + 52 + 48 + insets.bottom }} showsVerticalScrollIndicator={false}>
         <NavHeader left={{ icon: 'back', label: p.backLabel, onPress: p.onBack }} title={p.title} right={{ icon: 'add', label: p.addLabel, onPress: p.onAdd }} />
-        <View style={{ marginTop: 18, marginHorizontal: 20, borderRadius: 22, borderWidth: 1, borderColor: c.divider, backgroundColor: c.surface }}>
+        <View style={{ marginTop: 18, marginHorizontal: gutter, borderRadius: 22, borderWidth: 1, borderColor: c.divider, backgroundColor: c.surface }}>
           {p.cards.map((card, i) => (
             <SavedCardRow
               key={card.id}
@@ -29,6 +31,7 @@ export function SavedCardsView(p: SavedCardsViewProps) {
               tailText={card.tailText}
               typeLabel={card.typeLabel}
               color={card.color}
+              rapidPass={card.rapidPass}
               balance={card.balance}
               isDefault={card.isDefault}
               defaultLabel={p.defaultLabel}

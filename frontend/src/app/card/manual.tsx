@@ -15,17 +15,21 @@ export default function CardManualScreen() {
   const existing = useWallet((s) => (id ? s.cards.find((c) => c.id === id) : undefined));
 
   const [name, setName] = useState(existing?.name ?? '');
-  const [tail, setTail] = useState(existing?.tail ?? '');
+  // the rider may type the card code ("RP…") or just the last 4 digits; only the last 4 digits are ever kept
+  const [code, setCode] = useState(existing?.tail ?? '');
   const [color, setColor] = useState<CardColor>(existing?.color ?? 'green');
-  const valid = name.trim().length > 0 && /^\d{4}$/.test(tail);
+  const isRp = /^RP/i.test(code);
+  const valid = name.trim().length > 0 && /^(RP)?\d{4,}$/i.test(code);
+  const tail = code.replace(/\D/g, '').slice(-4);
+  const cardType = isRp ? 'rapid_pass' : (existing?.cardType ?? 'mrt_pass');
 
   const save = () => {
     if (!valid) return;
     const w = useWallet.getState();
     if (existing) {
-      w.update(existing.id, { name: name.trim(), tail, color, sample: false });
+      w.update(existing.id, { name: name.trim(), tail, color, cardType, sample: false });
     } else {
-      w.add({ name: name.trim(), tail, color, cardType: 'rapid_pass', source: 'manual', balanceBdt: null, lastTapAt: null });
+      w.add({ name: name.trim(), tail, color, cardType, source: 'manual', balanceBdt: null, lastTapAt: null });
     }
     router.replace('/card');
   };
@@ -35,13 +39,13 @@ export default function CardManualScreen() {
       title={existing ? t('card.editTitle') : t('card.manualTitle')}
       closeLabel={t('common.close')}
       onClose={() => router.back()}
-      preview={{ name: name || t('card.defaultCardName'), tail: tail ? fmtNum(tail, 'en') : '0000', typeLabel: t('card.' + (existing?.cardType ?? 'rapid_pass')) }}
+      preview={{ name: name || t('card.defaultCardName'), tail: tail.length === 4 ? fmtNum(tail, 'en') : '0000', typeLabel: t('card.' + cardType), rapidPass: cardType === 'rapid_pass' }}
       nameLabel={t('card.cardNameLabel')}
       name={name}
       onName={setName}
       tailLabel={t('card.last4Label')}
-      tail={tail}
-      onTail={(v) => setTail(v.replace(/\D/g, '').slice(0, 4))}
+      tail={code}
+      onTail={(v) => setCode(v.toUpperCase().replace(/[^A-Z0-9]/g, '').slice(0, 20))}
       colorLabel={t('card.cardColorLabel')}
       color={color}
       onColor={setColor}

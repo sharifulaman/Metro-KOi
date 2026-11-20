@@ -1,5 +1,5 @@
 import { useId } from 'react';
-import { View } from 'react-native';
+import { Image, Text as RNText, View } from 'react-native';
 import Svg, { Circle, Defs, G, Line, LinearGradient, Path, Rect, Stop, Text as SvgText } from 'react-native-svg';
 
 import { useSettings } from '@/store/settings';
@@ -14,6 +14,9 @@ import type { CardArtProps } from './types';
 const W = 326;
 const H = 206;
 
+// eslint-disable-next-line @typescript-eslint/no-require-imports
+const RAPID_PASS_ART = require('../../../../assets/rapid-pass-card.png');
+
 const CONTACTLESS_D = [
   'M6 8.32a7.43 7.43 0 0 1 0 7.36',
   'M9.46 6.21a11.76 11.76 0 0 1 0 11.58',
@@ -22,7 +25,7 @@ const CONTACTLESS_D = [
 ];
 
 /** The saved-card visual: a gradient tile with a chip, a contactless mark and the card's label — used in the wallet carousel, list rows and the scan/save flow. */
-export function CardArt({ name, tail, typeLabel, color, size = 'hero', width, testID }: CardArtProps) {
+export function CardArt({ name, tail, typeLabel, color, rapidPass, size = 'hero', width, testID }: CardArtProps) {
   const lang = useSettings((s) => s.lang);
   const id = useId().replace(/[:]/g, '_');
   const grad = cardGradients[color];
@@ -31,6 +34,26 @@ export function CardArt({ name, tail, typeLabel, color, size = 'hero', width, te
   const hero = size === 'hero';
   // long names shrink so they never run into the card number
   const nameSize = name.length > 16 ? Math.max(12, Math.round((18 * 16) / name.length)) : 18;
+  if (rapidPass) {
+    const k = w / W;
+    return (
+      <View style={{ width: w, height: h, borderRadius: 16 * k, overflow: 'hidden', backgroundColor: '#FFFFFF', boxShadow: hero ? '0 6px 18px rgba(14,26,22,0.22)' : '0 3px 8px rgba(14,26,22,0.18)' }}>
+        <Image testID={testID} source={RAPID_PASS_ART} style={{ width: w, height: h }} resizeMode="stretch" accessibilityLabel={`${name}, ${typeLabel}`} />
+        {hero ? (
+          <View style={{ position: 'absolute', left: 10 * k, right: 10 * k, bottom: 9 * k, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 8 * k }}>
+            <View style={{ flexShrink: 1, paddingHorizontal: 10 * k, paddingVertical: 4 * k, borderRadius: 12 * k, backgroundColor: 'rgba(255,255,255,0.92)' }}>
+              <RNText numberOfLines={1} style={{ fontSize: Math.min(nameSize, 16) * k, fontFamily: fontFamily(lang, 700, false, name), color: '#0B3A6B' }}>
+                {name}
+              </RNText>
+            </View>
+            <View style={{ paddingHorizontal: 10 * k, paddingVertical: 4 * k, borderRadius: 12 * k, backgroundColor: 'rgba(255,255,255,0.92)' }}>
+              <RNText style={{ fontSize: 14 * k, fontFamily: fontFamily(lang, 600, true), color: '#0B3A6B' }}>{`•••• ${fmtNum(tail, lang)}`}</RNText>
+            </View>
+          </View>
+        ) : null}
+      </View>
+    );
+  }
   return (
     <View style={{ width: w, height: h, borderRadius: (22 * w) / W, boxShadow: hero ? '0 6px 18px rgba(14,26,22,0.22)' : '0 3px 8px rgba(14,26,22,0.18)' }}>
     <Svg testID={testID} width={w} height={h} viewBox={`0 0 ${W} ${H}`} accessibilityLabel={`${name}, ${typeLabel}`}>
@@ -70,7 +93,7 @@ export function CardArt({ name, tail, typeLabel, color, size = 'hero', width, te
 
       {hero ? (
         <>
-          <SvgText x={20} y={187} fontSize={nameSize} fontWeight="700" fontFamily={fontFamily(lang, 700)} fill="#FFFFFF">
+          <SvgText x={20} y={187} fontSize={nameSize} fontWeight="700" fontFamily={fontFamily(lang, 700, false, name)} fill="#FFFFFF">
             {name}
           </SvgText>
           <SvgText x={306} y={187} textAnchor="end" fontSize={15} fontWeight="600" fontFamily={fontFamily(lang, 600, true)} fill="#FFFFFF">

@@ -40,7 +40,7 @@ export function TextField({ label, value, onChangeText, placeholder, maxLength, 
           backgroundColor: c.surfaceAlt,
           color: c.ink,
           fontSize: 16,
-          fontFamily: fontFamily(lang, 400),
+          fontFamily: fontFamily(lang, 400, false, value ?? placeholder),
         }}
       />
     </View>

@@ -12,6 +12,6 @@ export interface ScanViewProps {
   iosHint: string;
   cancelLabel: string;
   /** the card shown tilting into the phone */
-  card: { name: string; tail: string; typeLabel: string };
+  card: { name: string; tail: string; typeLabel: string; rapidPass?: boolean };
   testID?: string;
 }

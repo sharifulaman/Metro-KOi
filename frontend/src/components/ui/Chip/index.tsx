@@ -30,6 +30,8 @@ export function Chip({ label, tone = 'neutral', selected, dot, icon, onPress, el
           flexDirection: 'row',
           alignItems: 'center',
           alignSelf: 'flex-start',
+          maxWidth: '100%',
+          paddingVertical: space[1],
           gap: space[2],
           opacity: pressed ? 0.8 : 1,
         },
@@ -38,9 +40,11 @@ export function Chip({ label, tone = 'neutral', selected, dot, icon, onPress, el
     >
       {dot ? <View style={{ width: 8, height: 8, borderRadius: 4, backgroundColor: dot }} /> : null}
       {icon ? <Icon name={icon} size={16} tone={fg} /> : null}
-      <Text variant="label" weight={600} tone={fg} numberOfLines={1}>
-        {label}
-      </Text>
+      <View style={{ flexShrink: 1, minWidth: 0 }}>
+        <Text variant="label" weight={600} tone={fg} numberOfLines={2}>
+          {label}
+        </Text>
+      </View>
     </Pressable>
   );
 }

@@ -2,6 +2,7 @@ import { Image, Platform, Pressable, ScrollView, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import Svg, { Defs, LinearGradient, Rect, Stop } from 'react-native-svg';
 
+import { useResponsive } from '@/theme/useResponsive';
 import { useTheme } from '@/theme/useTheme';
 
 import { Button } from '../../ui/Button';
@@ -24,12 +25,14 @@ const blur = Platform.OS === 'web' ? ({ backdropFilter: 'blur(12px)' } as object
 /** Station detail (design ১৫): 3D map header, both directions' next trains, facts, journey / 3D buttons. */
 export function StationDetailView(p: StationDetailViewProps) {
   const { c } = useTheme();
+  const { gutter } = useResponsive();
   const insets = useSafeAreaInsets();
   const glass = { position: 'absolute' as const, top: 22 + insets.top, width: 46, height: 46, borderRadius: 23, alignItems: 'center' as const, justifyContent: 'center' as const, backgroundColor: c.glassMap, boxShadow: '0 4px 14px rgba(14,26,22,0.16)' };
   return (
     <View testID={p.testID} style={{ flex: 1, backgroundColor: c.bg }}>
-      <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom: insets.bottom + 4 }}>
-        <View style={{ height: 262, overflow: 'hidden' }}>
+      {/* the map header takes whatever height the details below do not need, so a tall phone shows no empty band */}
+      <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ flexGrow: 1, paddingBottom: insets.bottom + 4 }}>
+        <View style={{ minHeight: 262, flexGrow: 1, overflow: 'hidden' }}>
           {p.map ? <View style={{ position: 'absolute', left: 0, right: 0, top: 0, bottom: 0 }}>{p.map}</View> : <Image source={ART} resizeMode="stretch" style={{ position: 'absolute', left: 0, top: -70, width: '100%', height: 844 }} />}
           <Svg width="100%" height={70} pointerEvents="none" style={{ position: 'absolute', left: 0, right: 0, bottom: 0 }} preserveAspectRatio="none">
             <Defs>
@@ -86,7 +89,7 @@ export function StationDetailView(p: StationDetailViewProps) {
           </Pressable>
         </View>
 
-        <View style={{ paddingHorizontal: 20, marginTop: -2 }}>
+        <View style={{ paddingHorizontal: gutter, marginTop: -2 }}>
           <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
             <View style={{ width: 28, height: 28, borderRadius: 9, backgroundColor: c.brandSolid, alignItems: 'center', justifyContent: 'center' }}>
               <Text size={14} lh={1.2} weight={700} color={c.onBrandSolid} numeric>

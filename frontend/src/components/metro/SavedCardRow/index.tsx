@@ -30,7 +30,7 @@ export function SavedCardRow(p: SavedCardRowProps) {
     <View testID={p.testID}>
       <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12, paddingHorizontal: 14, paddingVertical: 12 }}>
         <Pressable onPress={p.onPress} disabled={!p.onPress} accessibilityRole="button" accessibilityLabel={p.name}>
-          <CardArt name={p.name} tail={p.tail} typeLabel={p.typeLabel} color={p.color} size="row" width={98} />
+          <CardArt name={p.name} tail={p.tail} typeLabel={p.typeLabel} color={p.color} rapidPass={p.rapidPass} size="row" width={98} />
         </Pressable>
         <View style={{ flex: 1, minWidth: 0 }}>
           <Text size={15.5} lh={1.35} weight={700} numberOfLines={1}>

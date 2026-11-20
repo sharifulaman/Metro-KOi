@@ -7,6 +7,7 @@ export interface SavedCardsViewCard {
   tailText: string;
   typeLabel: string;
   color: CardColor;
+  rapidPass?: boolean;
   balance: string | null;
   isDefault: boolean;
   confirming: boolean;

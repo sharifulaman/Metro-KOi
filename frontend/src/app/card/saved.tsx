@@ -27,6 +27,7 @@ export default function CardSavedScreen() {
         tailText: '•••• ' + fmtNum(c.tail, lang),
         typeLabel: t('card.' + c.cardType),
         color: c.color,
+        rapidPass: c.cardType === 'rapid_pass',
         balance: c.balanceBdt != null ? '৳ ' + fmtNum(c.balanceBdt.toLocaleString('en-US'), lang) : null,
         isDefault: c.isDefault,
         confirming: confirmId === c.id,

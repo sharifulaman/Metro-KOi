@@ -37,7 +37,7 @@ export function WalletCarousel({ cards, index, onIndexChange, onPressCard, hideD
       >
         {cards.map((card) => (
           <Pressable key={card.id} onPress={() => onPressCard?.(card.id)} accessibilityRole="button" accessibilityLabel={card.name}>
-            <CardArt name={card.name} tail={card.tail} typeLabel={card.typeLabel} color={card.color} width={CARD_W} />
+            <CardArt name={card.name} tail={card.tail} typeLabel={card.typeLabel} color={card.color} rapidPass={card.rapidPass} width={CARD_W} />
           </Pressable>
         ))}
       </ScrollView>

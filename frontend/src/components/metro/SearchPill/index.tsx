@@ -1,5 +1,6 @@
 import { Pressable, View } from 'react-native';
 
+import { useResponsive } from '@/theme/useResponsive';
 import { useTheme } from '@/theme/useTheme';
 
 import { Icon } from '../../ui/Icon';
@@ -10,6 +11,21 @@ import type { SearchPillProps } from './types';
 /** Full-width search bar: floating over the map, or outlined on a list page, with an optional legend or language toggle inside. */
 export function SearchPill({ placeholder, onPress, langLabel, onLangPress, langAccessibilityLabel, legend, outlined, testID }: SearchPillProps) {
   const { c, space, radius, size, shadow } = useTheme();
+  const { compact } = useResponsive();
+  // on small phones the Live / Estimated legend would squeeze the placeholder, so it goes on its own line
+  const stackLegend = !!legend && compact;
+  const legendView = legend ? (
+    <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6, flexShrink: 0 }}>
+      <View style={{ width: 8, height: 8, borderRadius: 4, backgroundColor: c.live }} />
+      <Text variant="micro" tone="muted">
+        {legend.live}
+      </Text>
+      <View style={{ width: 8, height: 8, borderRadius: 4, borderWidth: 1.6, borderStyle: 'dashed', borderColor: c.inkMuted, marginLeft: 4 }} />
+      <Text variant="micro" tone="muted">
+        {legend.estimated}
+      </Text>
+    </View>
+  ) : null;
   return (
     <View
       testID={testID}
@@ -17,7 +33,8 @@ export function SearchPill({ placeholder, onPress, langLabel, onLangPress, langA
         {
           flexDirection: 'row',
           alignItems: 'center',
-          height: outlined ? 46 : 52,
+          flexWrap: 'wrap',
+          minHeight: outlined ? 46 : 52,
           borderRadius: radius.control,
           backgroundColor: outlined ? c.surface : c.glass,
           borderWidth: outlined ? 1.5 : 0,
@@ -35,18 +52,7 @@ export function SearchPill({ placeholder, onPress, langLabel, onLangPress, langA
           {placeholder}
         </Text>
       </Pressable>
-      {legend ? (
-        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
-          <View style={{ width: 8, height: 8, borderRadius: 4, backgroundColor: c.live }} />
-          <Text variant="micro" tone="muted">
-            {legend.live}
-          </Text>
-          <View style={{ width: 8, height: 8, borderRadius: 4, borderWidth: 1.6, borderStyle: 'dashed', borderColor: c.inkMuted, marginLeft: 4 }} />
-          <Text variant="micro" tone="muted">
-            {legend.estimated}
-          </Text>
-        </View>
-      ) : null}
+      {stackLegend ? null : legendView}
       {langLabel ? (
         <Pressable
           onPress={onLangPress}
@@ -60,6 +66,7 @@ export function SearchPill({ placeholder, onPress, langLabel, onLangPress, langA
           </Text>
         </Pressable>
       ) : null}
+      {stackLegend ? <View style={{ width: '100%', paddingBottom: space[2], paddingLeft: space[1] }}>{legendView}</View> : null}
     </View>
   );
 }

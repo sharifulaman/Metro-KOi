@@ -1,6 +1,7 @@
 import { Pressable, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
+import { useResponsive } from '@/theme/useResponsive';
 import { useTheme } from '@/theme/useTheme';
 
 import { Icon } from '../../ui/Icon';
@@ -25,12 +26,15 @@ function Round({ icon, label, onPress }: { icon: 'back' | 'close' | 'add'; label
 /** Page header of the card flow: round back/close button, centred 18px title, optional round action (design: 22px top, 20px sides). */
 export function NavHeader({ left, title, right, testID }: NavHeaderProps) {
   const insets = useSafeAreaInsets();
+  const { gutter } = useResponsive();
   return (
-    <View testID={testID} style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingTop: insets.top + 22, paddingHorizontal: 20 }}>
+    <View testID={testID} style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingTop: insets.top + 22, paddingHorizontal: gutter }}>
       {left ? <Round {...left} /> : <View style={{ width: 46 }} />}
-      <Text size={18} lh={1.35} weight={700} numberOfLines={1}>
-        {title}
-      </Text>
+      <View style={{ flex: 1, minWidth: 0, paddingHorizontal: 8 }}>
+        <Text size={18} lh={1.35} weight={700} numberOfLines={2} align="center">
+          {title}
+        </Text>
+      </View>
       {right ? <Round {...right} /> : <View style={{ width: 46 }} />}
     </View>
   );

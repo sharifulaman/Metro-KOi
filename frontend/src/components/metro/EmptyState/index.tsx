@@ -23,7 +23,11 @@ export function EmptyState({ icon, title, body, action, compact, testID }: Empty
           {body}
         </Text>
       ) : null}
-      {action ? <Button label={action.label} onPress={action.onPress} variant="secondary" size="md" /> : null}
+      {action ? (
+        <View style={{ alignSelf: 'center', maxWidth: '100%' }}>
+          <Button label={action.label} onPress={action.onPress} variant="secondary" size="md" />
+        </View>
+      ) : null}
     </View>
   );
 }

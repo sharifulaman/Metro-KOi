@@ -4,7 +4,7 @@ export interface ManualCardViewProps {
   title: string;
   closeLabel: string;
   onClose(): void;
-  preview: { name: string; tail: string; typeLabel: string };
+  preview: { name: string; tail: string; typeLabel: string; rapidPass?: boolean };
   nameLabel: string;
   name: string;
   onName(v: string): void;

@@ -2,7 +2,7 @@ import type { CardColor } from '@/theme/tokens';
 
 export interface FoundViewProps {
   title: string;
-  card: { name: string; tail: string; typeLabel: string };
+  card: { name: string; tail: string; typeLabel: string; rapidPass?: boolean };
   color: CardColor;
   balanceLabel: string;
   /** digits only ("৩৪০"); null → no balance could be read */

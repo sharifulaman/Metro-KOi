@@ -1,5 +1,6 @@
 import { Pressable, View } from 'react-native';
 
+import { useResponsive } from '@/theme/useResponsive';
 import { useTheme } from '@/theme/useTheme';
 
 import { Icon } from '../../ui/Icon';
@@ -10,11 +11,11 @@ import type { StationTimelineProps, TimelineEta } from './types';
 const ROW = 60;
 const LINE_X = 27;
 
-function EtaPill({ eta }: { eta: TimelineEta }) {
+function EtaPill({ eta, narrow }: { eta: TimelineEta; narrow: boolean }) {
   const { c } = useTheme();
   const live = eta.kind === 'live';
   return (
-    <View style={{ height: 32, paddingHorizontal: 12, borderRadius: 16, flexDirection: 'row', alignItems: 'center', gap: 6, backgroundColor: live ? c.liveTint : c.surfaceAlt }}>
+    <View style={{ height: 32, paddingHorizontal: narrow ? 9 : 12, borderRadius: 16, flexDirection: 'row', alignItems: 'center', gap: narrow ? 4 : 6, flexShrink: 0, backgroundColor: live ? c.liveTint : c.surfaceAlt }}>
       {eta.kind === 'closed' ? (
         <Icon name="clock" size={16} color={c.inkMuted} strokeWidth={2.2} />
       ) : (
@@ -30,6 +31,7 @@ function EtaPill({ eta }: { eta: TimelineEta }) {
 /** The stations list as a vertical line: numbered stops, next-train pills, and the train riding between two stops (design ১৩/১৪). */
 export function StationTimeline({ stations, train, labels, testID }: StationTimelineProps) {
   const { c, dark } = useTheme();
+  const { narrow } = useResponsive();
   const markerTop = train ? 6 + (train.afterIndex + train.progress) * ROW + ROW / 2 - 11 : null;
   return (
     <View testID={testID} style={{ backgroundColor: c.surface, borderTopLeftRadius: 26, borderTopRightRadius: 26, paddingTop: 6, overflow: 'hidden', boxShadow: '0 1px 0 ' + c.divider }}>
@@ -44,7 +46,7 @@ export function StationTimeline({ stations, train, labels, testID }: StationTime
             disabled={!s.onPress}
             accessibilityRole={s.onPress ? 'button' : undefined}
             accessibilityLabel={[s.name, s.eta?.label].filter(Boolean).join(', ')}
-            style={({ pressed }) => ({ height: ROW, flexDirection: 'row', alignItems: 'center', paddingLeft: 62, paddingRight: 14, opacity: pressed ? 0.7 : 1 })}
+            style={({ pressed }) => ({ height: ROW, flexDirection: 'row', alignItems: 'center', paddingLeft: 62, paddingRight: narrow ? 10 : 14, opacity: pressed ? 0.7 : 1 })}
           >
             <View
               style={{
@@ -66,26 +68,31 @@ export function StationTimeline({ stations, train, labels, testID }: StationTime
               </Text>
             </View>
             <View style={{ flex: 1, minWidth: 0 }}>
+              <Text size={16.5} lh={1.3} weight={700} numberOfLines={1}>
+                {s.name}
+              </Text>
+              {/* Start / End badge sits with the second name, so the station name keeps the full width */}
               <View style={{ flexDirection: 'row', alignItems: 'center' }}>
-                <Text size={16.5} lh={1.3} weight={700} numberOfLines={1}>
-                  {s.name}
-                </Text>
+                <View style={{ flexShrink: 1, minWidth: 0 }}>
+                  <Text size={12.5} lh={1.35} weight={400} tone="muted" numberOfLines={1}>
+                    {s.altName}
+                  </Text>
+                </View>
                 {s.terminal ? (
-                  <View style={{ marginLeft: 8, paddingHorizontal: 7, paddingVertical: 1, borderRadius: 8, backgroundColor: c.brandTint }}>
+                  <View style={{ marginLeft: 6, flexShrink: 0, paddingHorizontal: 7, paddingVertical: 1, borderRadius: 8, backgroundColor: c.brandTint }}>
                     <Text size={11} lh={1.3} weight={700} color={c.onBrandTint}>
                       {s.terminal === 'start' ? labels.start : labels.end}
                     </Text>
                   </View>
                 ) : null}
               </View>
-              <Text size={12.5} lh={1.35} weight={400} tone="muted" numberOfLines={1}>
-                {s.altName}
-              </Text>
             </View>
-            {s.eta ? <EtaPill eta={s.eta} /> : null}
-            <View style={{ marginLeft: 6 }}>
-              <Icon name="chevron" size={18} color={dark ? '#5E716A' : '#9FB0A8'} strokeWidth={2.2} />
-            </View>
+            {s.eta ? <EtaPill eta={s.eta} narrow={narrow} /> : null}
+            {narrow ? null : (
+              <View style={{ marginLeft: 6 }}>
+                <Icon name="chevron" size={18} color={dark ? '#5E716A' : '#9FB0A8'} strokeWidth={2.2} />
+              </View>
+            )}
           </Pressable>
         );
       })}

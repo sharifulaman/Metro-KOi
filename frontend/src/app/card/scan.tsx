@@ -43,7 +43,7 @@ export default function CardScanScreen() {
       androidHint={t('card.androidHint')}
       iosHint={t('card.iosHint')}
       cancelLabel={t('common.cancel')}
-      card={{ name: sample?.name ?? t('card.defaultCardName'), tail: sample?.tail ?? '····', typeLabel: t('card.rapid_pass') }}
+      card={{ name: sample?.name ?? t('card.defaultCardName'), tail: sample?.tail ?? '····', typeLabel: t('card.rapid_pass'), rapidPass: (sample?.cardType ?? 'rapid_pass') === 'rapid_pass' }}
     />
   );
 }

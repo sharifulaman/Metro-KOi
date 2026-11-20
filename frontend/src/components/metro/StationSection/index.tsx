@@ -1,4 +1,4 @@
-import { View } from 'react-native';
+import { View, useWindowDimensions } from 'react-native';
 import Svg, { Circle, G, Path, Rect, Text as SvgText } from 'react-native-svg';
 
 import { useSettings } from '@/store/settings';
@@ -15,6 +15,9 @@ import type { StationSectionProps } from './types';
 export function StationSection({ platform = 1, gate = 'A', mode = 'entry', trainAt = null, roofOpen = true, labels, testID }: StationSectionProps) {
   const { c, radius } = useTheme();
   const lang = useSettings((s) => s.lang);
+  // taller phones get a taller diagram (same drawing, centred), so the page does not end in an empty band
+  const { height: winH } = useWindowDimensions();
+  const height = Math.round(Math.min(Math.max(240, winH * 0.34), 400));
   const west = gate === 'A' || gate === 'C';
   const gx = west ? 40 : 300;
   const px = platform === 1 ? 230 : 110;
@@ -23,7 +26,7 @@ export function StationSection({ platform = 1, gate = 'A', mode = 'entry', train
   const font = fontFamily(lang, 600);
   return (
     <View testID={testID} style={{ borderRadius: radius.card, overflow: 'hidden', backgroundColor: c.mapGround }}>
-      <Svg width="100%" height={240} viewBox="0 0 340 240">
+      <Svg width="100%" height={height} viewBox="0 0 340 240">
         {/* street + piers */}
         <Rect x={0} y={220} width={340} height={20} fill={c.mapRoad} />
         <Rect x={95} y={160} width={14} height={60} fill={c.outline} />

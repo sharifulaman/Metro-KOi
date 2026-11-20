@@ -51,6 +51,8 @@ import { gallery as WalletCarousel } from './metro/WalletCarousel/gallery';
 import { gallery as WalletHome } from './metro/WalletHome/gallery';
 import { gallery as StationTimeline } from './metro/StationTimeline/gallery';
 import { gallery as NearestBanner } from './metro/NearestBanner/gallery';
+import { gallery as GateFinderView } from './metro/GateFinderView/gallery';
+import { gallery as GateCompassView } from './metro/GateCompassView/gallery';
 import { gallery as DirectionEtaCard } from './metro/DirectionEtaCard/gallery';
 import { gallery as InfoTile } from './metro/InfoTile/gallery';
 import { gallery as Badge } from './ui/Badge/gallery';
@@ -78,6 +80,6 @@ export const galleryRegistry: GalleryEntry[] = [
   TabBar, ScreenHeader, StationHeader, DepartureRow, PlatformGroup, TrainCard, CoachCrowdBar, LineDiagram, GateSelector, RouteSteps,
   TransactionRow, BalanceCard, SummaryCard, RideBanner, ConnectionPill, TrainIllustration, EmptyState, StationSection,
   SearchPill, NextTrainRow, PlaybackBar, SegmentProgress, TrainTimeline, JourneyPicker, JourneyOptionCard, JourneyDetailView, JourneyView, BrandMark, BrandBar, MapLegend, Splash,
-  CardArt, LiveView, StationDetailView, StationsView, NavHeader, HistoryView, SavedCardsView, ManualCardView, AddCardSheet, FoundView, ScanView, CardColorPicker, WalletCarousel, WalletHome, BalancePanel, SavedCardRow, StationTimeline, NearestBanner, DirectionEtaCard, InfoTile,
+  CardArt, LiveView, StationDetailView, StationsView, NavHeader, HistoryView, SavedCardsView, ManualCardView, AddCardSheet, FoundView, ScanView, CardColorPicker, WalletCarousel, WalletHome, BalancePanel, SavedCardRow, StationTimeline, NearestBanner, DirectionEtaCard, InfoTile, GateFinderView, GateCompassView,
   mapGallery,
 ];

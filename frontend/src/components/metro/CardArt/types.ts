@@ -8,7 +8,7 @@ export interface CardArtProps {
   /** translated card-type chip, e.g. "Rapid Pass" */
   typeLabel: string;
   color: CardColor;
-  /** true → draw the official Rapid Pass card artwork instead of the coloured tile (card code starts with RP) */
+  /** the card is a Rapid Pass (code starts with RP): with design 'original' it is drawn as the official card picture instead of the coloured tile */
   rapidPass?: boolean;
   /** 'hero' = full card with name/tail; 'row' = small thumbnail for a list row, art only */
   size?: 'hero' | 'row';

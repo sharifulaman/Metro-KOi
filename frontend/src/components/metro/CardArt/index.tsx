@@ -34,7 +34,8 @@ export function CardArt({ name, tail, typeLabel, color, rapidPass, size = 'hero'
   const hero = size === 'hero';
   // long names shrink so they never run into the card number
   const nameSize = name.length > 16 ? Math.max(12, Math.round((18 * 16) / name.length)) : 18;
-  if (rapidPass) {
+  // the rider can pick the official Rapid Pass picture as the card design; any other card (or colour) is the tile
+  if (rapidPass && color === 'original') {
     const k = w / W;
     return (
       <View style={{ width: w, height: h, borderRadius: 16 * k, overflow: 'hidden', backgroundColor: '#FFFFFF', boxShadow: hero ? '0 6px 18px rgba(14,26,22,0.22)' : '0 3px 8px rgba(14,26,22,0.18)' }}>

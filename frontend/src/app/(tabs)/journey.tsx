@@ -2,13 +2,12 @@ import { useRouter } from 'expo-router';
 import { useState } from 'react';
 
 import { JourneyView, type JourneyBadge, type JourneyOptionCardProps } from '@/components/metro';
-import { ListRow, Sheet, Text } from '@/components/ui';
+import { Button, ListRow, Sheet, Text } from '@/components/ui';
 import { DEMO_JOURNEY } from '@/data/demoJourney';
 import { ActiveTrip } from '@/features/journey/ActiveTrip';
 import { useJourney } from '@/features/journey/useJourney';
 import { useRiderSession } from '@/features/rider/useRiderSession';
 import { useStartRide } from '@/features/rider/useStartRide';
-import { GateTrackerPanel } from '@/features/gates/GateTracker';
 import { stationName, useStations } from '@/features/stations/useStations';
 import { useT } from '@/i18n';
 import { fareFor } from '@/lib/schedule';
@@ -79,7 +78,7 @@ export default function JourneyScreen() {
       : undefined;
   const best = options[0];
   // the "next train" tab lists the trains; the Now tab shows the fastest one as a card
-  const laterTab = showLater && !closed;
+  const laterTab = showLater;
   // a train is arriving now: go back to the Now tab on its own
   const nextWaitSec = real.options[0]?.waitSec;
   if (showLater && nextWaitSec != null && nextWaitSec <= 60) setShowLater(false);
@@ -119,17 +118,17 @@ export default function JourneyScreen() {
       ? {
           ...row(best),
           testID: 'journey-best',
-          bestLabel: closed ? t('journey.firstTomorrow') : t('journey.fastest'),
+          bestLabel: t('journey.fastest'),
           departCaption: t('journey.leavesCaption'),
           arriveCaption: t('journey.arriveWord'),
           arriveText: t('journey.stationsCount', { n: fmtNum(stops, lang) }),
           duration: fmtDuration(best.durationSec, lang),
           midStops: Math.max(0, stops - 1),
           platformText: t('journey.platformShort', { n: fmtNum(best.direction === 'SB' ? 1 : 2, lang), dir: dirText(best) }),
-          platformMeta: closed ? t('journey.byTimetable') : best.trainId,
-          action: closed ? { label: t('journey.details'), icon: 'list', onPress: () => open(best) } : { label: t('journey.track'), icon: 'pin', onPress: () => router.push(`/train/${best.trainId}`) },
+          platformMeta: best.trainId,
+          action: { label: t('journey.track'), icon: 'pin', onPress: () => router.push(`/train/${best.trainId}`) },
           // start the trip: go live as a rider on this train and watch it on the Live map
-          extra: closed ? undefined : { label: t('journey.start'), icon: 'train', onPress: startJourney },
+          extra: { label: t('journey.start'), icon: 'train', onPress: startJourney },
         }
       : undefined;
 
@@ -155,33 +154,28 @@ export default function JourneyScreen() {
         },
         swapLabel: t('journey.swap'),
       }}
-      closedNote={closed ? { title: t('journey.closedNoteTitle'), body: t('journey.closedNoteBody') } : undefined}
-      modes={
-        closed
-          ? undefined
-          : {
-              nowLabel: t('journey.leaveNow'),
-              laterLabel: t('journey.leaveLater'),
-              later: showLater,
-              onNow: () => {
-                setLaterMin(0);
-                setShowLater(false);
-              },
-              onLater: () => setShowLater(true),
-              summary: differ && best ? t('journey.dirSummary', { dir: dirText(best), dur: fmtDuration(best.durationSec, lang) }) : undefined,
-              laterOptions: [],
-            }
-      }
+      modes={{
+        nowLabel: t('journey.leaveNow'),
+        laterLabel: t('journey.leaveLater'),
+        later: showLater,
+        onNow: () => {
+          setLaterMin(0);
+          setShowLater(false);
+        },
+        onLater: () => setShowLater(true),
+        summary: differ && best ? t('journey.dirSummary', { dir: dirText(best), dur: fmtDuration(best.durationSec, lang) }) : undefined,
+        laterOptions: [],
+      }}
       empty={!differ ? { icon: 'route', title: t('journey.same') } : !best ? { icon: 'clock', title: t('journey.none'), action: { label: t('stations.timetable'), onPress: () => router.push('/timetable') } } : undefined}
       fare={fareCard}
       best={laterTab ? undefined : bestCard}
-      listTitle={closed ? t('journey.after') : laterTab ? undefined : t('journey.nextTrains')}
-      rows={differ ? (laterTab ? options : closed ? options.slice(1) : []).map(row) : []}
+      listTitle={laterTab ? undefined : t('journey.nextTrains')}
+      rows={differ ? (laterTab ? options : []).map(row) : []}
       disclaimer={t('journey.disclaimer')}
-      footer={<GateTrackerPanel stationHint={to} />}
+      footer={<Button label={t('gateTrack.open')} icon="gate" variant="secondary" fullWidth onPress={() => router.push(to ? `/gate-tracker?station=${to}` : '/gate-tracker')} testID="open-gate-tracker" />}
     >
       {picking ? (
-        <Sheet onToggle={() => setPicking(null)}>
+        <Sheet modal withTabBar onDismiss={() => setPicking(null)}>
           <Text variant="title">{t(picking === 'from' ? 'journey.from' : 'journey.to')}</Text>
           {list.map((s, i) => (
             <ListRow

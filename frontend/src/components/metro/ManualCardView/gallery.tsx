@@ -27,7 +27,7 @@ function Demo() {
         colorLabel="Card colour"
         color={color}
         onColor={setColor}
-        colorLabels={{ green: 'Green', dark: 'Dark', gold: 'Gold', blue: 'Blue' }}
+        colorLabels={{ green: 'Green', dark: 'Dark', gold: 'Gold', blue: 'Blue', original: 'Original card' }}
         note="You don't need the full card number. Name, colour and last 4 digits are saved only on this phone."
         saveLabel="Save"
         canSave

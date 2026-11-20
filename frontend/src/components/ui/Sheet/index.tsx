@@ -56,7 +56,7 @@ export function Sheet({ children, handle = true, docked, collapsed, onToggle, pe
   );
   if (!modal) return sheet;
   return (
-    <View style={{ flex: 1, justifyContent: 'flex-end', backgroundColor: c.scrim }}>
+    <View style={{ position: 'absolute', left: 0, right: 0, top: 0, bottom: 0, justifyContent: 'flex-end', backgroundColor: c.scrim }}>
       <Pressable accessibilityRole="button" accessibilityLabel="Close" onPress={onDismiss} style={{ flex: 1 }} />
       {sheet}
     </View>

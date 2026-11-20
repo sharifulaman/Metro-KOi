@@ -49,7 +49,7 @@ export default function CardManualScreen() {
       colorLabel={t('card.cardColorLabel')}
       color={color}
       onColor={setColor}
-      colorLabels={{ green: t('card.colorGreen'), dark: t('card.colorDark'), gold: t('card.colorGold'), blue: t('card.colorBlue') }}
+      colorLabels={{ green: t('card.colorGreen'), dark: t('card.colorDark'), gold: t('card.colorGold'), blue: t('card.colorBlue'), original: t('card.colorOriginal') }}
       note={t('card.noFullNumberNote')}
       saveLabel={t('card.save')}
       canSave={valid}

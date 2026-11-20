@@ -9,5 +9,7 @@ export interface CardColorPickerProps {
   size?: number;
   /** colour of the gap ring around the chosen swatch: the surface it sits on */
   ringOn?: 'surface' | 'bg';
+  /** add the "original card" choice (the official Rapid Pass picture); only for Rapid Pass cards */
+  original?: boolean;
   testID?: string;
 }

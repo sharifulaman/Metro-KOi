@@ -95,6 +95,13 @@ export function fmtDistance(m: number, lang: Lang): string {
   return lang === 'bn' ? `${toBnDigits(km)} কি.মি. দূরে` : `${km} km away`;
 }
 
+/** "850 m" / "2.8 km" without the "away" words, for tight rows. */
+export function fmtDistanceShort(m: number, lang: Lang): string {
+  if (m < 1000) return lang === 'bn' ? `${toBnDigits(String(Math.round(m)))} মি.` : `${Math.round(m)} m`;
+  const km = (m / 1000).toFixed(1);
+  return lang === 'bn' ? `${toBnDigits(km)} কি.মি.` : `${km} km`;
+}
+
 const BN_MONTHS = ['জানুয়ারি', 'ফেব্রুয়ারি', 'মার্চ', 'এপ্রিল', 'মে', 'জুন', 'জুলাই', 'আগস্ট', 'সেপ্টেম্বর', 'অক্টোবর', 'নভেম্বর', 'ডিসেম্বর'];
 const EN_MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
 

@@ -72,7 +72,7 @@ export function FoundView(p: FoundViewProps) {
               {p.colorLabel}
             </Text>
             <View style={{ marginTop: 3 }}>
-              <CardColorPicker value={p.color} onChange={p.onColor} labels={p.colorLabels} size={40} ringOn="surface" />
+              <CardColorPicker value={p.color} onChange={p.onColor} labels={p.colorLabels} size={40} ringOn="surface" original={!!p.card.rapidPass} />
             </View>
           </View>
           <View style={{ marginTop: 11 }}>

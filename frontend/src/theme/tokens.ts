@@ -123,13 +123,16 @@ export const dark: Palette = {
 };
 
 /** A saved card's colour, picked by the rider to tell cards apart — fixed in both themes, like `livery`. */
-export type CardColor = 'green' | 'dark' | 'gold' | 'blue';
+/** 'original' = the official Rapid Pass card picture instead of a coloured tile (Rapid Pass cards only). */
+export type CardColor = 'green' | 'dark' | 'gold' | 'blue' | 'original';
 
 export const cardGradients: Record<CardColor, { from: string; via: string; to: string }> = {
   green: { from: '#0A8A60', via: '#066B4A', to: '#04402C' },
   dark: { from: '#2B3A35', via: '#16211D', to: '#0B1210' },
   gold: { from: '#B7791F', via: '#8A4B0F', to: '#5C3008' },
   blue: { from: '#2F6FD1', via: '#1D4FA3', to: '#123572' },
+  // never drawn as a tile: an 'original' card without the Rapid Pass picture falls back to green
+  original: { from: '#0A8A60', via: '#066B4A', to: '#04402C' },
 };
 
 /** The EMV-style chip graphic drawn on every card, regardless of its colour. */

@@ -33,7 +33,7 @@ export function ManualCardView(p: ManualCardViewProps) {
             {p.colorLabel}
           </Text>
           <View style={{ marginTop: 3 }}>
-            <CardColorPicker value={p.color} onChange={p.onColor} labels={p.colorLabels} size={38} ringOn="bg" />
+            <CardColorPicker value={p.color} onChange={p.onColor} labels={p.colorLabels} size={38} ringOn="bg" original={!!p.preview.rapidPass} />
           </View>
         </View>
         <View style={{ flexDirection: 'row', gap: 10, marginTop: 9, paddingHorizontal: 14, paddingVertical: 12, borderRadius: 18, backgroundColor: c.surfaceAlt }}>

@@ -26,7 +26,7 @@ function Demo({ known }: { known: boolean }) {
         onName={setName}
         colorLabel="Card colour"
         onColor={setColor}
-        colorLabels={{ green: 'Green', dark: 'Dark', gold: 'Gold', blue: 'Blue' }}
+        colorLabels={{ green: 'Green', dark: 'Dark', gold: 'Gold', blue: 'Blue', original: 'Original card' }}
         saveLabel="Save"
         onSave={() => {}}
         rescanLabel="Scan again"

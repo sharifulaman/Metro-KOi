@@ -51,7 +51,7 @@ export default function CardFoundScreen() {
       onName={setName}
       colorLabel={t('card.cardColorLabel')}
       onColor={setColor}
-      colorLabels={{ green: t('card.colorGreen'), dark: t('card.colorDark'), gold: t('card.colorGold'), blue: t('card.colorBlue') }}
+      colorLabels={{ green: t('card.colorGreen'), dark: t('card.colorDark'), gold: t('card.colorGold'), blue: t('card.colorBlue'), original: t('card.colorOriginal') }}
       saveLabel={existing ? t('card.updateCard') : t('card.save')}
       onSave={save}
       rescanLabel={t('card.rescan')}

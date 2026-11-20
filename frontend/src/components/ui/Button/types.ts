@@ -12,6 +12,8 @@ export interface ButtonProps {
   height?: number;
   icon?: IconName;
   fullWidth?: boolean;
+  /** tighter padding, icon and text for two buttons sharing a row on a narrow phone */
+  dense?: boolean;
   loading?: boolean;
   disabled?: boolean;
   /** Floating action style (elevated, pill). */

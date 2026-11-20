@@ -106,13 +106,13 @@ export function WalletHome(p: WalletHomeProps) {
 
       <View style={{ marginTop: 14, marginHorizontal: gutter + 4 }}>
         <Button label={p.scanLabel} icon="nfc" fullWidth onPress={p.onScan} testID="wallet-scan" />
-        {/* two buttons share a row only when each has room for its label on one line; otherwise they stack full width */}
-        <View style={{ flexDirection: 'row', flexWrap: 'wrap', columnGap: 10, rowGap: 8, marginTop: 8 }}>
-          <View style={{ flexGrow: 1, flexBasis: 170, minWidth: 0 }}>
-            <Button label={p.historyLabel} icon="clock" variant="secondary" size="md" fullWidth onPress={p.onHistory} />
+        {/* history and edit always share one row; dense buttons keep each label on a single line on most phones */}
+        <View style={{ flexDirection: 'row', gap: 10, marginTop: 8 }}>
+          <View style={{ flex: 1, minWidth: 0 }}>
+            <Button label={p.historyLabel} icon="clock" variant="secondary" size="md" fullWidth dense onPress={p.onHistory} />
           </View>
-          <View style={{ flexGrow: 1, flexBasis: 170, minWidth: 0 }}>
-            <Button label={p.editLabel} icon="edit" variant="secondary" size="md" fullWidth onPress={p.onEdit} />
+          <View style={{ flex: 1, minWidth: 0 }}>
+            <Button label={p.editLabel} icon="edit" variant="secondary" size="md" fullWidth dense onPress={p.onEdit} />
           </View>
         </View>
       </View>

@@ -20,7 +20,7 @@ const ON_LINE_M = 60;
 const LEAVE_M = 200;
 const LEAVE_AFTER_MS = 30_000;
 /** how long to wait for the server to accept the ride */
-const ACK_TIMEOUT_MS = 10_000;
+const ACK_TIMEOUT_MS = 20_000;
 
 // App-wide, not per screen: a ride started on Journey must keep streaming while the rider moves between screens.
 const sub: { current: Location.LocationSubscription | null } = { current: null };
@@ -126,9 +126,8 @@ export function useRiderSession() {
         st.update({ score, lastF: snap.f, lastSpd: spd });
         if (!canShare(signals.current)) return;
 
-        // Offline (no backend) the ride still runs on the phone: the trip view uses the timetable and GPS.
-        // Sharing starts - and restarts after every reconnect, as the server drops a closed connection's
-        // sessions - once the connection is live.
+        // Offline (not connected) the ride still runs on the phone: the trip view uses the timetable and GPS.
+        // Sharing starts - and restarts after every reconnect, once the connection is live.
         const lv = useLive.getState();
         if (lv.connection !== 'live') return;
         const client = liveClient();

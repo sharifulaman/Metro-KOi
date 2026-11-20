@@ -1,11 +1,13 @@
 import { useEffect, useRef } from 'react';
 
 import { config } from '@/lib/config';
-import { LiveClient } from '@/lib/ws';
+import { SupabaseLiveClient } from '@/lib/supabaseLive';
+import type { LiveTransport } from '@/lib/supabaseLive';
+import type { ConnectionState, ServerMessage } from '@/models';
 import { useLive } from '@/store/live';
 import { useSettings } from '@/store/settings';
 
-let shared: LiveClient | null = null;
+let shared: LiveTransport | null = null;
 
 /** The app-wide realtime connection; mounted once in the root layout. */
 export function useLiveConnection(): void {
@@ -15,13 +17,15 @@ export function useLiveConnection(): void {
   useEffect(() => {
     if (started.current) return;
     started.current = true;
-    shared = new LiveClient({
-      url: config.wsUrl,
+    const common = {
       deviceId,
       lang,
-      onMessage: (m) => useLive.getState().handle(m),
-      onState: (s) => useLive.getState().setConnection(s),
-    });
+      onMessage: (m: ServerMessage) => useLive.getState().handle(m),
+      onState: (s: ConnectionState) => useLive.getState().setConnection(s),
+    };
+    // No Supabase keys -> stay offline: the app shows the timetable only.
+    if (!config.supabaseUrl || !config.supabaseAnonKey) return;
+    shared = new SupabaseLiveClient({ ...common, supabaseUrl: config.supabaseUrl, anonKey: config.supabaseAnonKey });
     shared.start();
     return () => {
       shared?.stop();
@@ -33,6 +37,6 @@ export function useLiveConnection(): void {
   useEffect(() => shared?.setLang(lang), [lang]);
 }
 
-export function liveClient(): LiveClient | null {
+export function liveClient(): LiveTransport | null {
   return shared;
 }

@@ -1,5 +1,5 @@
 // Timetable engine (spec §4.2, §4.4, §6.4, §6.5). Pure functions — no React,
-// no runtime imports — so it runs in node tests and mirrors backend/internal/schedule.
+// no runtime imports — so it runs in node tests and mirrors the schedule model in supabase/functions/fuse/engine.ts.
 import type {
   DayType,
   Departure,

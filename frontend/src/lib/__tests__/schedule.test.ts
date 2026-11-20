@@ -32,7 +32,7 @@ const golden = read<{
   mustContain: Record<string, string[]>;
   mustNotContain: Record<string, string[]>;
   peakSunThuSB: string[];
-}>('../../../../backend/testdata/schedule_cases.json');
+}>('./schedule_cases.json');
 
 const times = (d: DayType, dir: Direction) => terminalDepartures(tt, d, dir).map((x) => secToHHMM(x.departSec));
 // 2026-11-08 is a Sunday; Dhaka 08:20 = 02:20Z

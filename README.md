@@ -7,18 +7,14 @@ fallback and is always labelled *Estimated*.
 
 ```
 frontend/   Expo SDK 58 · React Native · TypeScript · expo-router   (the app UI)
-backend/    Go 1.27 · chi · WebSocket · PostgreSQL/PostGIS · Redis  (API + fusion engine)
+supabase/   Postgres · Realtime · Edge Function (live-train fusion)  (the whole backend)
 ```
 
 ## Run it
 
-**Backend** (runs fully in memory, with no database needed for development):
-
-```bash
-cd backend
-go run ./cmd/api                                  # http://localhost:8080
-go run ./cmd/simulator -trains 4 -riders 3 -decoys 1   # optional: fake live riders
-```
+**Backend**: Supabase. One-time setup (SQL files, deploy the `fuse` function, cron) is in
+[`supabase/README.md`](supabase/README.md). Put the project URL and anon key in `frontend/.env.local`
+(see `frontend/.env.example`).
 
 **Frontend**:
 
@@ -26,10 +22,9 @@ go run ./cmd/simulator -trains 4 -riders 3 -decoys 1   # optional: fake live rid
 cd frontend
 npm install
 npx expo start            # press w for web, or scan with Expo Go
-# phone on the same Wi-Fi: EXPO_PUBLIC_API_URL=http://<your-PC-IP>:8080 npx expo start
 ```
 
-The app works offline too. With no backend it shows timetable estimates and
+The app works offline too. With no Supabase keys, or no signal, it shows timetable estimates and
 the connection pill reads *Offline · timetable only*.
 
 **Timetable playback** needs no location permission and no riders. Press ▶ on
@@ -39,23 +34,15 @@ from station to station. When the line is closed (at night, or on Friday
 morning), playback starts at the next first train. Train pages
 (`/train/SB-0710`) show every stop with its scheduled time, at any time of day.
 
-**Production stack** (PostGIS + Redis + migrations + API):
-
-```bash
-cd backend
-docker compose up -d --build
-docker compose run --rm admin seed
-```
-
 ## Checks
 
 | Command | What it verifies |
 |---|---|
 | `cd frontend && npm run verify` | TypeScript, schedule engine golden tests, UI rules (no hex/inline styles in `src/app` or `src/features`; every component has `index/types/gallery` and a gallery entry) |
-| `cd backend && go test ./...` | golden schedule vectors, UTM/snap geometry, fusion engine with 30 % bus decoys over 8 random seeds (max error ≈ 17 m, target ±40 m), end-to-end REST + WebSocket ride → LIVE |
+| `node --test supabase/functions/fuse/engine.test.ts` | fusion engine: snapping, direction, Kalman fusion of two riders, rejection rules, session limits, expiry, state save/restore |
 
-Both engines read the same golden file, `backend/testdata/schedule_cases.json`.
-Its values were generated independently of either engine.
+The schedule golden file is `frontend/src/lib/__tests__/schedule_cases.json`.
+Its values were generated independently of the engine.
 
 ## Data provenance
 

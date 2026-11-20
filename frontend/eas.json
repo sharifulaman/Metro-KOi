@@ -6,8 +6,7 @@
   "build": {
     "development": {
       "developmentClient": true,
-      "distribution": "internal",
-      "env": { "EXPO_PUBLIC_API_URL": "http://192.168.68.108:8080" }
+      "distribution": "internal"
     },
     "development-simulator": {
       "extends": "development",

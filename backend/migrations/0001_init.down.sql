@@ -1,9 +1,0 @@
-DROP TABLE IF EXISTS station_gates;
-DROP TABLE IF EXISTS raw_fixes;
-DROP TABLE IF EXISTS rider_sessions_agg;
-DROP TABLE IF EXISTS fares;
-DROP TABLE IF EXISTS segment_stats;
-DROP TABLE IF EXISTS timetable_bands;
-DROP TABLE IF EXISTS timetable_meta;
-DROP TABLE IF EXISTS line;
-DROP TABLE IF EXISTS stations;

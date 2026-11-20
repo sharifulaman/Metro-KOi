@@ -11,7 +11,7 @@ import { allStationsRaw } from '../stations/useStations';
 
 const bundledTimetable = bundled as TimetableFile;
 
-// Last timetable fetched from the backend, kept on the phone so an updated timetable still works offline.
+// Last timetable fetched from Supabase, kept on the phone so an updated timetable still works offline.
 const cache = zustandStorage('metro-cache');
 function cachedTimetable(): TimetableFile | undefined {
   try {
@@ -23,18 +23,28 @@ function cachedTimetable(): TimetableFile | undefined {
   }
 }
 
+/** The timetable row in Supabase (PostgREST). */
+async function fetchTimetable(): Promise<TimetableFile> {
+  if (!config.supabaseUrl || !config.supabaseAnonKey) throw new Error('supabase not configured');
+  const res = await fetch(`${config.supabaseUrl}/rest/v1/timetable?id=eq.1&select=data`, {
+    headers: { apikey: config.supabaseAnonKey, Authorization: `Bearer ${config.supabaseAnonKey}` },
+  });
+  if (!res.ok) throw new Error(`timetable ${res.status}`);
+  const rows = (await res.json()) as { data: TimetableFile }[];
+  if (!rows[0]?.data) throw new Error('timetable row missing');
+  return rows[0].data;
+}
+
 /**
- * Timetable that works with no backend: the last copy saved on the phone, else the one bundled
- * in the app. Refreshed from GET /v1/timetable when the backend is reachable; a failed fetch
+ * Timetable that works offline: the last copy saved on the phone, else the one bundled
+ * in the app. Refreshed from Supabase when it is reachable; a failed fetch
  * silently keeps what we have.
  */
 export function useTimetable(): TimetableFile {
   const q = useQuery({
     queryKey: ['timetable'],
     queryFn: async (): Promise<TimetableFile> => {
-      const res = await fetch(`${config.apiBase}/timetable`);
-      if (!res.ok) throw new Error(`timetable ${res.status}`);
-      const data = (await res.json()) as TimetableFile;
+      const data = await fetchTimetable();
       try {
         cache.setItem('timetable', JSON.stringify(data));
       } catch {

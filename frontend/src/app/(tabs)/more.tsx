@@ -13,6 +13,7 @@ export default function MoreScreen() {
   const router = useRouter();
   const themeMode = useSettings((s) => s.themeMode);
   const notifications = useSettings((s) => s.notifications);
+  const shareRides = useSettings((s) => s.shareRides);
   const demo = useSettings((s) => s.demo !== false);
   const { setLang, setThemeMode, setNotifications, setDemo } = useSettings.getState();
   const [showCredits, setShowCredits] = useState(false);
@@ -34,6 +35,7 @@ export default function MoreScreen() {
       />
       <Card padding={3}>
         <SwitchRow label={t('more.demo')} subtitle={t('more.demoSub')} value={demo} onValueChange={setDemo} divider testID="demo-switch" />
+        <SwitchRow label={t('more.shareRides')} subtitle={t('more.shareRidesSub')} value={shareRides} onValueChange={useSettings.getState().setShareRides} divider testID="share-switch" />
         <SwitchRow label={t('more.notifications')} value={notifications} onValueChange={(on) => (on ? void enableNotifications().then(setNotifications) : setNotifications(false))} divider />
         <ListRow title={t('more.timetable')} leading={<IconTile icon="calendar" tone="neutral" />} chevron divider onPress={() => router.push('/timetable')} />
         <ListRow title={t('sim.more')} subtitle={t('sim.moreSub')} leading={<IconTile icon="box" tone="neutral" />} chevron divider onPress={() => router.push('/simulation')} testID="more-sim" />

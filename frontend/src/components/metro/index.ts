@@ -35,6 +35,7 @@ export { RideBanner } from './RideBanner';
 export { ConnectionPill } from './ConnectionPill';
 export { TrainIllustration } from './TrainIllustration';
 export { EmptyState } from './EmptyState';
+export { ShareOnboardView } from './ShareOnboardView';
 export { StationSection } from './StationSection';
 export { SearchPill } from './SearchPill';
 export { NextTrainRow } from './NextTrainRow';

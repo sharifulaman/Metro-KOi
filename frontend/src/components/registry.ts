@@ -20,6 +20,7 @@ import { gallery as CoachCrowdBar } from './metro/CoachCrowdBar/gallery';
 import { gallery as ConnectionPill } from './metro/ConnectionPill/gallery';
 import { gallery as DepartureRow } from './metro/DepartureRow/gallery';
 import { gallery as EmptyState } from './metro/EmptyState/gallery';
+import { gallery as ShareOnboardView } from './metro/ShareOnboardView/gallery';
 import { gallery as GateSelector } from './metro/GateSelector/gallery';
 import { gallery as LineDiagram } from './metro/LineDiagram/gallery';
 import { gallery as PlatformGroup } from './metro/PlatformGroup/gallery';
@@ -78,7 +79,7 @@ import { gallery as Text } from './ui/Text/gallery';
 export const galleryRegistry: GalleryEntry[] = [
   Text, Icon, Stack, Badge, Button, IconButton, Chip, StatusBadge, Card, ListRow, IconTile, SectionLabel, Segmented, InfoNote, SwitchRow, Sheet, Layout, TextField, GlassPill,
   TabBar, ScreenHeader, StationHeader, DepartureRow, PlatformGroup, TrainCard, CoachCrowdBar, LineDiagram, GateSelector, RouteSteps,
-  TransactionRow, BalanceCard, SummaryCard, RideBanner, ConnectionPill, TrainIllustration, EmptyState, StationSection,
+  TransactionRow, BalanceCard, SummaryCard, RideBanner, ConnectionPill, TrainIllustration, EmptyState, ShareOnboardView, StationSection,
   SearchPill, NextTrainRow, PlaybackBar, SegmentProgress, TrainTimeline, JourneyPicker, JourneyOptionCard, JourneyDetailView, JourneyView, BrandMark, BrandBar, MapLegend, Splash,
   CardArt, LiveView, StationDetailView, StationsView, NavHeader, HistoryView, SavedCardsView, ManualCardView, AddCardSheet, FoundView, ScanView, CardColorPicker, WalletCarousel, WalletHome, BalancePanel, SavedCardRow, StationTimeline, NearestBanner, DirectionEtaCard, InfoTile, GateFinderView, GateCompassView,
   mapGallery,

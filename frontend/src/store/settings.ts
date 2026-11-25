@@ -13,6 +13,8 @@ interface SettingsState {
   /** the one-time location permission prompt has been shown */
   locationAsked: boolean;
   deviceId: string;
+  /** the rider agreed to share rides (anonymous); off until they turn it on */
+  shareRides: boolean;
   favourites: string[];
   /** show the design's fixed sample data instead of the real timetable (off by default) */
   demo: boolean;
@@ -26,6 +28,7 @@ interface SettingsState {
   setOnboarded(v: boolean): void;
   setNotifications(v: boolean): void;
   setLocationAsked(v: boolean): void;
+  setShareRides(v: boolean): void;
   toggleFavourite(stationId: string): void;
   setDemo(v: boolean): void;
   setRealMap3d(v: boolean): void;
@@ -42,6 +45,7 @@ export const useSettings = create<SettingsState>()(
       notifications: false,
       locationAsked: false,
       deviceId: Crypto.randomUUID(),
+      shareRides: false,
       favourites: [],
       demo: false,
       realMap3d: true,
@@ -53,6 +57,7 @@ export const useSettings = create<SettingsState>()(
       setOnboarded: (onboarded) => set({ onboarded }),
       setNotifications: (notifications) => set({ notifications }),
       setLocationAsked: (locationAsked) => set({ locationAsked }),
+      setShareRides: (shareRides) => set({ shareRides }),
       setDemo: (demo) => set({ demo }),
       setRealMap3d: (realMap3d) => set({ realMap3d }),
       setTripFrom: (tripFrom) => set({ tripFrom }),

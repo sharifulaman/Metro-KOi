@@ -30,6 +30,8 @@ function toTrain(w: WireTrain, ts: number): Train {
     riders: w.riders,
     nextStation: w.nextStation ?? null,
     etaSec: w.etaSec ?? null,
+    sched: w.sched ?? null,
+    delaySec: w.delaySec ?? null,
     ts,
   };
 }

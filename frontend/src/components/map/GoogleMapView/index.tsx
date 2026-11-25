@@ -15,6 +15,7 @@ import { Text } from '../../ui/Text';
 import { cityPage } from './cityPage';
 import { mapPage } from './page';
 import { scenePage } from './scenePage';
+import { CompassButton } from './CompassButton';
 import { buildPayload } from './payload';
 import type { GoogleMapViewProps } from './types';
 
@@ -114,6 +115,7 @@ export function GoogleMapView(props: GoogleMapViewProps) {
         </View>
       )}
       {children}
+      {props.compass ? <CompassButton headingUp={props.compass.headingUp} heading={props.user?.heading ?? null} onPress={props.compass.onPress} label={props.compass.label} top={(props.topInset ?? 0) + 12} /> : null}
     </View>
   );
 }

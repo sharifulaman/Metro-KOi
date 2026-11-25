@@ -1,6 +1,7 @@
 import { geoAt } from '@/lib/lineGeo';
 import type { Palette } from '@/theme/tokens';
 
+import { STATION_SIZE_M } from './stationSprite';
 import type { GoogleMapViewProps } from './types';
 
 /** `zoom` that frames a station and its neighbours (street level on Google's scale). */
@@ -11,8 +12,8 @@ export interface MapPayload {
   dark: boolean;
   errorText: string;
   theme: Pick<Palette, 'bg' | 'surface' | 'ink' | 'inkMuted' | 'brand' | 'brandDeep' | 'onBrand' | 'live' | 'liveTint' | 'onLiveTint' | 'estimated' | 'trainSB' | 'trainNB' | 'mapGround' | 'mapRoad'>;
-  stations: { id: string; label: string; lat: number; lng: number; terminal: boolean; bearing: number }[];
-  trains: { id: string; dir: 'SB' | 'NB'; state: string; lat: number; lng: number; heading: number; label?: string; women?: string; callout?: { title: string; rows: [string, string][] }; timer?: string; progress?: number }[];
+  stations: { id: string; label: string; lat: number; lng: number; terminal: boolean; bearing: number; gated: boolean }[];
+  trains: { id: string; dir: 'SB' | 'NB'; state: string; f: number; lat: number; lng: number; heading: number; label?: string; women?: string; callout?: { title: string; rows: [string, string][] }; timer?: string; progress?: number }[];
   hints: GoogleMapViewProps['hints'] | null;
   womenLabel: string | null;
   platformSigns: { SB: string; NB: string } | null;
@@ -21,7 +22,8 @@ export interface MapPayload {
   lang?: string;
   gates: { id: string; letter: string; label: string; lat: number; lng: number }[];
   selectedGate?: string;
-  user: { lat: number; lng: number; accuracy: number } | null;
+  user: { lat: number; lng: number; accuracy: number; heading: number | null } | null;
+  walk: { lat: number; lng: number } | null;
   /** the trip, sampled along the track in travel order */
   route: { lat: number; lng: number }[] | null;
   selectedStation?: string;
@@ -33,6 +35,8 @@ export interface MapPayload {
     flat?: boolean;
     /** compass heading for the 3D view (looks along the line) */
     heading: number;
+    /** 2D heading-up: turn the map with the phone */
+    rotate: boolean;
     mode: 'fit' | 'focus';
     lat: number;
     lng: number;
@@ -49,11 +53,65 @@ export interface MapPayload {
   };
 }
 
+/**
+ * When a station's gates are on the map, its model sits in the middle of them and runs along their long
+ * axis, so the gates land on the model's corners (the OSM track point can be metres off the building).
+ * Gate ids are `<stationId>:<letter>`; needs at least 3 gates, otherwise the track point is kept.
+ */
+function gateFrame(stationId: string, gates: GoogleMapViewProps['gates'], along: { lat: number; lng: number; bearing: number }) {
+  const pts = (gates ?? []).filter((g) => g.id.startsWith(stationId + ':'));
+  if (pts.length < 3) return along;
+  const lat = pts.reduce((a, g) => a + g.lat, 0) / pts.length;
+  const lng = pts.reduce((a, g) => a + g.lng, 0) / pts.length;
+  // principal axis of the gate points, in local metres (x east, y north)
+  const kx = Math.cos((lat * Math.PI) / 180);
+  let sxx = 0, syy = 0, sxy = 0;
+  for (const g of pts) {
+    const x = (g.lng - lng) * kx, y = g.lat - lat;
+    sxx += x * x; syy += y * y; sxy += x * y;
+  }
+  let bearing = along.bearing;
+  if (sxx + syy > 0) {
+    const theta = 0.5 * Math.atan2(2 * sxy, sxx - syy); // angle of the long axis from east, counter-clockwise
+    const axis = (90 - (theta * 180) / Math.PI + 360) % 180; // as a compass bearing, 0..180
+    // of the two directions along the axis, keep the one nearest the track's direction
+    const diff = ((axis - along.bearing) % 360 + 540) % 360 - 180;
+    bearing = Math.abs(diff) <= 90 ? axis : (axis + 180) % 360;
+  }
+  return { lat, lng, bearing, fromGates: true as const };
+}
+
+const M_PER_DEG = 111320;
+/** how far in from the model's sides / ends the gate letters sit, in metres */
+const GATE_INSET = { across: 13, along: 30 };
+
+/**
+ * Where a gate's pin is drawn: inside its station's model, in the corner on the gate's real side
+ * (left/right of the track, front/back end). Display only; the compass and walk use the real point.
+ */
+function gateOnModel(g: { id: string; lat: number; lng: number }, gates: GoogleMapViewProps['gates'], stations: GoogleMapViewProps['stations']) {
+  const st = stations.find((s) => g.id.startsWith(s.id + ':'));
+  if (!st) return { lat: g.lat, lng: g.lng };
+  const fr = gateFrame(st.id, gates, geoAt(st.f));
+  if (!('fromGates' in fr)) return { lat: g.lat, lng: g.lng };
+  const kx = Math.cos((fr.lat * Math.PI) / 180);
+  const b = (fr.bearing * Math.PI) / 180;
+  // unit vectors in metres (east, north): along the model, and across it (to its right)
+  const ax = Math.sin(b), ay = Math.cos(b), rx = Math.cos(b), ry = -Math.sin(b);
+  const x = (g.lng - fr.lng) * kx * M_PER_DEG, y = (g.lat - fr.lat) * M_PER_DEG;
+  const along = Math.sign(x * ax + y * ay || 1) * (STATION_SIZE_M.l / 2 - GATE_INSET.along);
+  const across = Math.sign(x * rx + y * ry || 1) * (STATION_SIZE_M.w / 2 - GATE_INSET.across);
+  const ex = along * ax + across * rx, ny = along * ay + across * ry;
+  return { lat: fr.lat + ny / M_PER_DEG, lng: fr.lng + ex / (kx * M_PER_DEG) };
+}
+
 export function buildPayload(p: GoogleMapViewProps, c: Palette, dark: boolean, reservedBottom: number): MapPayload {
   const near = (p.zoom ?? 1) > 1 && (p.focus != null || p.focusPoint != null);
   const along = geoAt(near && p.focus != null ? p.focus : 0.5);
   const at = near && p.focusPoint ? { lat: p.focusPoint.lat, lng: p.focusPoint.lng } : along;
   const tilt = !!p.tilt && near;
+  // 2D: frame several points at once (the rider and the chosen gate); refits only when `fitKey` changes
+  const fitPts = !tilt && p.fitPoints && p.fitPoints.length >= 2 ? p.fitPoints : null;
   const level = Math.max(tilt ? 16 : 11, Math.min(19, 13 + Math.log2(p.zoom ?? 1)));
   const last = p.stations.length - 1;
   let route: { lat: number; lng: number }[] | null = null;
@@ -87,8 +145,8 @@ export function buildPayload(p: GoogleMapViewProps, c: Palette, dark: boolean, r
       mapRoad: c.mapRoad,
     },
     stations: p.stations.map((s, i) => {
-      const g = geoAt(s.f);
-      return { id: s.id, label: s.label, lat: g.lat, lng: g.lng, terminal: i === 0 || i === last, bearing: Math.round(g.bearing) };
+      const g = gateFrame(s.id, p.gates, geoAt(s.f));
+      return { id: s.id, label: s.label, lat: g.lat, lng: g.lng, terminal: i === 0 || i === last, bearing: Math.round(g.bearing), gated: 'fromGates' in g };
     }),
     trains: p.trains.map((t) => {
       const g = geoAt(t.f);
@@ -96,6 +154,7 @@ export function buildPayload(p: GoogleMapViewProps, c: Palette, dark: boolean, r
         id: t.id,
         dir: t.dir,
         state: t.state,
+        f: t.f,
         lat: g.lat,
         lng: g.lng,
         // SB runs towards Motijheel (increasing f), NB the other way
@@ -107,28 +166,30 @@ export function buildPayload(p: GoogleMapViewProps, c: Palette, dark: boolean, r
         progress: t.dwell?.progress,
       };
     }),
-    gates: (p.gates ?? []).map((g) => ({ id: g.id, letter: g.letter, label: g.label, lat: g.lat, lng: g.lng })),
+    gates: (p.gates ?? []).map((g) => ({ id: g.id, letter: g.letter, label: g.label, ...gateOnModel(g, p.gates, p.stations) })),
     selectedGate: p.selectedGate,
     hints: p.hints ?? null,
     womenLabel: p.womenLabel ?? null,
     platformSigns: p.platformSigns ?? null,
     realMap: p.realMap !== false,
     route,
-    user: p.user ? { lat: p.user.lat, lng: p.user.lng, accuracy: p.user.accuracy ?? 0 } : null,
+    user: p.user ? { lat: p.user.lat, lng: p.user.lng, accuracy: p.user.accuracy ?? 0, heading: p.user.heading ?? null } : null,
+    walk: p.walkTo ?? null,
     selectedStation: p.selectedStation,
     selectedTrain: p.selectedTrain,
     view: {
       tilt,
       heading: Math.round(along.bearing),
-      mode: near ? 'focus' : 'fit',
+      rotate: !!p.headingUp && !tilt,
+      mode: fitPts ? 'fit' : near ? 'focus' : 'fit',
       lat: at.lat,
       lng: at.lng,
-      fit: route,
+      fit: fitPts ?? route,
       zoom: level,
       top: p.topInset ?? 0,
       bottom: reservedBottom,
       shiftX: p.focusShiftX ?? 0,
-      key: String(p.recenterKey ?? '') + (tilt ? '|3d' : '') + (route ? '|r' + route.length + ':' + route[0].lat + ',' + route[route.length - 1].lat : ''),
+      key: String(p.recenterKey ?? '') + (tilt ? '|3d' : '') + (route ? '|r' + route.length + ':' + route[0].lat + ',' + route[route.length - 1].lat : '') + (fitPts ? '|fp' + (p.fitKey ?? '') : ''),
     },
   };
 }

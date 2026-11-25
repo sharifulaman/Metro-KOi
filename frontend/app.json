@@ -11,9 +11,8 @@
       "bundleIdentifier": "com.metrokoi.app",
       "infoPlist": {
         "NSLocationWhenInUseUsageDescription": "Metro Koi uses your location only while you share a metro ride, to show the train live for other riders.",
-        "NSLocationAlwaysAndWhenInUseUsageDescription": "While you share a ride, Metro Koi keeps reading your position when the screen is locked. Sharing stops when the ride ends.",
+        "NSLocationAlwaysAndWhenInUseUsageDescription": "If you turn on ride detection in the background, Metro Koi notices when you are on the metro even with the app closed, to name your train and remind you of your stop. Only on the metro line; turn it off any time in Settings.",
         "UIBackgroundModes": [
-          "location",
           "location"
         ],
         "ITSAppUsesNonExemptEncryption": false
@@ -63,6 +62,16 @@
             ],
             "useLegacyPackaging": false
           }
+        }
+      ],
+      [
+        "expo-location",
+        {
+          "locationWhenInUsePermission": "Metro Koi uses your location only while you share a metro ride, to show the train live for other riders.",
+          "locationAlwaysAndWhenInUsePermission": "If you turn on ride detection in the background, Metro Koi notices when you are on the metro even with the app closed, to name your train and remind you of your stop. Only on the metro line; turn it off any time in Settings.",
+          "isIosBackgroundLocationEnabled": true,
+          "isAndroidBackgroundLocationEnabled": true,
+          "isAndroidForegroundServiceEnabled": true
         }
       ]
     ],

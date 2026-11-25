@@ -25,6 +25,9 @@ export interface StationGate {
   walkMin: number | null;
   /** true while lat/lng are an estimate (not a surveyed entrance point). */
   approx?: boolean;
+  /** surveyed points: GPS accuracy (m) of the averaged fix, and the date (YYYY-MM-DD) */
+  accuracyM?: number | null;
+  surveyedAt?: string | null;
 }
 
 export type GateMode = 'entry' | 'exit';

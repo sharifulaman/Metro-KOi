@@ -29,6 +29,9 @@ export interface Train {
    * timetable engine knows this exactly, so riders' LIVE trains leave it unset.
    */
   dwellLeftSec?: number;
+  /** rider trains: the scheduled run the server matched (SB-0810) and how late it is (s, negative = early) */
+  sched?: string | null;
+  delaySec?: number | null;
 }
 
 /** 0–100 per coach; 6 coaches. */

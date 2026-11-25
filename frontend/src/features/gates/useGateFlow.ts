@@ -109,6 +109,10 @@ export function useGateFlow(initialStation?: string | null) {
     ahead,
     statusText,
     distanceText,
+    /** some gate of this station is not surveyed yet: its spot is an estimate */
+    approx: gates.some((g: StationGate) => g.approx !== false),
+    /** GPS accuracy (m) of the rider's position, null when unknown */
+    userAccuracy: user?.accuracy ?? null,
     shortDistance: (d: number | null) => (d == null ? undefined : fmtDistanceShort(d, lang)),
   };
 }

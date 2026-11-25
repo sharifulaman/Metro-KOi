@@ -12,6 +12,12 @@ export interface LineData {
   chainage: number[];
   endToEndMin: number;
   dwellSec: number;
+  /** longer stops at busy stations (s), by station id */
+  dwellByStation?: Record<string, number>;
+  /** the timetable, to name each live train after its scheduled run (SB-0810) and work out its delay */
+  bands?: Record<'sun_thu' | 'fri' | 'sat', Record<Dir, [string, string, number][]>>;
+  holidayAs?: 'sun_thu' | 'fri' | 'sat';
+  holidays?: string[];
 }
 
 export interface WireTrain {
@@ -26,6 +32,9 @@ export interface WireTrain {
   riders: number;
   nextStation?: string;
   etaSec?: number;
+  /** the scheduled run this live train is (e.g. SB-0810) and how late it runs (s, negative = early) */
+  sched?: string;
+  delaySec?: number;
 }
 
 export interface Fix {
@@ -60,6 +69,8 @@ export interface Config {
   trainSpeedMps: number;
   stationRadiusM: number;
   offStationStopMs: number;
+  /** a train that already stopped properly at a station may stand this long between stations (signal hold) */
+  signalHoldMaxMs: number;
   maxSessionMs: number;
 }
 
@@ -83,6 +94,7 @@ export const DEFAULT_CONFIG: Config = {
   trainSpeedMps: 40 / 3.6,
   stationRadiusM: 80,
   offStationStopMs: 15_000,
+  signalHoldMaxMs: 300_000,
   maxSessionMs: 90 * 60_000,
 };
 
@@ -100,6 +112,8 @@ export interface Track {
   /** 0 = moving */
   stopStart: number;
   stopS: number;
+  /** proper station stops seen (15-90 s within a station): it behaves like a train */
+  stationStops?: number;
   suspicious: boolean;
   published: boolean;
 }
@@ -116,6 +130,10 @@ export interface Session {
   history: number[];
   trackJoined: number;
   untrusted: boolean;
+  /** server time minus phone time, once a phone clock is seen to be consistently off */
+  clockOffset?: number;
+  /** recent (server - phone) gaps of fixes that looked stale, to tell a wrong phone clock from late fixes */
+  skew?: number[];
 }
 
 export interface EngineState {
@@ -226,12 +244,18 @@ export class Run {
   lengthM: number;
   endToEndSec: number;
   dwellSec: number;
+  /** stop length (s) per station; 0 at the terminals */
+  dwell: number[];
+  data: LineData;
   constructor(d: LineData) {
+    this.data = d;
     this.ids = d.stationIds;
     this.chainage = d.chainage;
     this.lengthM = d.chainage[d.chainage.length - 1] - d.chainage[0];
     this.endToEndSec = d.endToEndMin * 60;
     this.dwellSec = d.dwellSec;
+    const n = d.stationIds.length;
+    this.dwell = d.stationIds.map((id, i) => (i === 0 || i === n - 1 ? 0 : (d.dwellByStation?.[id] ?? d.dwellSec)));
   }
   nextStationIdx(dir: Dir, s: number): number {
     if (dir === 'SB') {
@@ -246,14 +270,86 @@ export class Run {
     if (i < 0) return null;
     const ahead = dir === 'NB' ? s - this.chainage[i] : this.chainage[i] - s;
     if (ahead < 0) return null;
-    const avg = this.lengthM / (this.endToEndSec - this.dwellSec * (this.ids.length - 2));
+    const avg = this.lengthM / (this.endToEndSec - this.dwell.reduce((a, b) => a + b, 0));
     let dwells = 0;
     for (let k = 1; k < this.chainage.length - 1; k++) {
       const d = dir === 'NB' ? s - this.chainage[k] : this.chainage[k] - s;
-      if (d > 1 && d < ahead) dwells++;
+      if (d > 1 && d < ahead) dwells += this.dwell[k];
     }
-    return Math.round(ahead / avg + dwells * this.dwellSec);
+    return Math.round(ahead / avg + dwells);
   }
+
+  /** SB stop times (s after leaving Uttara North) with the same per-station dwell as the app's run model */
+  private offsets(): { arrive: number[]; depart: number[] } {
+    if (this.off) return this.off;
+    const c = this.chainage;
+    const n = c.length;
+    const moving = this.endToEndSec - this.dwell.reduce((a, b) => a + b, 0);
+    const arrive = [0];
+    const depart = [0];
+    for (let i = 1; i < n; i++) {
+      arrive[i] = depart[i - 1] + ((c[i] - c[i - 1]) / this.lengthM) * moving;
+      depart[i] = arrive[i] + this.dwell[i];
+    }
+    arrive[n - 1] = depart[n - 1] = this.endToEndSec;
+    this.off = { arrive, depart };
+    return this.off;
+  }
+  private off: { arrive: number[]; depart: number[] } | null = null;
+
+  /** where a scheduled train is `elapsed` s after leaving its terminal (constant speed between stops; enough to match) */
+  schedS(dir: Dir, elapsed: number): number | null {
+    if (elapsed < 0 || elapsed > this.endToEndSec) return null;
+    const { arrive, depart } = this.offsets();
+    const c = this.chainage;
+    const n = c.length;
+    // NB runs the SB timings mirrored
+    const tt = dir === 'SB' ? elapsed : this.endToEndSec - elapsed;
+    for (let i = 0; i < n; i++) {
+      if (tt >= arrive[i] && tt <= depart[i]) return c[i];
+      if (i + 1 < n && tt > depart[i] && tt < arrive[i + 1]) return c[i] + ((tt - depart[i]) / (arrive[i + 1] - depart[i])) * (c[i + 1] - c[i]);
+    }
+    return null;
+  }
+
+  /** the nearest scheduled run in this direction (within 900 m) and how late the live train is against it */
+  matchSchedule(dir: Dir, s: number, now: number): { id: string; delaySec: number } | null {
+    if (!this.data.bands) return null;
+    const local = new Date(now + 6 * 3600_000); // Asia/Dhaka, no DST
+    const dateKey = local.toISOString().slice(0, 10);
+    const wd = local.getUTCDay();
+    const day = (this.data.holidays ?? []).includes(dateKey) ? (this.data.holidayAs ?? 'fri') : wd === 5 ? 'fri' : wd === 6 ? 'sat' : 'sun_thu';
+    const sec = local.getUTCHours() * 3600 + local.getUTCMinutes() * 60 + local.getUTCSeconds();
+    const avg = this.lengthM / (this.endToEndSec - this.dwell.reduce((a, b) => a + b, 0));
+    let best: { id: string; delaySec: number; d: number } | null = null;
+    for (const dep of departures(this.data.bands[day][dir])) {
+      const p = this.schedS(dir, sec - dep);
+      if (p == null) continue;
+      const d = Math.abs(p - s);
+      if (d > 900 || (best && d >= best.d)) continue;
+      const behind = dir === 'SB' ? p - s : s - p; // metres the live train trails its timetable place
+      const hh = String(Math.floor(dep / 3600)).padStart(2, '0');
+      const mm = String(Math.floor((dep % 3600) / 60)).padStart(2, '0');
+      best = { id: `${dir}-${hh}${mm}`, delaySec: Math.round(behind / avg), d };
+    }
+    return best ? { id: best.id, delaySec: best.delaySec } : null;
+  }
+}
+
+/** Terminal departures (s after midnight) of one direction's bands; later bands carry on from the last train, as in the app. */
+function departures(bands: [string, string, number][]): number[] {
+  const sec = (h: string) => Number(h.slice(0, 2)) * 3600 + Number(h.slice(3, 5)) * 60;
+  const out: number[] = [];
+  let last: number | null = null;
+  bands.forEach(([from, to, hw], i) => {
+    const h = hw * 60;
+    const nextStart = i + 1 < bands.length ? sec(bands[i + 1][0]) : Infinity;
+    for (let t = Math.max(sec(from), last == null ? -Infinity : last + h); t <= sec(to) && t < nextStart; t += h) {
+      out.push(t);
+      last = t;
+    }
+  });
+  return out;
 }
 
 // ---------------------------------------------------------------- engine
@@ -304,7 +400,16 @@ export class Engine {
     }
     if (s.lastFixAt && recv - s.lastFixAt < this.cfg.minFixIntervalMs) return { ok: false, reason: 'rate' };
     if (f.acc > this.cfg.maxAccuracyM) return { ok: false, reason: 'accuracy' };
-    if (recv - f.ts > this.cfg.maxFixAgeMs) return { ok: false, reason: 'stale' };
+    let ts = f.ts + (s.clockOffset ?? 0); // the fix's time on the server clock
+    if (recv - ts > this.cfg.maxFixAgeMs) {
+      // three fixes in a row off by the same amount: the phone's clock is wrong, not the fixes late
+      s.skew = [...(s.skew ?? []), recv - f.ts].slice(-3);
+      const k = s.skew;
+      if (k.length < 3 || Math.max(...k) - Math.min(...k) > 3_000) return { ok: false, reason: 'stale' };
+      s.clockOffset = [...k].sort((a, b) => a - b)[1];
+      ts = f.ts + s.clockOffset;
+    }
+    s.skew = [];
     if (f.spd > this.cfg.maxSpeedMps) return { ok: false, reason: 'speed' };
     const { chainage, offset } = this.line.snap(f.lat, f.lng);
     if (offset > this.cfg.maxOffsetM) return { ok: false, reason: 'offset' };
@@ -315,7 +420,7 @@ export class Engine {
       s.direction = direction(s.history, this.cfg.dirMinFixes, this.cfg.dirMinSpanM);
       if (s.direction === '') return { ok: true }; // accepted, not yet on a track
     }
-    if (!s.untrusted) this.associate(s, f, chainage, f.ts);
+    if (!s.untrusted) this.associate(s, { ...f, ts }, chainage, ts);
     return { ok: true };
   }
 
@@ -399,11 +504,22 @@ export class Engine {
       if (!t.stopStart) {
         t.stopStart = ts;
         t.stopS = ch;
-      } else if (ts - t.stopStart >= this.cfg.offStationStopMs && !this.nearStation(t.stopS)) {
-        t.suspicious = true; // stop-start between stations: road traffic
+      } else if (!this.nearStation(t.stopS)) {
+        // stopped between stations: road traffic, unless it already stopped at a station like a train (a signal hold)
+        const limit = (t.stationStops ?? 0) > 0 ? this.cfg.signalHoldMaxMs : this.cfg.offStationStopMs;
+        if (ts - t.stopStart >= limit) t.suspicious = true;
       }
-    } else t.stopStart = 0;
-    t.confirmed = t.speedSeen && !t.suspicious;
+    } else {
+      if (t.stopStart && this.nearStation(t.stopS)) {
+        const dur = ts - t.stopStart;
+        if (dur >= 15_000 && dur <= 90_000) t.stationStops = (t.stationStops ?? 0) + 1;
+      }
+      t.stopStart = 0;
+    }
+    // the phone's own score is not trusted: publish only what the server itself saw move like a train, plus one
+    // more piece of evidence: a proper station stop, a second rider on the same track, or a scheduled train right there
+    const evidence = (t.stationStops ?? 0) > 0 || Object.keys(t.riders).length >= 2 || this.run.matchSchedule(t.dir, ch, ts) != null;
+    t.confirmed = t.speedSeen && !t.suspicious && evidence;
   }
 
   private nearStation(s: number): boolean {
@@ -469,6 +585,11 @@ export class Engine {
       out.nextStation = id;
       const eta = this.run.etaToStation(t.dir, s, id);
       if (eta !== null) out.etaSec = eta;
+    }
+    const m = this.run.matchSchedule(t.dir, s, now);
+    if (m) {
+      out.sched = m.id;
+      out.delaySec = m.delaySec;
     }
     return out;
   }

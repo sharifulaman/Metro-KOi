@@ -16,6 +16,10 @@ const data = {
   chainage: stations.map((s) => s.chainageM),
   endToEndMin: tt.endToEndMin,
   dwellSec: tt.dwellSec,
+  dwellByStation: tt.dwellByStation ?? {},
+  bands: tt.bands,
+  holidayAs: tt.holidayAs,
+  holidays: tt.holidays ?? [],
 };
 const out =
   '// Generated from supabase/data by scripts/gen-fuse-data.mjs. Do not edit.\n' +

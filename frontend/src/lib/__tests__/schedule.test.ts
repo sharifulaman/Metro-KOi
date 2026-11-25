@@ -11,6 +11,9 @@ import { fmtClock, fmtClockRange, fmtEta, fmtEtaAt, fmtNum } from '../fmt.ts';
 import {
   buildRunModel,
   dayTypeFor,
+  dayTypeOf,
+  etaToStation,
+  runProfile,
   dhakaClock,
   estimatedTrains,
   journeyOptions,
@@ -59,7 +62,7 @@ test('golden vectors: must / must-not contain', () => {
   }
 });
 
-test('Sun–Thu SB peak 08:11→10:00 every 5 min', () => {
+test('Sun–Thu SB peak band (08:11–10:00) every 5 min', () => {
   const got = times('sun_thu', 'SB');
   for (const v of golden.peakSunThuSB) assert.ok(got.includes(v), v);
 });
@@ -160,4 +163,49 @@ test('fmt: far-off trains show a clock time; ranges share the period word', () =
   assert.equal(fmtEtaAt(6 * 3600, 6 * 3600 + 30 * 60, 'schedule', 'bn'), 'সকাল ৬:৩০');
   assert.equal(fmtClockRange(6 * 3600 + 1800, 7 * 3600 + 600, 'bn'), 'সকাল ৬:৩০ – ৭:১০');
   assert.equal(fmtClockRange(10 * 3600, 15 * 3600 + 1200, 'en'), '10:00 AM – 3:20 PM');
+});
+
+test('band change carries on from the last train: no train closer than the shorter headway', () => {
+  for (const d of ['sun_thu', 'fri', 'sat'] as const) {
+    for (const dir of ['SB', 'NB'] as const) {
+      const deps = terminalDepartures(tt, d, dir).map((x) => x.departSec);
+      for (let i = 1; i < deps.length; i++) assert.ok(deps[i] - deps[i - 1] >= 5 * 60, `${d}/${dir} ${secToHHMM(deps[i - 1])}→${secToHHMM(deps[i])}`);
+    }
+  }
+});
+
+test('per-station dwell: busy stations stop longer, terminals not at all, run still ends on time', () => {
+  const m = buildRunModel(stations, 38, 35, { farmgate: 45 });
+  const fg = m.stationIds.indexOf('farmgate');
+  assert.equal(m.dwell[0], 0);
+  assert.equal(m.dwell[m.dwell.length - 1], 0);
+  assert.equal(m.dwell[fg], 45);
+  assert.equal(m.depart[fg] - m.arrive[fg], 45);
+  assert.equal(m.arrive[m.arrive.length - 1], 38 * 60);
+  // ETA from the start to the end counts every stop on the way
+  assert.ok(Math.abs((etaToStation(m, { s: 0, dir: 'SB' }, 'motijheel') ?? 0) - 38 * 60) <= 1);
+});
+
+test('run profile: starts and ends at rest, covers the whole gap on time, faster in the middle', () => {
+  const d = 1200;
+  const T = 120;
+  assert.equal(runProfile(d, T, 0).s, 0);
+  assert.equal(runProfile(d, T, 0).v, 0);
+  assert.ok(Math.abs(runProfile(d, T, T).s - d) < 1e-6);
+  assert.ok(Math.abs(runProfile(d, T, T).v) < 1e-6);
+  assert.ok(runProfile(d, T, T / 2).v > d / T, 'cruise faster than the average');
+  let prev = 0;
+  for (let t = 0; t <= T; t += 5) {
+    const s = runProfile(d, T, t).s;
+    assert.ok(s >= prev - 1e-9, 'never goes backwards');
+    prev = s;
+  }
+  // too short to accelerate and brake: constant speed
+  assert.equal(runProfile(100, 5, 2.5).s, 50);
+});
+
+test("timetable's own holiday list runs the Friday timetable", () => {
+  const withHoliday = { ...tt, holidays: ['2026-11-08'] };
+  assert.equal(dayTypeOf(withHoliday, SUN_0820), 'holiday');
+  assert.equal(dayTypeOf(tt, SUN_0820), 'sun_thu');
 });

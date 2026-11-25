@@ -68,22 +68,30 @@ export function bandsFor(tt: TimetableFile, dt: DayType, dir: Direction): Headwa
 }
 
 /**
- * Departures from the terminal: `from, from+h, … ≤ to`. When the next band
- * starts it replaces the previous one (spec §4.2), so a band never emits a
- * time at or after the next band's start.
+ * Departures from the terminal. The first band starts at its `from`; every later band carries on from the
+ * last train with its own headway (not restarting at its `from`), so a band change never puts two trains a
+ * minute apart (07:10 then 07:11). A band whose `from` is later than that (a gap in service) starts at `from`.
+ * Every band ends at its `to` (inclusive) and before the next band's `from`.
  */
 export function terminalDepartures(tt: TimetableFile, dt: DayType, dir: Direction): TerminalDeparture[] {
   const bands = bandsFor(tt, dt, dir);
   const out: TerminalDeparture[] = [];
+  let last: number | null = null;
   bands.forEach((b, i) => {
-    const start = hhmmToSec(b.from);
+    const h = b.headwayMin * 60;
     const end = hhmmToSec(b.to);
     const nextStart = i + 1 < bands.length ? hhmmToSec(bands[i + 1].from) : Infinity;
-    for (let t = start; t <= end && t < nextStart; t += b.headwayMin * 60) {
+    for (let t = Math.max(hhmmToSec(b.from), last == null ? -Infinity : last + h); t <= end && t < nextStart; t += h) {
       out.push({ direction: dir, departSec: t, trainId: `${dir}-${secToHHMM(t).replace(':', '')}` });
+      last = t;
     }
   });
   return out;
+}
+
+/** The timetable's public-holiday dates, unless the caller passes its own. */
+function holidaySet(tt: TimetableFile, holidays?: ReadonlySet<string>): ReadonlySet<string> {
+  return holidays ?? new Set(tt.holidays ?? []);
 }
 
 export function serviceWindow(tt: TimetableFile, dt: DayType): { firstSec: number; lastSec: number } {
@@ -113,7 +121,10 @@ export interface RunModel {
   arrive: number[];
   depart: number[];
   endToEndSec: number;
+  /** default stop length (s) */
   dwellSec: number;
+  /** stop length (s) per station index; 0 at the two terminals */
+  dwell: number[];
   /** true when OSM chainage is missing and stations are evenly spaced */
   approxGeometry: boolean;
 }
@@ -122,7 +133,7 @@ export function openStations(stations: Station[]): Station[] {
   return stations.filter((s) => s.status === 'open').sort((a, b) => a.order - b.order);
 }
 
-export function buildRunModel(stations: Station[], endToEndMin: number, dwellSec: number): RunModel {
+export function buildRunModel(stations: Station[], endToEndMin: number, dwellSec: number, dwellByStation: Record<string, number> = {}): RunModel {
   const open = openStations(stations);
   const n = open.length;
   const haveChainage = open.every((s) => typeof s.chainageM === 'number');
@@ -131,18 +142,42 @@ export function buildRunModel(stations: Station[], endToEndMin: number, dwellSec
     : open.map((_, i) => (i * NOMINAL_LINE_M) / (n - 1));
   const lengthM = chainage[n - 1] - chainage[0];
   const endToEndSec = endToEndMin * 60;
-  const moving = endToEndSec - dwellSec * (n - 2);
+  // terminals: the run starts when the train leaves and ends when it arrives, so no stop is counted there
+  const dwell = open.map((s, i) => (i === 0 || i === n - 1 ? 0 : (dwellByStation[s.id] ?? dwellSec)));
+  const moving = endToEndSec - dwell.reduce((a, b) => a + b, 0);
   const arrive: number[] = [0];
   const depart: number[] = [0];
   for (let i = 1; i < n; i++) {
     const seg = ((chainage[i] - chainage[i - 1]) / lengthM) * moving;
     arrive[i] = depart[i - 1] + seg;
-    depart[i] = i === n - 1 ? arrive[i] : arrive[i] + dwellSec;
+    depart[i] = arrive[i] + dwell[i];
   }
   // Pin the terminus exactly: summed float segments drift by ~1e-12 s, which
   // would make the NB train at elapsed 0 miss its own starting station.
   arrive[n - 1] = depart[n - 1] = endToEndSec;
-  return { stationIds: open.map((s) => s.id), chainage, lengthM, arrive, depart, endToEndSec, dwellSec, approxGeometry: !haveChainage };
+  return { stationIds: open.map((s) => s.id), chainage, lengthM, arrive, depart, endToEndSec, dwellSec, dwell, approxGeometry: !haveChainage };
+}
+
+/** Metro acceleration and braking (m/s²) for the motion between two stops. */
+export const ACCEL_MPS2 = 0.8;
+
+/**
+ * Distance covered and speed `t` seconds into a run of `d` metres that takes `T` seconds, starting and ending
+ * at rest: speed up at `ACCEL_MPS2`, cruise, then brake at the same rate (a trapezoid speed profile). A run too
+ * short to fit that falls back to constant speed.
+ */
+export function runProfile(d: number, T: number, t: number): { s: number; v: number } {
+  const a = ACCEL_MPS2;
+  const disc = a * a * T * T - 4 * a * d;
+  if (T <= 0 || d <= 0 || disc < 0) return { s: T > 0 ? (d * t) / T : 0, v: T > 0 ? d / T : 0 };
+  const vc = (a * T - Math.sqrt(disc)) / 2; // cruise speed: d = vc·T − vc²/a
+  const ta = vc / a;
+  if (t <= ta) return { s: 0.5 * a * t * t, v: a * t };
+  if (t >= T - ta) {
+    const r = T - t;
+    return { s: d - 0.5 * a * r * r, v: a * r };
+  }
+  return { s: (a * ta * ta) / 2 + vc * (t - ta), v: vc };
 }
 
 /** Offsets for station index `i` (always in SB/north→south index order). */
@@ -189,14 +224,14 @@ export function positionAt(m: RunModel, dir: Direction, elapsed: number): Schedu
       const j = order[k + 1];
       const nextArrive = offsetsFor(m, dir, j).arrive;
       if (elapsed > depart && elapsed < nextArrive) {
-        const f = (elapsed - depart) / (nextArrive - depart);
         const ds = m.chainage[j] - m.chainage[i];
+        const run = runProfile(Math.abs(ds), nextArrive - depart, elapsed - depart);
         return {
-          s: m.chainage[i] + f * ds,
+          s: m.chainage[i] + Math.sign(ds) * run.s,
           atStation: null,
           nextIdx: j,
           etaNextSec: nextArrive - elapsed,
-          v: (sign * Math.abs(ds)) / (nextArrive - depart),
+          v: sign * run.v,
         };
       }
     }
@@ -208,7 +243,7 @@ export function positionAt(m: RunModel, dir: Direction, elapsed: number): Schedu
 
 /** Active scheduled trains right now (spec §6.4 step 3), marked ESTIMATED. */
 export function estimatedTrains(tt: TimetableFile, m: RunModel, nowMs: number, holidays?: ReadonlySet<string>): Train[] {
-  const dt = dayTypeFor(nowMs, holidays);
+  const dt = dayTypeFor(nowMs, holidaySet(tt, holidays));
   const { sec } = dhakaClock(nowMs);
   const out: Train[] = [];
   for (const dir of ['SB', 'NB'] as const) {
@@ -247,7 +282,7 @@ export function stationDepartures(
   const i = m.stationIds.indexOf(stationId);
   const res: Record<Direction, Departure[]> = { SB: [], NB: [] };
   if (i < 0) return res;
-  const dt = dayTypeFor(nowMs, holidays);
+  const dt = dayTypeFor(nowMs, holidaySet(tt, holidays));
   const { sec } = dhakaClock(nowMs);
   const last = m.stationIds.length - 1;
   for (const dir of ['SB', 'NB'] as const) {
@@ -292,7 +327,7 @@ export function journeyOptions(
   const b = m.stationIds.indexOf(toId);
   if (a < 0 || b < 0 || a === b) return [];
   const dir: Direction = b > a ? 'SB' : 'NB';
-  const dt = dayTypeFor(nowMs, holidays);
+  const dt = dayTypeFor(nowMs, holidaySet(tt, holidays));
   const { sec } = dhakaClock(nowMs);
   const fromOff = offsetsFor(m, dir, a);
   const toOff = offsetsFor(m, dir, b);
@@ -325,12 +360,12 @@ export function etaToStation(m: RunModel, train: Pick<Train, 's' | 'dir'>, stati
   const target = m.chainage[i];
   const ahead = train.dir === 'SB' ? target - train.s : train.s - target;
   if (ahead < 0) return null;
-  const avgSpeed = m.lengthM / (m.endToEndSec - m.dwellSec * (m.stationIds.length - 2));
-  const dwellsAhead = m.chainage.filter((c, k) => {
+  const avgSpeed = m.lengthM / (m.endToEndSec - m.dwell.reduce((a, b) => a + b, 0));
+  const dwellsAhead = m.chainage.reduce((sum, c, k) => {
     const d = train.dir === 'SB' ? c - train.s : train.s - c;
-    return d > 1 && d < ahead && k > 0 && k < m.chainage.length - 1;
-  }).length;
-  return Math.round(ahead / avgSpeed + dwellsAhead * m.dwellSec);
+    return d > 1 && d < ahead ? sum + m.dwell[k] : sum;
+  }, 0);
+  return Math.round(ahead / avgSpeed + dwellsAhead);
 }
 
 // ---------- scheduled runs (train detail, playback) ----------
@@ -340,7 +375,7 @@ export function nextDateOfType(tt: TimetableFile, nowMs: number, type: ServiceDa
   const dayStart = nowMs - dhakaClock(nowMs).sec * 1000;
   for (let d = 0; d < 8; d++) {
     const midnight = dayStart + d * 86400000;
-    if (resolveDayType(dayTypeFor(midnight + 12 * 3600000, holidays), tt) === type) return midnight + sec * 1000;
+    if (resolveDayType(dayTypeFor(midnight + 12 * 3600000, holidaySet(tt, holidays)), tt) === type) return midnight + sec * 1000;
   }
   return dayStart + sec * 1000;
 }
@@ -380,7 +415,7 @@ export function nextServiceStart(tt: TimetableFile, m: RunModel, nowMs: number, 
   const dayStart = nowMs - dhakaClock(nowMs).sec * 1000;
   for (let d = 0; d < 4; d++) {
     const midnight = dayStart + d * 86400000;
-    const dt = dayTypeFor(midnight + 12 * 3600000, holidays);
+    const dt = dayTypeFor(midnight + 12 * 3600000, holidaySet(tt, holidays));
     const next = (['SB', 'NB'] as const)
       .flatMap((dir) => terminalDepartures(tt, dt, dir))
       .map((x) => midnight + x.departSec * 1000)
@@ -388,4 +423,9 @@ export function nextServiceStart(tt: TimetableFile, m: RunModel, nowMs: number, 
     if (next.length) return Math.min(...next);
   }
   return null;
+}
+
+/** Day type for `nowMs` using the timetable's own holiday list (screens call this, not `dayTypeFor`). */
+export function dayTypeOf(tt: TimetableFile, nowMs: number): DayType {
+  return dayTypeFor(nowMs, holidaySet(tt));
 }

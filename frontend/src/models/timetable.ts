@@ -20,9 +20,13 @@ export interface TimetableFile {
   verifiedAt: string;
   version: string;
   holidayAs: ServiceDayType;
+  /** public holidays (Dhaka dates, YYYY-MM-DD): they run the `holidayAs` timetable */
+  holidays?: string[];
   /** UNVERIFIED defaults (spec §4.4). */
   endToEndMin: number;
   dwellSec: number;
+  /** longer stops at busy stations (seconds), by station id; the rest use `dwellSec` */
+  dwellByStation?: Record<string, number>;
   bands: Record<ServiceDayType, Record<Direction, HeadwayBandTuple[]>>;
 }
 

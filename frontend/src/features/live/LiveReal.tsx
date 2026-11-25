@@ -11,6 +11,8 @@ import { locationServicesOn, nearestStation, travelMinutes, useScreenLocation } 
 import { fractionOf, trainSegment, useTrains } from '@/features/map/useTrains';
 import { useRiderSession } from '@/features/rider/useRiderSession';
 import { useStartRide } from '@/features/rider/useStartRide';
+import { useAutoRide } from '@/store/autoRide';
+import { useHeading } from '@/features/gates/useHeading';
 import { useDepartures } from '@/features/stations/useDepartures';
 import { useBestTrain } from '@/features/stations/useBestTrain';
 import { stationAltName, stationName, useStations } from '@/features/stations/useStations';
@@ -29,9 +31,10 @@ export function LiveReal() {
   const { t, lang } = useT();
   const router = useRouter();
   const { list, byId, first, last, geometry } = useStations();
-  const { trains, model, now } = useTrains(500);
+  const { trains, model, now } = useTrains(500, true);
   const favourites = useSettings((s) => s.favourites);
   const rider = useRiderSession();
+  const auto = useAutoRide();
   const startRide = useStartRide();
   const playback = usePlayback(now);
   const [selStation, setSelStation] = useState<string | undefined>();
@@ -41,6 +44,8 @@ export function LiveReal() {
   const [followNext, setFollowNext] = useState(false);
   const [recenter, setRecenter] = useState(0);
   const [view3d, setView3d] = useState(false);
+  // Google-Maps-style compass: north up, or the map turns with the phone (2D, while the rider's dot is shown)
+  const [headingUp, setHeadingUp] = useState(false);
   // 3D: the real map (OpenStreetMap buildings, streets, place names) can be switched off; the choice is remembered
   const realMap = useSettings((s) => s.realMap3d);
   const setRealMap = useSettings((s) => s.setRealMap3d);
@@ -52,11 +57,14 @@ export function LiveReal() {
   // why locate found no position: the permission was refused, or the phone's GPS is switched off
   const [locNote, setLocNote] = useState<null | 'denied' | 'gpsOff'>(null);
   const { user, travel, request: requestLocation } = useScreenLocation({ fast: true });
+  const compassHeading = useHeading(headingUp && !!user);
+  // on the move the GPS course is truer than the compass
+  const myHeading = user && (user.speed ?? 0) > 2 && user.course != null ? user.course : compassHeading;
   // a position arrived after all (GPS switched on, permission given in settings): the note has done its job
   if (locNote && user) setLocNote(null);
 
   // standing at / near a station: the sheet follows that station by itself and updates as the rider moves
-  const nearest = user ? nearestStation(user, model.chainage.map((m) => fractionOf(model, m))) : null;
+  const nearest = user ? nearestStation(user, model.chainage.map((m) => fractionOf(model, m)), model.stationIds) : null;
   const nearbyId = nearest && nearest.metres <= AT_STATION_M ? model.stationIds[nearest.index] : undefined;
   const [seenNearby, setSeenNearby] = useState<string | undefined>();
   if (nearbyId !== seenNearby) {
@@ -102,7 +110,7 @@ export function LiveReal() {
           [t('live.nextStationIs', { name: nameAt(sg.toIdx) }), ''],
         ] as [string, string][],
       };
-      return { ...base, callout, label: t('live.atStationTag', { id: tr.id }), dwell: { timer: fmtMmSs(tr.dwellLeftSec, lang), progress: tr.dwellLeftSec / model.dwellSec } };
+      return { ...base, callout, label: t('live.atStationTag', { id: tr.id }), dwell: { timer: fmtMmSs(tr.dwellLeftSec, lang), progress: tr.dwellLeftSec / (model.dwell[sg.fromIdx] || model.dwellSec) } };
     }
     return { ...base, label: tagFor(tr.state, tr.id) };
   });
@@ -218,7 +226,7 @@ export function LiveReal() {
     const idx = seg.atStation ? seg.fromIdx : seg.progress > 0.12 ? seg.toIdx : -1;
     const sid = idx >= 0 ? model.stationIds[idx] : undefined;
     if (!sid) return null;
-    const dw = model.dwellSec;
+    const dw = model.dwell[idx] || model.dwellSec;
     let tStop: number | null = null;
     if (train.dwellLeftSec != null && seg.atStation) tStop = now + (train.dwellLeftSec - dw) * 1000;
     else {
@@ -304,7 +312,9 @@ export function LiveReal() {
         onGatePress={(id) => setSelGate((cur) => (cur === id ? undefined : id))}
         womenLabel={t('live.womenCoach')}
         // the rider's own dot is hidden while they ride: they are the "YOU" train
-        user={rider.session ? undefined : user}
+        user={rider.session || !user ? undefined : { ...user, heading: myHeading }}
+        headingUp={headingUp && myHeading != null && !view3d}
+        compass={user && !rider.session && !view3d ? { headingUp, onPress: () => setHeadingUp((v) => !v), label: t(headingUp ? 'map.northUp' : 'map.headingUp') } : undefined}
         tilt={view3d}
         recenterKey={recenter}
         topInset={playback.active ? 330 : 200}
@@ -374,6 +384,18 @@ export function LiveReal() {
                   stopLabel={t('common.close')}
                   onStop={() => rider.stop('user')}
                   onPress={() => router.push('/rider')}
+                />
+              </Stack>
+            ) : auto.phase === 'ON_TRAIN' ? (
+              // detected automatically (not shared yet): which train, the next stop, and one tap to share
+              <Stack flex>
+                <RideBanner
+                  live={false}
+                  title={auto.trainId ? t('autoRide.onTrain', { id: auto.trainId }) : t('autoRide.onTrainNoId')}
+                  subtitle={auto.nextStationId ? t('autoRide.next', { name: nameOf(auto.nextStationId), eta: auto.nextEtaSec != null ? fmtMmSs(auto.nextEtaSec, lang) : '—' }) : ''}
+                  stopLabel={t('autoRide.share')}
+                  onStop={() => void rider.start({ direction: auto.dir, fromStationId: auto.fromStationId })}
+                  testID="auto-ride-banner"
                 />
               </Stack>
             ) : (

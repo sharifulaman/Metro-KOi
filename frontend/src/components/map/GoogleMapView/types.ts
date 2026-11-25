@@ -62,6 +62,11 @@ export interface MapUser {
   lng: number;
   /** metres */
   accuracy?: number;
+  /** compass heading of the phone (0 = north): draws a light cone the way the rider faces */
+  heading?: number | null;
+  /** GPS speed (m/s) and direction of travel (degrees): on the move the course is truer than the compass */
+  speed?: number | null;
+  course?: number | null;
 }
 
 export interface GoogleMapViewProps {
@@ -99,6 +104,15 @@ export interface GoogleMapViewProps {
   route?: { from: number; to: number } | null;
   /** Show the rider's position on the map. */
   user?: MapUser | null;
+  /** Dotted walking line from the rider to this point (the chosen gate). */
+  walkTo?: { lat: number; lng: number } | null;
+  /** 2D: frame these points (e.g. the rider and the gate) instead of `focus`; framed again only when `fitKey` changes */
+  fitPoints?: { lat: number; lng: number }[] | null;
+  fitKey?: string;
+  /** 2D: turn the map with the phone (heading-up) and keep the rider centred; needs `user.heading`. */
+  headingUp?: boolean;
+  /** Round compass button (top right): shows north, toggles heading-up. */
+  compass?: { headingUp: boolean; onPress(): void; label: string };
   /** Frame this exact point (e.g. the rider) instead of `focus`; needs `zoom` > 1. */
   focusPoint?: { lat: number; lng: number };
   /** 3D: tilted vector map with buildings, turned to look along the line. 2D when omitted. */

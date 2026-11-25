@@ -12,7 +12,9 @@ const SUPABASE_URL = Deno.env.get('SUPABASE_URL')!;
 const SERVICE_KEY = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
 const FUSE_SECRET = Deno.env.get('FUSE_SECRET') ?? '';
 
-const RUN_MS = 55_000; // how long one invocation keeps ticking
+// one invocation ticks until just before the next cron call (every minute), which waits for the lock
+const RUN_MS = 57_000; // how long one invocation keeps ticking
+const LOCK_WAIT_MS = 10_000; // how long a new invocation waits for the previous one to hand over
 const LOCK_MS = 75_000; // a crashed invocation frees the lock after this
 const TICK_MS = 2_000;
 const SYNC_MS = 10_000; // save state + refresh the `trains` snapshot table
@@ -70,15 +72,22 @@ async function saveState(state: EngineState, lastEventId: number): Promise<void>
 }
 
 async function run(): Promise<Record<string, unknown>> {
-  const begin = Date.now();
-  // take the lock; if another invocation holds it, do nothing
-  const lock = await rest(`fusion_state?id=eq.1&lock_until=lt.${encodeURIComponent(new Date().toISOString())}`, {
-    method: 'PATCH',
-    headers: { Prefer: 'return=representation' },
-    body: JSON.stringify({ lock_until: new Date(begin + LOCK_MS).toISOString() }),
-  });
-  const rows = (await lock.json()) as { state: EngineState; last_event_id: number }[];
+  let begin = Date.now();
+  // take the lock. The previous run may still be saving its last state: wait up to LOCK_WAIT_MS for it instead
+  // of skipping a whole minute, so the hand-over gap is about a second, not ~5 s or a full minute.
+  let rows: { state: EngineState; last_event_id: number }[] = [];
+  while (Date.now() - begin < LOCK_WAIT_MS) {
+    const lock = await rest(`fusion_state?id=eq.1&lock_until=lt.${encodeURIComponent(new Date().toISOString())}`, {
+      method: 'PATCH',
+      headers: { Prefer: 'return=representation' },
+      body: JSON.stringify({ lock_until: new Date(Date.now() + LOCK_MS).toISOString() }),
+    });
+    rows = (await lock.json()) as { state: EngineState; last_event_id: number }[];
+    if (rows.length) break;
+    await sleep(500);
+  }
   if (!rows.length) return { skipped: 'locked' };
+  begin = Date.now();
 
   const engine = new Engine(LINE_DATA, rows[0].state && rows[0].state.sessions ? rows[0].state : emptyState());
   let lastId = Number(rows[0].last_event_id) || 0;

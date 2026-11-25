@@ -16,6 +16,9 @@ export interface WireTrain {
   riders: number;
   nextStation?: string | null;
   etaSec?: number | null;
+  /** the scheduled run this live train was matched to (SB-0810) and its delay in seconds */
+  sched?: string | null;
+  delaySec?: number | null;
 }
 
 // Client → server

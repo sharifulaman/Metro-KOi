@@ -15,6 +15,8 @@ interface SettingsState {
   deviceId: string;
   /** the rider agreed to share rides (anonymous); off until they turn it on */
   shareRides: boolean;
+  /** ride detection with the app closed ("Always" location, station geofences); off unless turned on */
+  autoRideBackground: boolean;
   favourites: string[];
   /** show the design's fixed sample data instead of the real timetable (off by default) */
   demo: boolean;
@@ -29,6 +31,7 @@ interface SettingsState {
   setNotifications(v: boolean): void;
   setLocationAsked(v: boolean): void;
   setShareRides(v: boolean): void;
+  setAutoRideBackground(v: boolean): void;
   toggleFavourite(stationId: string): void;
   setDemo(v: boolean): void;
   setRealMap3d(v: boolean): void;
@@ -46,6 +49,7 @@ export const useSettings = create<SettingsState>()(
       locationAsked: false,
       deviceId: Crypto.randomUUID(),
       shareRides: false,
+      autoRideBackground: false,
       favourites: [],
       demo: false,
       realMap3d: true,
@@ -58,6 +62,7 @@ export const useSettings = create<SettingsState>()(
       setNotifications: (notifications) => set({ notifications }),
       setLocationAsked: (locationAsked) => set({ locationAsked }),
       setShareRides: (shareRides) => set({ shareRides }),
+      setAutoRideBackground: (autoRideBackground) => set({ autoRideBackground }),
       setDemo: (demo) => set({ demo }),
       setRealMap3d: (realMap3d) => set({ realMap3d }),
       setTripFrom: (tripFrom) => set({ tripFrom }),

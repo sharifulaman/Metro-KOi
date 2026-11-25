@@ -4,6 +4,7 @@ import { useCallback, useEffect, useState } from 'react';
 import { AppState } from 'react-native';
 
 import type { MapUser } from '@/components/map';
+import gatesFile from '@/data/gates.json';
 import { geoAt } from '@/lib/lineGeo';
 
 export type LocationStatus = 'unknown' | 'granted' | 'denied';
@@ -18,12 +19,19 @@ export function metresBetween(a: { lat: number; lng: number }, b: { lat: number;
   return 2 * R * Math.asin(Math.sqrt(h));
 }
 
-/** The station closest to `user` (by straight line) and how far it is, given each station's fraction along the line. */
-export function nearestStation(user: MapUser, fractions: number[]): { index: number; metres: number } | null {
+const GATES = (gatesFile as { gates: { stationId: string; lat: number | null; lng: number | null }[] }).gates;
+
+/**
+ * The station closest to `user` and how far it is, given each station's fraction along the line. With the
+ * station ids, the distance is to the station's nearest gate (where people actually go in and out), not to
+ * the middle of a ~200 m station.
+ */
+export function nearestStation(user: MapUser, fractions: number[], ids?: string[]): { index: number; metres: number } | null {
   let best: { index: number; metres: number } | null = null;
   fractions.forEach((f, index) => {
     const g = geoAt(f);
-    const metres = metresBetween(user, g);
+    const gates = ids ? GATES.filter((x) => x.stationId === ids[index] && x.lat != null && x.lng != null) : [];
+    const metres = gates.length ? Math.min(...gates.map((x) => metresBetween(user, { lat: x.lat as number, lng: x.lng as number }))) : metresBetween(user, g);
     if (!best || metres < best.metres) best = { index, metres };
   });
   return best;
@@ -100,7 +108,7 @@ function useLocationCore(opts: LocationOptions, focused: boolean): Located {
     let sub: Location.LocationSubscription | null = null;
     void Location.watchPositionAsync(fast ? FAST : slow ? SLOW : NORMAL, (p) => {
       if (cancelled) return;
-      setUser({ lat: p.coords.latitude, lng: p.coords.longitude, accuracy: p.coords.accuracy ?? undefined });
+      setUser({ lat: p.coords.latitude, lng: p.coords.longitude, accuracy: p.coords.accuracy ?? undefined, speed: p.coords.speed, course: p.coords.heading != null && p.coords.heading >= 0 ? p.coords.heading : null });
       // speed in m/s from the GPS; null / negative when the phone cannot tell, then the last mode stands
       const v = p.coords.speed;
       if (v != null && v >= 0) setTravel((cur) => (v >= VEHICLE_MPS ? 'vehicle' : v < WALK_MPS ? 'walk' : cur));

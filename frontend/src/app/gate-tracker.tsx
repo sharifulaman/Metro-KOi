@@ -17,8 +17,12 @@ export default function GateTrackerScreen() {
   const f = useGateFlow(station);
   const [picking, setPicking] = useState(false);
   const [threeD, setThreeD] = useState(false);
+  // heading-up by default: walking, the map's 'ahead' is the street's 'ahead' (docs/train-tracking-plan.md §6.3)
+  const [headingUp, setHeadingUp] = useState(true);
+  const gatePin = f.mapGates.find((g) => g.letter === f.selected);
 
-  const header = { backLabel: t('common.back'), footnote: t('gateTrack.approx') };
+  // the 'approximate' warning goes away once every gate of the station is surveyed
+  const header = { backLabel: t('common.back'), footnote: f.approx ? t('gateTrack.approx') : undefined };
   return (
     <Screen bleed>
       {f.tracking && f.target ? (
@@ -59,10 +63,13 @@ export default function GateTrackerScreen() {
               gates={f.mapGates}
               selectedGate={`${f.stationId}:${f.selected}`}
               onGatePress={(id) => f.select(id.split(':')[1] as Gate)}
+              walkTo={gatePin ? { lat: gatePin.lat, lng: gatePin.lng } : null}
+              headingUp={headingUp}
+              onCompass={() => setHeadingUp((v) => !v)}
             />
           }
           view3d={{ active: threeD, label: t(threeD ? 'live.tilt2d' : 'live.tilt3d'), onPress: () => setThreeD((v) => !v) }}
-          mapNote={t('gateTrack.mapApprox')}
+          mapNote={f.userAccuracy != null && f.userAccuracy > 30 ? t('gateTrack.gpsWeak') : f.approx ? t('gateTrack.mapApprox') : undefined}
           gates={f.rows.map((r) => ({ gate: r.gate, name: r.name, area: r.area, tag: r.gate === f.nearestGate ? t('gateTrack.nearestTag') : undefined, selected: r.gate === f.selected, onPress: () => f.select(r.gate) }))}
           actionLabel={t('gateTrack.exitVia', { g: f.selected })}
           onAction={f.startTracking}

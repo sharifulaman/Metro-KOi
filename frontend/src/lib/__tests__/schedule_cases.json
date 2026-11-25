@@ -1,147 +1,148 @@
 {
- "description": "Golden vectors for the schedule engine (spec \u00a714). Generated independently in Python from timetable.json; shared by frontend (node --test) and backend (go test).",
- "cases": [
-  {
-   "dayType": "sun_thu",
-   "direction": "SB",
-   "count": 136,
-   "first": "06:30",
-   "last": "21:31",
-   "sample": [
-    "06:30",
-    "06:50",
-    "07:10",
-    "07:11"
-   ]
+  "description": "Golden vectors for the schedule engine (spec §14), DMTCL chart of 2026-11-19. Later bands carry on from the previous train (no restart at the band start).",
+  "cases": [
+    {
+      "dayType": "sun_thu",
+      "direction": "SB",
+      "count": 136,
+      "first": "06:30",
+      "last": "21:49",
+      "sample": [
+        "06:30",
+        "06:50",
+        "07:10",
+        "07:20"
+      ]
+    },
+    {
+      "dayType": "sun_thu",
+      "direction": "NB",
+      "count": 137,
+      "first": "07:15",
+      "last": "22:21",
+      "sample": [
+        "07:15",
+        "07:25",
+        "07:35",
+        "07:45"
+      ]
+    },
+    {
+      "dayType": "fri",
+      "direction": "SB",
+      "count": 53,
+      "first": "15:00",
+      "last": "21:48",
+      "sample": [
+        "15:00",
+        "15:08",
+        "15:16",
+        "15:24"
+      ]
+    },
+    {
+      "dayType": "fri",
+      "direction": "NB",
+      "count": 55,
+      "first": "15:20",
+      "last": "22:28",
+      "sample": [
+        "15:20",
+        "15:28",
+        "15:36",
+        "15:44"
+      ]
+    },
+    {
+      "dayType": "sat",
+      "direction": "SB",
+      "count": 100,
+      "first": "06:30",
+      "last": "21:36",
+      "sample": [
+        "06:30",
+        "06:50",
+        "07:10",
+        "07:26"
+      ]
+    },
+    {
+      "dayType": "sat",
+      "direction": "NB",
+      "count": 104,
+      "first": "07:15",
+      "last": "22:21",
+      "sample": [
+        "07:15",
+        "07:27",
+        "07:39",
+        "07:51"
+      ]
+    }
+  ],
+  "mustContain": {
+    "sun_thu/SB": [
+      "06:30",
+      "06:50",
+      "07:10",
+      "07:20",
+      "07:30",
+      "08:15",
+      "10:00",
+      "21:49"
+    ],
+    "fri/SB": [
+      "15:00"
+    ],
+    "sat/NB": [
+      "07:15"
+    ]
   },
-  {
-   "dayType": "sun_thu",
-   "direction": "NB",
-   "count": 123,
-   "first": "07:15",
-   "last": "22:11",
-   "sample": [
-    "07:15",
-    "07:25",
-    "07:35",
-    "07:45"
-   ]
+  "mustNotContain": {
+    "sun_thu/SB": [
+      "06:29",
+      "07:11",
+      "07:21",
+      "08:11",
+      "22:00"
+    ],
+    "fri/SB": [
+      "06:30",
+      "14:52"
+    ]
   },
-  {
-   "dayType": "fri",
-   "direction": "SB",
-   "count": 54,
-   "first": "15:00",
-   "last": "21:31",
-   "sample": [
-    "15:00",
-    "15:08",
-    "15:16",
-    "15:24"
-   ]
-  },
-  {
-   "dayType": "fri",
-   "direction": "NB",
-   "count": 55,
-   "first": "15:20",
-   "last": "22:11",
-   "sample": [
-    "15:20",
-    "15:28",
-    "15:36",
-    "15:44"
-   ]
-  },
-  {
-   "dayType": "sat",
-   "direction": "SB",
-   "count": 101,
-   "first": "06:30",
-   "last": "21:31",
-   "sample": [
-    "06:30",
-    "06:50",
-    "07:10",
-    "07:26"
-   ]
-  },
-  {
-   "dayType": "sat",
-   "direction": "NB",
-   "count": 105,
-   "first": "07:15",
-   "last": "22:11",
-   "sample": [
-    "07:15",
-    "07:27",
-    "07:39",
-    "07:51"
-   ]
+  "peakSunThuSB": [
+    "08:15",
+    "08:20",
+    "08:25",
+    "08:30",
+    "08:35",
+    "08:40",
+    "08:45",
+    "08:50",
+    "08:55",
+    "09:00",
+    "09:05",
+    "09:10",
+    "09:15",
+    "09:20",
+    "09:25",
+    "09:30",
+    "09:35",
+    "09:40",
+    "09:45",
+    "09:50",
+    "09:55",
+    "10:00"
+  ],
+  "runModel": {
+    "endToEndMin": 40,
+    "dwellSec": 30,
+    "stations": 16,
+    "note": "evenly spaced until OSM chainage exists",
+    "expect": {
+      "arriveLastSec": 2400,
+      "departFirstSec": 0
+    }
   }
- ],
- "mustContain": {
-  "sun_thu/SB": [
-   "06:30",
-   "06:50",
-   "07:10",
-   "07:11",
-   "07:21",
-   "08:11",
-   "09:56",
-   "21:31"
-  ],
-  "fri/SB": [
-   "15:00"
-  ],
-  "sat/NB": [
-   "07:15"
-  ]
- },
- "mustNotContain": {
-  "sun_thu/SB": [
-   "06:29",
-   "07:30",
-   "10:00",
-   "22:00"
-  ],
-  "fri/SB": [
-   "06:30",
-   "14:52"
-  ]
- },
- "peakSunThuSB": [
-  "08:11",
-  "08:16",
-  "08:21",
-  "08:26",
-  "08:31",
-  "08:36",
-  "08:41",
-  "08:46",
-  "08:51",
-  "08:56",
-  "09:01",
-  "09:06",
-  "09:11",
-  "09:16",
-  "09:21",
-  "09:26",
-  "09:31",
-  "09:36",
-  "09:41",
-  "09:46",
-  "09:51",
-  "09:56"
- ],
- "runModel": {
-  "endToEndMin": 40,
-  "dwellSec": 30,
-  "stations": 16,
-  "note": "evenly spaced until OSM chainage exists",
-  "expect": {
-   "arriveLastSec": 2400,
-   "departFirstSec": 0
-  }
- }
 }

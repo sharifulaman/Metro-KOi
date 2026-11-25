@@ -1,6 +1,6 @@
 import { useMemo } from 'react';
 
-import { dayTypeFor, dhakaClock, etaToStation, parseScheduledId, runStops, terminalDepartures, type StopTime } from '@/lib/schedule';
+import { dayTypeOf, dhakaClock, estimatedTrains, etaToStation, parseScheduledId, runStops, terminalDepartures, type StopTime } from '@/lib/schedule';
 import type { Direction, Train } from '@/models';
 
 import { useTimetable } from '../timetable/useTimetable';
@@ -40,15 +40,33 @@ export interface TrainRun {
  * time of day: before departure, while running and after arrival. Rider-only
  * trains use their live position and chainage ETAs.
  */
+/**
+ * The train with this id. A scheduled train whose estimate is hidden on the map because a rider's live train
+ * covers it (the 300 m merge rule) is still running: it is drawn from that live train, under its own id.
+ */
+export function findTrain(trains: Train[], id: string, estimates: Train[]): Train | undefined {
+  const shown = trains.find((x) => x.id === id);
+  if (shown) return shown;
+  // the server names live trains after their scheduled run
+  const named = trains.find((x) => x.sched === id);
+  if (named) return { ...named, id };
+  const est = estimates.find((x) => x.id === id);
+  if (!est) return undefined;
+  const live = trains
+    .filter((l) => l.state !== 'ESTIMATED' && l.dir === est.dir && Math.abs(l.s - est.s) <= 300)
+    .sort((a, b) => Math.abs(a.s - est.s) - Math.abs(b.s - est.s))[0];
+  return live ? { ...live, id } : est;
+}
+
 export function useTrainRun(id: string): TrainRun {
   const tt = useTimetable();
   const { trains, model, now } = useTrains(1000);
-  const train = trains.find((x) => x.id === id);
+  const train = useMemo(() => findTrain(trains, id, estimatedTrains(tt, model, now)), [trains, id, tt, model, now]);
   return useMemo(() => {
     const parsed = parseScheduledId(id);
     const sec = dhakaClock(now).sec;
     const dir = train?.dir ?? parsed?.dir ?? null;
-    const scheduledToday = parsed ? terminalDepartures(tt, dayTypeFor(now), parsed.dir).some((d) => d.trainId === id) : false;
+    const scheduledToday = parsed ? terminalDepartures(tt, dayTypeOf(tt, now), parsed.dir).some((d) => d.trainId === id) : false;
     const empty: TrainRun = { phase: 'unknown', dir, train, segment: null, stops: [], markerAfter: null, startsInSec: null, now };
     if (!dir || (!train && !scheduledToday)) return empty;
 

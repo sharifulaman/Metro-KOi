@@ -1,5 +1,5 @@
 -- Run AFTER deploying the "fuse" edge function (see supabase/README.md). Replace the two <placeholders>.
--- Calls the function every minute; each call keeps ticking for ~55 s and a lock stops overlapping runs.
+-- Calls the function every minute; each call keeps ticking for ~57 s; the next call waits for the lock, so runs hand over without a gap.
 
 create extension if not exists pg_cron;
 create extension if not exists pg_net;
@@ -17,6 +17,6 @@ select cron.schedule('fuse-tick', '* * * * *', $$
       'x-fuse-secret', (select decrypted_secret from vault.decrypted_secrets where name = 'fuse_secret')
     ),
     body := '{}'::jsonb,
-    timeout_milliseconds := 70000
+    timeout_milliseconds := 80000
   );
 $$);

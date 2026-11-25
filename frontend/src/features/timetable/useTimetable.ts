@@ -9,7 +9,12 @@ import type { TimetableFile } from '@/models';
 
 import { allStationsRaw } from '../stations/useStations';
 
-const bundledTimetable = bundled as TimetableFile;
+const bundledTimetable = bundled as unknown as TimetableFile;
+
+/** Versions are "YYYY-MM-DD.n": the later one wins, so an old server row or phone cache never hides a newer bundled timetable. */
+function newest(a: TimetableFile | undefined, b: TimetableFile): TimetableFile {
+  return a && (a.version ?? '') > (b.version ?? '') ? a : b;
+}
 
 // Last timetable fetched from Supabase, kept on the phone so an updated timetable still works offline.
 const cache = zustandStorage('metro-cache');
@@ -57,12 +62,12 @@ export function useTimetable(): TimetableFile {
     staleTime: 6 * 3600 * 1000,
     retry: 1,
   });
-  return q.data ?? bundledTimetable;
+  return newest(q.data, bundledTimetable);
 }
 
 export function useRunModel(): RunModel {
   const tt = useTimetable();
-  return useMemo(() => buildRunModel(allStationsRaw, tt.endToEndMin, tt.dwellSec), [tt.endToEndMin, tt.dwellSec]);
+  return useMemo(() => buildRunModel(allStationsRaw, tt.endToEndMin, tt.dwellSec, tt.dwellByStation), [tt.endToEndMin, tt.dwellSec, tt.dwellByStation]);
 }
 
 export { bundledTimetable };

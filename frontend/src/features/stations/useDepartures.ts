@@ -1,6 +1,6 @@
 import { useMemo } from 'react';
 
-import { dayTypeFor, etaToStation, serviceWindow, stationDepartures } from '@/lib/schedule';
+import { dayTypeOf, etaToStation, serviceWindow, stationDepartures } from '@/lib/schedule';
 import type { Departure, Direction, Train } from '@/models';
 
 import { useTrains } from '../map/useTrains';
@@ -36,7 +36,7 @@ export function useDepartures(stationId: string, limit = 3): StationDepartures {
     }
     return {
       byDir,
-      window: serviceWindow(tt, dayTypeFor(now)),
+      window: serviceWindow(tt, dayTypeOf(tt, now)),
       isTerminusFor: { SB: idx === model.stationIds.length - 1, NB: idx === 0 },
       now,
     };

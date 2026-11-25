@@ -8,7 +8,7 @@ import { stationName, useStations } from '@/features/stations/useStations';
 import { useTimetable } from '@/features/timetable/useTimetable';
 import { useT } from '@/i18n';
 import { fmtClockRange, fmtNum } from '@/lib/fmt';
-import { bandsFor, currentBandIndex, dayTypeFor, dhakaClock, hhmmToSec, resolveDayType } from '@/lib/schedule';
+import { bandsFor, currentBandIndex, dayTypeOf, dhakaClock, hhmmToSec, resolveDayType } from '@/lib/schedule';
 import type { Direction, ServiceDayType } from '@/models';
 
 /** Timetable (spec §10.7, board 7). Tapping a band plays it on the live map. */
@@ -18,7 +18,7 @@ export default function TimetableScreen() {
   const tt = useTimetable();
   const { first, last } = useStations();
   const now = useNow(30000);
-  const today = resolveDayType(dayTypeFor(now), tt);
+  const today = resolveDayType(dayTypeOf(tt, now), tt);
   const [day, setDay] = useState<ServiceDayType>(today);
   const [dir, setDir] = useState<Direction>('SB');
   const bands = bandsFor(tt, day, dir);

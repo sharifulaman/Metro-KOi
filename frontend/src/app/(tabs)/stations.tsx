@@ -79,7 +79,7 @@ export default function StationsScreen() {
   useEffect(() => {
     if (!demo && status === 'unknown') void request();
   }, [demo, status, request]);
-  const nearest = !demo && user ? nearestStation(user, model.chainage.map((m) => fractionOf(model, m))) : null;
+  const nearest = !demo && user ? nearestStation(user, model.chainage.map((m) => fractionOf(model, m)), model.stationIds) : null;
   const nearestId = nearest ? model.stationIds[nearest.index] : undefined;
   const focus = demo ? byId[DEMO_NEAREST.stationId] : byId[nearestId ?? favourites[0] ?? config.defaultStationId];
   const focusIndex = focus ? list.findIndex((s) => s.id === focus.id) : -1;

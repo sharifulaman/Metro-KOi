@@ -3,7 +3,9 @@ import * as Location from 'expo-location';
 import { useCallback } from 'react';
 
 import { snapToLine } from '@/lib/lineGeo';
-import { canShare, scoreSignals } from '@/lib/riderScore';
+import { canShare, detectSignals, scoreSignals, type SnappedSample } from '@/lib/riderScore';
+import stationsFile from '@/data/stations.json';
+import line from '@/data/line6.json';
 import type { Direction, RiderSignals, StopReason } from '@/models';
 import { useLive } from '@/store/live';
 import { useRider } from '@/store/rider';
@@ -24,6 +26,26 @@ const ACK_TIMEOUT_MS = 20_000;
 
 // App-wide, not per screen: a ride started on Journey must keep streaming while the rider moves between screens.
 const sub: { current: Location.LocationSubscription | null } = { current: null };
+/** line length (m) and open stations' chainage, to turn a snapped fraction into metres along the track */
+const LINE_M = line.properties.lengthM;
+const STATION_M = (stationsFile.stations as { status: string; chainageM: number | null }[]).filter((s) => s.status === 'open' && s.chainageM != null).map((s) => s.chainageM as number);
+/** a station platform: within this of a station's chainage and of the track */
+const IN_STATION_M = 150;
+/** samples kept for the dwell / smoothness signals (~4 min at one fix per 3 s) */
+const MAX_SAMPLES = 80;
+
+/** Variance of the GPS speed's rate of change (m/s² squared): low on a train, high in stop-and-go traffic. */
+function accelVariance(samples: SnappedSample[]): number | null {
+  const a: number[] = [];
+  for (let i = 1; i < samples.length; i++) {
+    const dt = (samples[i].ts - samples[i - 1].ts) / 1000;
+    if (dt > 0.5 && dt < 10) a.push((samples[i].speedMps - samples[i - 1].speedMps) / dt);
+  }
+  if (a.length < 8) return null;
+  const mean = a.reduce((x, y) => x + y, 0) / a.length;
+  return a.reduce((x, y) => x + (y - mean) ** 2, 0) / a.length;
+}
+
 const signals: { current: RiderSignals } = { current: { confirmed: false, nearLineFor20s: false, trainSpeedSeen: false, stationDwellPattern: false, smoothMotion: false, startedInStation: false } };
 
 export interface RideOptions {
@@ -80,7 +102,8 @@ export function useRiderSession() {
       }
 
       const sessionId = Crypto.randomUUID();
-      signals.current = { confirmed: true, nearLineFor20s: false, trainSpeedSeen: false, stationDwellPattern: false, smoothMotion: false, startedInStation: startSnap.metres <= 150 };
+      signals.current = { confirmed: true, nearLineFor20s: false, trainSpeedSeen: false, stationDwellPattern: false, smoothMotion: false, startedInStation: startSnap.metres <= 60 && STATION_M.some((c) => Math.abs(c - startSnap.f * LINE_M) <= IN_STATION_M) };
+      const samples: SnappedSample[] = [];
       rider.begin({
         sessionId,
         startedAt: Date.now(),
@@ -122,6 +145,15 @@ export function useRiderSession() {
         } else nearSince = null;
         const spd = loc.coords.speed ?? 0;
         if (spd * 3.6 >= 40 && spd * 3.6 <= 85) signals.current.trainSpeedSeen = true;
+        // dwell only at stations + smooth motion (spec §6.2): read from the recent snapped fixes
+        if (accurate) {
+          samples.push({ ts: loc.timestamp, chainageM: snap.f * LINE_M, offsetM: snap.metres, speedMps: Math.max(0, spd) });
+          if (samples.length > MAX_SAMPLES) samples.shift();
+          const seen = detectSignals(samples, STATION_M, signals.current.startedInStation, accelVariance(samples));
+          // once seen, a signal stays for the ride
+          signals.current.stationDwellPattern ||= seen.stationDwellPattern;
+          signals.current.smoothMotion ||= seen.smoothMotion;
+        }
         const score = scoreSignals(signals.current);
         st.update({ score, lastF: snap.f, lastSpd: spd });
         if (!canShare(signals.current)) return;

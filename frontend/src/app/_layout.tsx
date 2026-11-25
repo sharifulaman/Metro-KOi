@@ -1,3 +1,5 @@
+// background tasks must be defined when the bundle loads (a background launch mounts no screens)
+import '@/features/ride/backgroundRide';
 import * as Location from 'expo-location';
 import { useRouter, useSegments } from 'expo-router';
 import { useEffect, useState } from 'react';
@@ -5,6 +7,7 @@ import { useEffect, useState } from 'react';
 import { AppProviders, AppStack } from '@/components/AppShell';
 import { useLiveConnection } from '@/features/live/useLiveConnection';
 import { useNearStationAlert } from '@/features/notify/useNearStationAlert';
+import { useAutoRideDetector } from '@/features/ride/useAutoRideDetector';
 import { initI18n, useI18nLanguage } from '@/i18n';
 import { useClock } from '@/store/clock';
 import { useSettings } from '@/store/settings';
@@ -19,6 +22,7 @@ function Root() {
   useI18nLanguage(lang);
   useLiveConnection();
   useNearStationAlert();
+  useAutoRideDetector();
 
   useEffect(() => useClock.getState().stop(), []);
 

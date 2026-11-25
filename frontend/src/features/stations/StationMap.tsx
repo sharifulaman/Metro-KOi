@@ -1,17 +1,23 @@
 import { GoogleMapView, ZOOM_NEAR, type MapGate } from '@/components/map';
 import { fractionOf, useTrains } from '@/features/map/useTrains';
+import { useHeading } from '@/features/gates/useHeading';
 import { useScreenLocation } from '@/features/map/useUserLocation';
 import { stationName, useStations } from '@/features/stations/useStations';
 import { useT } from '@/i18n';
 import { useRider } from '@/store/rider';
 
 /** The real map around one station: the line, every station, the trains, and the rider's own dot. 2D, or tilted 3D with buildings. */
-export function StationMap({ stationId, height, tilt, zoom = ZOOM_NEAR, gates, selectedGate, onGatePress, platformSigns }: { stationId: string; height?: number; tilt?: boolean; zoom?: number; gates?: MapGate[]; selectedGate?: string; onGatePress?(id: string): void; platformSigns?: Record<'SB' | 'NB', string> }) {
+export function StationMap({ stationId, height, tilt, zoom = ZOOM_NEAR, gates, selectedGate, onGatePress, platformSigns, walkTo, headingUp, onCompass }: { stationId: string; height?: number; tilt?: boolean; zoom?: number; gates?: MapGate[]; selectedGate?: string; onGatePress?(id: string): void; platformSigns?: Record<'SB' | 'NB', string>; walkTo?: { lat: number; lng: number } | null; headingUp?: boolean; onCompass?(): void }) {
   const { t, lang } = useT();
   const { list, byId } = useStations();
   const { trains, model } = useTrains(1000);
   const { user } = useScreenLocation();
   const riding = useRider((s) => !!s.session);
+  // the compass is read only where the map offers heading-up (the gate finder)
+  const compass = useHeading(!!onCompass && !riding && !!user);
+  // walking slowly the compass shows where the phone faces; on the move (> 2 m/s) the GPS course is truer
+  const heading = user && (user.speed ?? 0) > 2 && user.course != null ? user.course : compass;
+  const me = riding || !user ? undefined : { ...user, heading };
   const idx = model.stationIds.indexOf(stationId);
   return (
     <GoogleMapView
@@ -28,7 +34,12 @@ export function StationMap({ stationId, height, tilt, zoom = ZOOM_NEAR, gates, s
       }))}
       selectedStation={stationId}
       platformSigns={platformSigns}
-      user={riding ? undefined : user}
+      user={me}
+      walkTo={me ? walkTo : null}
+      fitPoints={me && walkTo && !headingUp ? [me, walkTo] : null}
+      fitKey={walkTo ? `${walkTo.lat},${walkTo.lng}` : undefined}
+      headingUp={!!headingUp && heading != null && !tilt}
+      compass={onCompass && !tilt ? { headingUp: !!headingUp, onPress: onCompass, label: t(headingUp ? 'map.northUp' : 'map.headingUp') } : undefined}
       tilt={tilt}
       gates={gates}
       selectedGate={selectedGate}

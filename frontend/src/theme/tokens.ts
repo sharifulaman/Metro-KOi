@@ -165,6 +165,39 @@ export const brandFixed = {
   body: '#E9EDEB',
 } as const;
 
+/** Opening (splash) scene and the pin logo (design "স্প্ল্যাশ" / "অ্যাপ লোগো"): fixed in both themes. */
+export const splashFixed = {
+  skyTop: '#12B07A',
+  skyMid: '#08724F',
+  skyBottom: '#033A28',
+  cityFar: '#055E41',
+  cityNear: '#044E36',
+  window: '#FDE68A',
+  deck: '#06402C',
+  pierCap: '#0A5B40',
+  deckEdge: '#12B07A',
+  rail: '#FDE047',
+  accent: '#FDE047',
+  barFrom: '#FDE047',
+  barTo: '#FBBF24',
+  ring: 'rgba(253,230,138,0.7)',
+  glow: '#FDE68A',
+  beam: '#FFF3B0',
+  carBody: '#F4F7F6',
+  carStripe: '#0E9F6E',
+  carBand: '#E8453C',
+  carWheel: '#0E1A16',
+  cab: '#0A5B40',
+  white: '#FFFFFF',
+  logoBg: '#FFFFFF',
+  pinTop: '#2BD39A',
+  pinBottom: '#0A7A55',
+  pinShadow: '#0E1A16',
+  logoGlass: '#0A5B40',
+  logoBand: '#E8453C',
+  logoLamp: '#FBBF24',
+} as const;
+
 export const space = [0, 4, 8, 12, 16, 20, 24, 32] as const;
 export type SpaceStep = 0 | 1 | 2 | 3 | 4 | 5 | 6 | 7;
 

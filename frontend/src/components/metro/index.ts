@@ -36,6 +36,8 @@ export { ConnectionPill } from './ConnectionPill';
 export { TrainIllustration } from './TrainIllustration';
 export { EmptyState } from './EmptyState';
 export { ShareOnboardView } from './ShareOnboardView';
+export { ObWelcomeView } from './ObWelcomeView';
+export { ObPrefsView } from './ObPrefsView';
 export { StationSection } from './StationSection';
 export { SearchPill } from './SearchPill';
 export { NextTrainRow } from './NextTrainRow';

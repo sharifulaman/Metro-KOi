@@ -1,93 +1,94 @@
 import { useRouter } from 'expo-router';
 import { useState } from 'react';
 
-import { GoogleMapView } from '@/components/map';
-import { ShareOnboardView } from '@/components/metro';
-import { Button, Card, Screen, Segmented, Stack, Text } from '@/components/ui';
+import { ObPrefsView, ObWelcomeView, ShareOnboardView } from '@/components/metro';
 import { stationName, useStations } from '@/features/stations/useStations';
 import { useT } from '@/i18n';
-import type { Lang, ThemeMode } from '@/models';
 import { useSettings } from '@/store/settings';
 
+const STEPS = 3;
+
+/** First launch (design: ObWelcome → ObPrefs → ShareOnboard): the live line, language and theme, then ride sharing. */
 export default function Onboarding() {
   const { t, lang } = useT();
   const router = useRouter();
   const [step, setStep] = useState(0);
-  const { list } = useStations();
+  const { first, last } = useStations();
   const themeMode = useSettings((s) => s.themeMode);
-  const { setLang, setThemeMode, setOnboarded } = useSettings.getState();
-  const finish = () => {
+  const { setLang, setThemeMode, setOnboarded, setShareRides } = useSettings.getState();
+  const finish = (share?: boolean) => {
+    if (share != null) setShareRides(share);
     setOnboarded(true);
     router.replace('/');
   };
-  if (step === 1) {
-    // ride sharing: its own full-screen page (design: share onboarding); both choices move on
-    const next = (share: boolean) => {
-      useSettings.getState().setShareRides(share);
-      setStep(2);
-    };
+
+  if (step === 0) {
     return (
-      <ShareOnboardView
-        title={t('shareIntro.title')}
-        body={t('shareIntro.body')}
-        rows={[
-          { icon: 'shield', title: t('shareIntro.anonTitle'), body: t('shareIntro.anonBody') },
-          { icon: 'clock', title: t('shareIntro.tripTitle'), body: t('shareIntro.tripBody') },
-          { icon: 'lock', title: t('shareIntro.deleteTitle'), body: t('shareIntro.deleteBody') },
-        ]}
-        trainLabel={t('shareIntro.train')}
-        liveLabel={t('shareIntro.liveForAll')}
-        ctaLabel={t('shareIntro.cta')}
-        note={t('shareIntro.note')}
-        skipLabel={t('shareIntro.skip')}
-        onEnable={() => next(true)}
-        onSkip={() => next(false)}
-        progress={{ index: 1, count: 3 }}
-        testID="onboarding-share"
+      <ObWelcomeView
+        title={t('onboarding.t1')}
+        body={t('onboarding.b1')}
+        fromLabel={first ? stationName(first, lang) : ''}
+        toLabel={last ? stationName(last, lang) : ''}
+        etaLabel={t('onboarding.eta')}
+        liveLabel={t('onboarding.live')}
+        nextLabel={t('onboarding.next')}
+        skipLabel={t('onboarding.skip')}
+        onNext={() => setStep(1)}
+        onSkip={() => finish()}
+        progress={{ index: 0, count: STEPS }}
+        testID="onboarding-welcome"
       />
     );
   }
+
+  if (step === 1) {
+    return (
+      <ObPrefsView
+        title={t('onboarding.prefsTitle')}
+        body={t('onboarding.prefsBody')}
+        lang={lang}
+        onLang={setLang}
+        theme={themeMode}
+        onTheme={setThemeMode}
+        labels={{
+          language: t('more.language'),
+          theme: t('more.theme'),
+          bangla: 'বাংলা',
+          banglaSub: t('onboarding.banglaSub'),
+          english: 'English',
+          englishSub: t('onboarding.englishSub'),
+          system: t('more.themeSystem'),
+          light: t('more.themeLight'),
+          dark: t('more.themeDark'),
+          systemNote: t('onboarding.systemNote'),
+        }}
+        nextLabel={t('onboarding.next')}
+        onNext={() => setStep(2)}
+        progress={{ index: 1, count: STEPS }}
+        testID="onboarding-prefs"
+      />
+    );
+  }
+
+  // ride sharing last, already in the language just picked; both choices finish onboarding
   return (
-    <Screen gap={5}>
-      <Stack flex gap={5} justify="center">
-        {step === 0 && (
-          <>
-            <Card radius="hero" padding={0}>
-              <Stack>
-                <GoogleMapView
-                  stations={list.filter((_, i) => i % 3 === 0).map((s, i, a) => ({ id: s.id, label: stationName(s, lang), f: i / (a.length - 1) }))}
-                  trains={[
-                    { id: 'a', dir: 'SB', state: 'LIVE', f: 0.3 },
-                    { id: 'b', dir: 'NB', state: 'ESTIMATED', f: 0.68 },
-                  ]}
-                  errorText={t('live.mapError')}
-                  height={280}
-                />
-              </Stack>
-            </Card>
-            <Text variant="display">{t('onboarding.t1')}</Text>
-            <Text tone="muted">{t('onboarding.b1')}</Text>
-          </>
-        )}
-        {step === 2 && (
-          <>
-            <Text variant="display">{t('onboarding.t3')}</Text>
-            <Text variant="label" tone="muted">{t('more.language')}</Text>
-            <Segmented<Lang> value={lang} onChange={setLang} options={[{ value: 'bn', label: 'বাংলা' }, { value: 'en', label: 'English' }]} />
-            <Text variant="label" tone="muted">{t('more.theme')}</Text>
-            <Segmented<ThemeMode>
-              value={themeMode}
-              onChange={setThemeMode}
-              options={[
-                { value: 'system', label: t('more.themeSystem') },
-                { value: 'light', label: t('more.themeLight') },
-                { value: 'dark', label: t('more.themeDark') },
-              ]}
-            />
-          </>
-        )}
-      </Stack>
-      <Button fullWidth label={step < 2 ? t('onboarding.next') : t('onboarding.start')} onPress={() => (step < 2 ? setStep(step + 1) : finish())} testID="onboarding-next" />
-    </Screen>
+    <ShareOnboardView
+      title={t('shareIntro.title')}
+      body={t('shareIntro.body')}
+      rows={[
+        { icon: 'shield', title: t('shareIntro.anonTitle'), body: t('shareIntro.anonBody') },
+        { icon: 'clock', title: t('shareIntro.tripTitle'), body: t('shareIntro.tripBody') },
+        { icon: 'lock', title: t('shareIntro.deleteTitle'), body: t('shareIntro.deleteBody') },
+      ]}
+      trainLabel={t('shareIntro.train')}
+      liveLabel={t('shareIntro.liveForAll')}
+      ctaLabel={t('shareIntro.cta')}
+      note={t('shareIntro.note')}
+      skipLabel={t('shareIntro.skip')}
+      onEnable={() => finish(true)}
+      onSkip={() => finish(false)}
+      progress={{ index: 2, count: STEPS }}
+      testID="onboarding-share"
+    />
   );
 }

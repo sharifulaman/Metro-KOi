@@ -11,7 +11,7 @@ export const ZOOM_NEAR = 5.4;
 export interface MapPayload {
   dark: boolean;
   errorText: string;
-  theme: Pick<Palette, 'bg' | 'surface' | 'ink' | 'inkMuted' | 'brand' | 'brandDeep' | 'onBrand' | 'live' | 'liveTint' | 'onLiveTint' | 'estimated' | 'trainSB' | 'trainNB' | 'mapGround' | 'mapRoad'>;
+  theme: Pick<Palette, 'bg' | 'surface' | 'ink' | 'inkMuted' | 'brand' | 'brandDeep' | 'onBrand' | 'live' | 'liveTint' | 'onLiveTint' | 'estimated' | 'trainSB' | 'trainNB' | 'mapGround' | 'mapRoad' | 'trackRail' | 'trackBed' | 'trackTie'>;
   stations: { id: string; label: string; lat: number; lng: number; terminal: boolean; bearing: number; gated: boolean }[];
   trains: { id: string; dir: 'SB' | 'NB'; state: string; f: number; lat: number; lng: number; heading: number; label?: string; women?: string; callout?: { title: string; rows: [string, string][] }; timer?: string; progress?: number }[];
   hints: GoogleMapViewProps['hints'] | null;
@@ -166,6 +166,9 @@ export function buildPayload(p: GoogleMapViewProps, c: Palette, dark: boolean, r
       trainNB: c.trainNB,
       mapGround: c.mapGround,
       mapRoad: c.mapRoad,
+      trackRail: c.trackRail,
+      trackBed: c.trackBed,
+      trackTie: c.trackTie,
     },
     stations: p.stations.map((s, i) => {
       const g = gateFrame(s.id, p.gates, geoAt(s.f));

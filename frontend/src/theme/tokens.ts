@@ -35,6 +35,9 @@ export interface Palette {
   scrim: string;
   mapGround: string;
   mapRoad: string;
+  trackRail: string;
+  trackBed: string;
+  trackTie: string;
   /** brick-red concourse facade (station section + 3D scene) */
   facade: string;
   /** floating "glass" pills and the tab bar: translucent surface + hairline */
@@ -77,6 +80,9 @@ export const light: Palette = {
   scrim: 'rgba(14,26,22,0.35)',
   mapGround: '#EEF1EF',
   mapRoad: '#FFFFFF',
+  trackRail: '#555D63',
+  trackBed: '#E4E7EA',
+  trackTie: '#3D4347',
   facade: '#B5523B',
   glass: 'rgba(255,255,255,0.84)',
   glassBorder: 'rgba(255,255,255,0.75)',
@@ -115,6 +121,9 @@ export const dark: Palette = {
   scrim: 'rgba(0,0,0,0.55)',
   mapGround: '#101917',
   mapRoad: '#1C2925',
+  trackRail: '#8D969C',
+  trackBed: '#22272B',
+  trackTie: '#586066',
   facade: '#5A2E26',
   glass: 'rgba(19,29,26,0.86)',
   glassBorder: 'rgba(255,255,255,0.12)',

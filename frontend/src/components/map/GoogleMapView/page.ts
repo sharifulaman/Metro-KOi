@@ -75,7 +75,7 @@ html,body,#m{margin:0;height:100%;width:100%;overflow:hidden;-webkit-tap-highlig
 <body><div id="m"></div><div id="err" hidden></div>
 <script>
 var LINE=${path},MAPID=${JSON.stringify(mapId)},DARK=${dark ? 'true' : 'false'};
-var walkLine=null,headUp=false,routeCasing=null,routeLine=null,me=null,meRing=null,tiltOn=false,map=null,ready=false,pending=null,S=null,Pin=null,stations={},trains={},placed=false,viewKey='',proj=false;
+var walkLine=null,headUp=false,routeCasing=null,routeLine=null,me=null,meRing=null,tiltOn=false,map=null,ready=false,pending=null,S=null,Pin=null,stations={},trains={},placed=false,viewKey='',proj=false,lineSig='';
 function send(m){var s=JSON.stringify(m);if(window.ReactNativeWebView)window.ReactNativeWebView.postMessage(s);else parent.postMessage(s,'*');}
 function fail(kind){send({type:'error',kind:kind});var e=document.getElementById('err'),t=pending||S;e.hidden=false;e.textContent=(t&&t.errorText)||'Google Maps unavailable';if(t){e.style.background=t.theme.bg;e.style.color=t.theme.inkMuted;}}
 window.gm_authFailure=function(){fail('auth');};
@@ -110,14 +110,17 @@ function makePin(){
 window.__init=function(){
   map=new google.maps.Map(document.getElementById('m'),{center:{lat:23.83,lng:90.365},zoom:12,disableDefaultUI:true,clickableIcons:false,gestureHandling:'greedy',keyboardShortcuts:false,isFractionalZoomEnabled:true,mapId:MAPID,colorScheme:DARK?google.maps.ColorScheme.DARK:google.maps.ColorScheme.LIGHT,renderingType:google.maps.RenderingType.VECTOR,headingInteractionEnabled:true,tiltInteractionEnabled:true});
   Pin=makePin();
-  var casing=new google.maps.Polyline({map:map,path:LINE,strokeWeight:10,strokeOpacity:1,zIndex:1});
-  var line=new google.maps.Polyline({map:map,path:LINE,strokeWeight:5,strokeOpacity:1,zIndex:2});
-  window.__line=[casing,line];
+  var casing=new google.maps.Polyline({map:map,path:LINE,strokeWeight:14,strokeOpacity:0.95,zIndex:1,clickable:false});
+  var rails=new google.maps.Polyline({map:map,path:LINE,strokeWeight:9,strokeOpacity:1,zIndex:2,clickable:false});
+  var bed=new google.maps.Polyline({map:map,path:LINE,strokeWeight:4.5,strokeOpacity:1,zIndex:3,clickable:false});
+  var ties=new google.maps.Polyline({map:map,path:LINE,strokeOpacity:0,zIndex:4,clickable:false,icons:[{icon:{path:'M -4.6,0 L 4.6,0',scale:1,strokeWeight:2.2,strokeOpacity:0.9},offset:'0',repeat:'11px'}]});
+  window.__line=[casing,rails,bed,ties];
   map.addListener('heading_changed',function(){coneRot();Object.keys(trains).forEach(function(k){rot(trains[k]);});Object.keys(stations).forEach(function(k){rotSt(stations[k]);});});
   map.addListener('zoom_changed',function(){
     updMod();
     var d=document.body;d.classList.add('nz');setTimeout(function(){d.classList.remove('nz');},450);
     d.classList.toggle('dots',map.getZoom()<13.2);
+    styleLine();
   });
   // the projection arrives a moment after the first placement: redo the framing so the sheet/top offsets apply
   google.maps.event.addListenerOnce(map,'idle',function(){proj=true;if(S){placed=false;setView(S.view);placed=true;}});
@@ -285,7 +288,7 @@ function coneRot(){if(!me)return;var c=me.el.querySelector('.cone');if(!c)return
 /* dotted walking line from the rider to the chosen gate */
 function syncWalk(p){
   if(!p.walk||!p.user){if(walkLine){walkLine.setMap(null);walkLine=null;}return;}
-  if(!walkLine)walkLine=new google.maps.Polyline({map:map,strokeOpacity:0,zIndex:4,clickable:false,icons:[{icon:{path:google.maps.SymbolPath.CIRCLE,scale:3,fillOpacity:1,strokeWeight:0},offset:'0',repeat:'12px'}]});
+  if(!walkLine)walkLine=new google.maps.Polyline({map:map,strokeOpacity:0,zIndex:6,clickable:false,icons:[{icon:{path:google.maps.SymbolPath.CIRCLE,scale:3,fillOpacity:1,strokeWeight:0},offset:'0',repeat:'12px'}]});
   var ic=walkLine.get('icons');ic[0].icon.fillColor=p.theme.brandDeep;
   walkLine.setOptions({path:[{lat:p.user.lat,lng:p.user.lng},p.walk],icons:ic});
 }
@@ -305,8 +308,8 @@ function syncHeading(p){
 function syncRoute(p){
   if(!p.route){if(routeLine){routeCasing.setMap(null);routeLine.setMap(null);routeCasing=routeLine=null;}return;}
   if(!routeLine){
-    routeCasing=new google.maps.Polyline({map:map,strokeOpacity:1,strokeWeight:14,zIndex:3,clickable:false});
-    routeLine=new google.maps.Polyline({map:map,strokeOpacity:1,strokeWeight:8,zIndex:4,clickable:false,icons:[{icon:{path:google.maps.SymbolPath.FORWARD_CLOSED_ARROW,scale:2.6,strokeColor:'#ffffff',fillColor:'#ffffff',fillOpacity:1,strokeWeight:1},offset:'12px',repeat:'64px'}]});
+    routeCasing=new google.maps.Polyline({map:map,strokeOpacity:1,strokeWeight:14,zIndex:5,clickable:false});
+    routeLine=new google.maps.Polyline({map:map,strokeOpacity:1,strokeWeight:8,zIndex:6,clickable:false,icons:[{icon:{path:google.maps.SymbolPath.FORWARD_CLOSED_ARROW,scale:2.6,strokeColor:'#ffffff',fillColor:'#ffffff',fillOpacity:1,strokeWeight:1},offset:'12px',repeat:'64px'}]});
   }
   routeCasing.setOptions({path:p.route,strokeColor:p.theme.surface});
   routeLine.setOptions({path:p.route,strokeColor:p.theme.brandDeep});
@@ -343,14 +346,25 @@ function setView(v){
   }else map.setCenter(ll);
 }
 
+function styleLine(){
+  if(!S||!window.__line)return;
+  var t=S.theme,sm=map.getZoom()<13.2;
+  var sig=(sm?1:0)+'|'+t.surface+'|'+t.trackRail+'|'+t.trackBed+'|'+t.trackTie;
+  if(sig===lineSig)return;
+  lineSig=sig;
+  window.__line[0].setOptions({strokeColor:t.surface,strokeWeight:sm?8:14});
+  window.__line[1].setOptions({strokeColor:t.trackRail,strokeWeight:sm?5:9});
+  window.__line[2].setOptions({strokeColor:t.trackBed,strokeWeight:sm?2.2:4.5});
+  window.__line[3].setOptions({icons:[{icon:{path:sm?'M -2.5,0 L 2.5,0':'M -4.6,0 L 4.6,0',scale:1,strokeColor:t.trackTie,strokeWeight:sm?1.4:2.2,strokeOpacity:sm?0.85:0.9},offset:'0',repeat:sm?'7px':'11px'}]});
+}
+
 function apply(p){
   S=p;
   document.documentElement.style.background=p.theme.bg;
   document.body.style.background=p.theme.bg;
   if(!MAPID)map.setOptions({styles:styles(p.theme,p.dark)});
-  window.__line[0].setOptions({strokeColor:p.theme.surface});
-  window.__line[1].setOptions({strokeColor:p.theme.brand});
   document.body.classList.toggle('dots',map.getZoom()<13.2);
+  styleLine();
   updMod();
   syncRoute(p);
   syncStations(p);

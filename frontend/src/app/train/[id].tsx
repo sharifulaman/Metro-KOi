@@ -5,7 +5,6 @@ import { Card, Chip, Screen, Stack, StatusBadge, Text } from '@/components/ui';
 import { useTrainRun } from '@/features/map/useTrainRun';
 import { stationName, useStations } from '@/features/stations/useStations';
 import { useT } from '@/i18n';
-import { config } from '@/lib/config';
 import { fmtClock, fmtEta, fmtEtaAt, fmtNum, fmtSpeed } from '@/lib/fmt';
 import { useSettings } from '@/store/settings';
 
@@ -15,7 +14,8 @@ export default function TrainScreen() {
   const { t, lang } = useT();
   const router = useRouter();
   const { byId, first, last } = useStations();
-  const mine = useSettings((s) => s.favourites[0]) ?? config.defaultStationId;
+  // "your station" is only a station the rider saved; with none saved, no stop is tagged (never the app's default station)
+  const mine = useSettings((s) => s.favourites[0]);
   const run = useTrainRun(id);
   const name = (sid: string) => (byId[sid] ? stationName(byId[sid], lang) : sid);
 

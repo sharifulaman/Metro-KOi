@@ -3,11 +3,11 @@ import { useCallback, useEffect, useState } from 'react';
 import { BackHandler } from 'react-native';
 
 import { GoogleMapView, ZOOM_NEAR, type MapGate, type MapHints, type MapTrain } from '@/components/map';
-import { AlertSlider, BrandBar, NextTrainRow, RideBanner, SegmentProgress, Speedometer, StationHeader } from '@/components/metro';
+import { BrandBar, NextTrainRow, RideBanner, SegmentProgress, Speedometer, StationHeader } from '@/components/metro';
 import { Button, Chip, GlassPill, IconButton, InfoNote, Screen, Sheet, Stack, StatusBadge, Text } from '@/components/ui';
 import { useStationGates } from '@/features/gates/useStationGates';
 import { usePlayback } from '@/features/map/usePlayback';
-import { nearestStation, useScreenLocation } from '@/features/map/useUserLocation';
+import { locationServicesOn, nearestStation, travelMinutes, useScreenLocation } from '@/features/map/useUserLocation';
 import { fractionOf, trainSegment, useTrains } from '@/features/map/useTrains';
 import { useRiderSession } from '@/features/rider/useRiderSession';
 import { useStartRide } from '@/features/rider/useStartRide';
@@ -49,8 +49,11 @@ export function LiveReal() {
   /** show only trains reported live by riders (hide the timetable's estimated ones) */
   const [liveOnly, setLiveOnly] = useState(false);
   const [userFocus, setUserFocus] = useState<{ lat: number; lng: number } | null>(null);
-  const [locNote, setLocNote] = useState(false);
-  const { user, request: requestLocation } = useScreenLocation({ fast: true });
+  // why locate found no position: the permission was refused, or the phone's GPS is switched off
+  const [locNote, setLocNote] = useState<null | 'denied' | 'gpsOff'>(null);
+  const { user, travel, request: requestLocation } = useScreenLocation({ fast: true });
+  // a position arrived after all (GPS switched on, permission given in settings): the note has done its job
+  if (locNote && user) setLocNote(null);
 
   // standing at / near a station: the sheet follows that station by itself and updates as the rider moves
   const nearest = user ? nearestStation(user, model.chainage.map((m) => fractionOf(model, m))) : null;
@@ -68,8 +71,9 @@ export function LiveReal() {
   const focusIdx = model.stationIds.indexOf(focusId);
   const deps = useDepartures(focusId, 1);
   // suggestion: the train to take from the station the rider is at / walking to, by the time now (walk ~80 m/min, only when the sheet shows their nearest station)
-  const walkSec = nearest && focusId === nearestId ? Math.round((nearest.metres / 80) * 60) : null;
-  const { best, byDir: bestByDir } = useBestTrain(focusId, walkSec);
+  // time to reach the station the way the rider is moving now (on foot or in a vehicle)
+  const walkSec = nearest && focusId === nearestId ? travelMinutes(nearest.metres, travel) * 60 : null;
+  const { byDir: bestByDir } = useBestTrain(focusId, walkSec);
   const train = trains.find((x) => x.id === selTrain);
   const seg = train ? trainSegment(model, train) : null;
   const nameAt = (i: number) => (byId[model.stationIds[i]] ? stationName(byId[model.stationIds[i]], lang) : '');
@@ -166,14 +170,14 @@ export function LiveReal() {
     setSelTrain(undefined);
     setSelStation(undefined);
     setNear(true);
-    setLocNote(!fix);
+    setLocNote(fix ? null : (await locationServicesOn()) ? 'denied' : 'gpsOff');
     setUserFocus(fix ? { lat: fix.lat, lng: fix.lng } : null);
     setRecenter((n) => n + 1);
   };
   /** locate is a switch: a second tap turns it off and goes back to the normal view */
   const stopLocate = () => {
     setUserFocus(null);
-    setLocNote(false);
+    setLocNote(null);
     setRecenter((n) => n + 1);
   };
   // while it is on, the map follows the rider as their position updates
@@ -350,7 +354,7 @@ export function LiveReal() {
               <IconButton icon={near ? 'zoomOut' : 'zoomIn'} size="sm" elevated accessibilityLabel={t(near ? 'live.zoomOut' : 'live.zoomIn')} onPress={() => setNear((v) => !v)} testID="zoom" />
             </Stack>
           </Stack>
-          {locNote ? <InfoNote icon="gpsOff" tone="danger" text={t('live.locationOff')} /> : null}
+          {locNote ? <InfoNote icon="gpsOff" tone="danger" text={t(locNote === 'gpsOff' ? 'live.gpsOff' : 'live.locationOff')} /> : null}
           {view3d && realMap && mapStatus === 'fail' ? <InfoNote icon="map" tone="danger" text={t('live.mapDataFail')} /> : null}
           {geometry === 'TO_FETCH' ? <InfoNote icon="map" text={t('live.schematicNote')} /> : null}
         </Stack>
@@ -447,21 +451,6 @@ export function LiveReal() {
                   nextLabel={t('live.nextStation')}
                   testID="station-header"
                 />
-                <AlertSlider testID="alerts">
-                  {closedUntil ? <InfoNote icon="clock" text={`${t('live.closedTitle')} · ${t('live.closedBody', { time: playback.timeLabel(closedUntil), station: stationName(first, lang) })}`} /> : null}
-                  {(['SB', 'NB'] as const).map((dir) => {
-                    const b = bestByDir[dir];
-                    if (!b) return null;
-                    const walkMin = fmtNum(Math.max(1, Math.round((walkSec ?? 0) / 60)), lang);
-                    const label = b.closed ? t('live.bestNext') : b === best ? t('live.bestNow') : t('live.bestLater');
-                    const leave =
-                      !b.closed && b.leaveInSec != null
-                        ? ' · ' + (b.leaveInSec < 60 ? t('live.bestHurry', { walk: walkMin }) : t('live.bestLeave', { min: fmtNum(Math.floor(b.leaveInSec / 60), lang), walk: walkMin }))
-                        : '';
-                    const when = b.closed ? fmtClock(b.atSec, lang) : fmtEtaAt(b.etaSec, b.atSec, b.source, lang);
-                    return <InfoNote key={dir} icon="train" tone="brand" text={`${label}: ${t('live.bestLine', { dir: t(`timetable.${dir}`), n: fmtNum(b.platform, lang), when })}${leave}`} />;
-                  })}
-                </AlertSlider>
                 {(['SB', 'NB'] as const)
                   .filter((dir) => !deps.isTerminusFor[dir])
                   .map((dir, i, arr) => {

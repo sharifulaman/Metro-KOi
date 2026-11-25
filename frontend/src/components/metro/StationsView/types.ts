@@ -9,9 +9,6 @@ export interface StationsViewProps {
   dirs: { key: string; label: string }[];
   dir: string;
   onDir(key: string): void;
-  searchPlaceholder: string;
-  legendLive: string;
-  legendEstimated: string;
   /** omit to hide the banner */
   banner?: Pick<NearestBannerProps, 'mode' | 'caption' | 'title' | 'subtitle' | 'eta' | 'onPress'>;
   timeline: Pick<StationTimelineProps, 'stations' | 'train' | 'labels'>;

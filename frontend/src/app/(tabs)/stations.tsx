@@ -10,7 +10,7 @@ import { stationAltName, stationName, useStations } from '@/features/stations/us
 import { useRunModel, useTimetable } from '@/features/timetable/useTimetable';
 import { useT } from '@/i18n';
 import { config } from '@/lib/config';
-import { fmtClock, fmtEtaAt, fmtNum } from '@/lib/fmt';
+import { fmtClock, fmtDistance, fmtEtaAt, fmtNum } from '@/lib/fmt';
 import { dhakaClock, etaToStation, nextServiceStart, stationDepartures } from '@/lib/schedule';
 import type { Direction } from '@/models';
 import { useSettings } from '@/store/settings';
@@ -86,7 +86,28 @@ export default function StationsScreen() {
   const focusEta = focus && !closedUntil ? nextAt(focus.id, focusIndex) : undefined;
   const firstTrainLabel = closedUntil ? fmtClock(dhakaClock(closedUntil).sec, lang) : '';
 
-  const banner = closedUntil
+  // just how far: "650 m away" / "3.2 km away"
+  const walk = nearest ? fmtDistance(nearest.metres, lang) : '';
+  // the rider's location is known: always suggest their nearest station, even after service hours (then with the first train's time)
+  const banner =
+    closedUntil && nearest && focus
+      ? {
+          mode: 'nearest' as const,
+          caption: t('stations.nearestTitle'),
+          title: stationName(focus, lang),
+          subtitle: `${walk} · ${t('stations.closedBody', { time: firstTrainLabel })}`,
+          onPress: () => router.push('/station/' + focus.id),
+        }
+      : !demo && !nearest
+        ? {
+            // no position yet: say so, and a tap asks for location (blocked: the subtitle says where to allow it)
+            mode: 'nearest' as const,
+            caption: t('stations.nearestTitle'),
+            title: t('stations.locateTitle'),
+            subtitle: (status === 'denied' ? t('stations.locateBlocked') : t('stations.locateBody')) + (closedUntil ? ' · ' + t('stations.closedBody', { time: firstTrainLabel }) : ''),
+            onPress: () => void request(),
+          }
+      : closedUntil
     ? { mode: 'closed' as const, caption: '', title: t('stations.closedTitle'), subtitle: t('stations.closedBody', { time: firstTrainLabel }) }
     : focus
       ? {
@@ -94,9 +115,9 @@ export default function StationsScreen() {
           caption: t('stations.nearestTitle'),
           title: stationName(focus, lang),
           subtitle: demo
-            ? t('stations.walkInfo', { m: fmtNum(DEMO_NEAREST.walkMeters, lang), min: fmtNum(DEMO_NEAREST.walkMinutes, lang) })
+            ? fmtDistance(DEMO_NEAREST.walkMeters, lang)
             : nearest
-              ? t('stations.walkInfo', { m: fmtNum(Math.round(nearest.metres), lang), min: fmtNum(Math.max(1, Math.ceil(nearest.metres / 80)), lang) })
+              ? walk
               : stationAltName(focus, lang),
           eta: focusEta ? { label: demo ? t('common.minutes', { n: fmtNum(DEMO_NEAREST.etaMin, lang) }) : focusEta.label, live: demo ? true : focusEta.kind === 'live', badge: demo || focusEta.kind === 'live' ? t('common.live') : t('common.estimated') } : undefined,
           onPress: () => router.push('/station/' + focus.id),
@@ -115,9 +136,6 @@ export default function StationsScreen() {
       ]}
       dir={dir}
       onDir={(k) => setDir(k as Direction)}
-      searchPlaceholder={t('stations.search')}
-      legendLive={t('common.live')}
-      legendEstimated={t('common.estimated')}
       banner={banner}
       timeline={{ stations: rows, train: marker, labels: { start: t('stations.start'), end: t('stations.end') } }}
       footnote={t('app.unofficial')}

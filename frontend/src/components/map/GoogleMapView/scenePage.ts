@@ -385,7 +385,7 @@ window.__set=function(p){
   var sig=(p.view&&p.view.key)+'|'+p.selectedTrain+'|'+p.selectedStation,vk=String(p.view&&p.view.key);
   if(sig!==lastSig){if(lastSig&&vk!==lastKey){zmul=1;hOff=0;PITCH=.7;}lastKey=vk;pan.x=0;pan.z=0;lastSig=sig;}
   S=p;
-  var fl=!!(p.view&&p.view.flat);if(fl!==flatMode){flatMode=fl;PITCH=fl?1.4:.7;}
+  var fl=!!(p.view&&p.view.flat);if(fl!==flatMode){flatMode=fl;PITCH=fl?FLAT_PITCH:.7;}
   STN=p.stations.map(function(s){var x=mx(s.lng),y=my(s.lat);return {id:s.id,label:s.label,s:snap(x,y),term:s.terminal};});
   GT=(p.gates||[]).map(function(g){return {id:g.id,letter:g.letter,label:g.label,x:mx(g.lng),z:-my(g.lat)};});
   snapGates();
@@ -591,7 +591,7 @@ function drawUser(){
 }
 
 /* ---------- gestures: drag = pan, pinch / wheel = zoom, short touch = tap ---------- */
-var hits=[],ptr={},moved=0,pinch=0,D0=340,PITCH=.7,hb=0,hOff=0,pinchA=0,pinchY=0,rot=false,flatMode=false;
+var hits=[],ptr={},moved=0,pinch=0,D0=340,PITCH=.7,hb=0,hOff=0,pinchA=0,pinchY=0,rot=false,flatMode=false,FLAT_PITCH=1.55;
 function ptrs(){return Object.keys(ptr).map(function(k){return ptr[k];});}
 function tap(x,y){for(var i=hits.length-1;i>=0;i--){var h=hits[i];if(x>=h.x&&x<=h.x+h.w&&y>=h.y&&y<=h.y+h.h){send({type:h.type,id:h.id});return;}}}
 function panBy(dx,dy){
@@ -772,7 +772,8 @@ function frame(now){
   var sel=S.selectedTrain&&TR[S.selectedTrain],tx,tz,thd;
   if(sel){tx=sel.pos.x;tz=sel.pos.z;thd=sel.br*180/Math.PI+(sel.d.dir==='NB'?180:0);}
   else{tx=mx(v.lng);tz=-my(v.lat);thd=v.heading;}
-  if(flatMode)thd=0;
+  /* 2D: always straight down, north up; recentre, zoom or a two-finger drag must not tilt it back into 3D */
+  if(flatMode){thd=0;PITCH=FLAT_PITCH;}
   tx+=pan.x;tz+=pan.z;
   if(!cam.init||Math.hypot(tx-cam.x,tz-cam.z)>1500||Object.keys(ptr).length){cam.x=tx;cam.z=tz;cam.h=thd;cam.init=true;}
   k=Math.min(1,dt*4);cam.x+=(tx-cam.x)*k;cam.z+=(tz-cam.z)*k;cam.h=angLerp(cam.h,thd,Math.min(1,dt*2.5));

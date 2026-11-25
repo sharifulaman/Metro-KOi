@@ -1,11 +1,12 @@
 import { useRouter } from 'expo-router';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 
 import { JourneyView, type JourneyBadge, type JourneyOptionCardProps } from '@/components/metro';
 import { Button, ListRow, Sheet, Text } from '@/components/ui';
 import { DEMO_JOURNEY } from '@/data/demoJourney';
 import { ActiveTrip } from '@/features/journey/ActiveTrip';
 import { useJourney } from '@/features/journey/useJourney';
+import { metresBetween, useScreenLocation } from '@/features/map/useUserLocation';
 import { useRiderSession } from '@/features/rider/useRiderSession';
 import { useStartRide } from '@/features/rider/useStartRide';
 import { stationName, useStations } from '@/features/stations/useStations';
@@ -36,6 +37,25 @@ export default function JourneyScreen() {
   const to = useSettings((s) => s.tripTo);
   const setFrom = useSettings((s) => s.setTripFrom);
   const setTo = useSettings((s) => s.setTripTo);
+  // From starts at the station nearest the rider (asks for location once), until they pick From themselves
+  const { user, status, request } = useScreenLocation();
+  useEffect(() => {
+    if (!demo && status === 'unknown') void request();
+  }, [demo, status, request]);
+  const [fromPicked, setFromPicked] = useState(false);
+  const nearestId = user
+    ? list.reduce<{ id: string; m: number } | null>((best, s) => {
+        if (s.lat == null || s.lng == null) return best;
+        const m = metresBetween(user, { lat: s.lat, lng: s.lng });
+        return !best || m < best.m ? { id: s.id, m } : best;
+      }, null)?.id
+    : undefined;
+  useEffect(() => {
+    if (demo || fromPicked || !nearestId || nearestId === from) return;
+    // the nearest station was the destination: keep the trip by moving the old start there
+    if (nearestId === to) setTo(from);
+    setFrom(nearestId);
+  }, [demo, fromPicked, nearestId, from, to, setFrom, setTo]);
   const [picking, setPicking] = useState<Field | null>(null);
   const [laterMin, setLaterMin] = useState(0);
   const [showLater, setShowLater] = useState(false);
@@ -149,6 +169,7 @@ export default function JourneyScreen() {
         onFrom: () => setPicking('from'),
         onTo: () => setPicking('to'),
         onSwap: () => {
+          setFromPicked(true);
           setFrom(to);
           setTo(from);
         },
@@ -184,8 +205,10 @@ export default function JourneyScreen() {
               highlighted={(picking === 'from' ? from : to) === s.id}
               divider={i < list.length - 1}
               onPress={() => {
-                if (picking === 'from') setFrom(s.id);
-                else setTo(s.id);
+                if (picking === 'from') {
+                  setFromPicked(true);
+                  setFrom(s.id);
+                } else setTo(s.id);
                 setPicking(null);
               }}
             />

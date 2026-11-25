@@ -23,9 +23,6 @@ function Demo() {
         dirs={[{ key: 'SB', label: 'Towards Motijheel' }, { key: 'NB', label: 'Towards Uttara' }]}
         dir={dir}
         onDir={setDir}
-        searchPlaceholder="Find a station"
-        legendLive="Live"
-        legendEstimated="Estimated"
         banner={{ mode: 'nearest', caption: 'Your nearest station', title: 'Farmgate', subtitle: '220 m · 3 min walk', eta: { label: '4 min', live: true, badge: 'Live' } }}
         timeline={{ stations, labels: { start: 'Start', end: 'End' }, train: { afterIndex: 0, progress: 0.4, live: true } }}
       />

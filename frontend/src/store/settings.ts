@@ -45,7 +45,8 @@ export const useSettings = create<SettingsState>()(
       favourites: [],
       demo: false,
       realMap3d: true,
-      tripFrom: 'farmgate',
+      // From follows the rider's nearest station once location is known; no made-up start before that
+      tripFrom: null,
       tripTo: 'motijheel',
       setLang: (lang) => set({ lang }),
       setThemeMode: (themeMode) => set({ themeMode }),

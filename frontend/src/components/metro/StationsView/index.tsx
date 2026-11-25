@@ -65,25 +65,6 @@ export function StationsView(p: StationsViewProps) {
           })}
         </View>
 
-        <View style={{ flexDirection: 'row', flexWrap: 'wrap', alignItems: 'center', columnGap: 10, minHeight: 46, marginTop: 10, marginHorizontal: gutter, paddingHorizontal: 16, borderRadius: 23, backgroundColor: c.surface, borderWidth: 1.5, borderColor: c.outline }}>
-          <Icon name="search" size={19} color={c.inkMuted} strokeWidth={2.2} />
-          <View style={{ flex: 1, minWidth: 0, height: 46, justifyContent: 'center' }}>
-            <Text size={15} lh={1.3} weight={400} tone="muted" numberOfLines={1}>
-              {p.searchPlaceholder}
-            </Text>
-          </View>
-          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6, ...(compact ? { width: '100%', paddingBottom: 10, paddingLeft: 2 } : null) }}>
-            <View style={{ width: 8, height: 8, borderRadius: 4, backgroundColor: c.live }} />
-            <Text size={12} lh={1.3} weight={400} tone="muted">
-              {p.legendLive}
-            </Text>
-            <View style={{ width: 8, height: 8, borderRadius: 4, borderWidth: 1.6, borderStyle: 'dashed', borderColor: c.inkMuted, marginLeft: 4 }} />
-            <Text size={12} lh={1.3} weight={400} tone="muted">
-              {p.legendEstimated}
-            </Text>
-          </View>
-        </View>
-
         {p.banner ? (
           <View style={{ marginTop: 10, marginHorizontal: gutter }}>
             <NearestBanner {...p.banner} />

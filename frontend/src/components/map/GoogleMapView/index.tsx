@@ -73,7 +73,10 @@ export function GoogleMapView(props: GoogleMapViewProps) {
     try {
       const m = JSON.parse(e.nativeEvent.data) as { type: string; id?: string; kind?: string; state?: string; n?: number; key?: string; data?: string };
       if (m.type === 'error' && m.kind === 'engine') setEngineFailed(true);
-      else if (m.type === 'error' && (m.kind === 'load' || m.kind === 'auth')) setGoogleFailed(true);
+      else if (m.type === 'error' && (m.kind === 'load' || m.kind === 'auth')) {
+        if (__DEV__) console.warn(`Google Maps ${m.kind === 'auth' ? 'rejected the API key' : 'script failed to load'}; 2D falls back to the offline map`);
+        setGoogleFailed(true);
+      }
       else if (m.type === 'tileGet' && m.key != null && m.n != null) ref.current?.injectJavaScript(`window.__tile(${m.n},${JSON.stringify(getTile(m.key))});true;`);
       else if (m.type === 'tilePut' && m.key && m.data) putTile(m.key, m.data);
       else if (m.type === 'station' && m.id) onStationPress?.(m.id);
@@ -91,7 +94,8 @@ export function GoogleMapView(props: GoogleMapViewProps) {
         <WebView
           key={mode}
           ref={ref}
-          source={{ html }}
+          // a fixed origin so Google sees a referrer: a key restricted to websites must allow https://metro-koi.app/*
+          source={{ html, baseUrl: 'https://metro-koi.app/' }}
           onLoadStart={() => setLoaded(false)}
           originWhitelist={['*']}
           injectedJavaScript={script}

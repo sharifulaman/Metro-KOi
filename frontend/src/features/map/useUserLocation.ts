@@ -38,7 +38,22 @@ export interface LocationOptions {
   enabled?: boolean;
 }
 
-type Located = { user: MapUser | null; status: LocationStatus; request(): Promise<MapUser | null> };
+/** How the rider is moving, from the GPS speed: on foot, or in a vehicle (bus, rickshaw, car, bike). */
+export type TravelMode = 'walk' | 'vehicle';
+
+type Located = { user: MapUser | null; status: LocationStatus; travel: TravelMode; request(): Promise<MapUser | null> };
+
+/** above ~11 km/h it is a vehicle; it is walking again only below ~6.5 km/h, so traffic stop-and-go does not flicker */
+const VEHICLE_MPS = 3;
+const WALK_MPS = 1.8;
+/** walking pace ~80 m/min; Dhaka road traffic averages ~15 km/h (250 m/min) */
+const WALK_M_PER_MIN = 80;
+const VEHICLE_M_PER_MIN = 250;
+
+/** Minutes to cover `metres` the way the rider is moving now (at least 1). */
+export function travelMinutes(metres: number, travel: TravelMode): number {
+  return Math.max(1, Math.ceil(metres / (travel === 'vehicle' ? VEHICLE_M_PER_MIN : WALK_M_PER_MIN)));
+}
 
 const NORMAL = { accuracy: Location.Accuracy.Balanced, timeInterval: 3000, distanceInterval: 5 };
 const SLOW = { accuracy: Location.Accuracy.Low, timeInterval: 15000, distanceInterval: 50 };
@@ -49,6 +64,7 @@ function useLocationCore(opts: LocationOptions, focused: boolean): Located {
   const slow = !!opts.slow;
   const enabled = opts.enabled !== false;
   const [user, setUser] = useState<MapUser | null>(null);
+  const [travel, setTravel] = useState<TravelMode>('walk');
   const [status, setStatus] = useState<LocationStatus>('unknown');
   const [granted, setGranted] = useState(false);
   const [foreground, setForeground] = useState(AppState.currentState === 'active');
@@ -83,7 +99,11 @@ function useLocationCore(opts: LocationOptions, focused: boolean): Located {
     let cancelled = false;
     let sub: Location.LocationSubscription | null = null;
     void Location.watchPositionAsync(fast ? FAST : slow ? SLOW : NORMAL, (p) => {
-      if (!cancelled) setUser({ lat: p.coords.latitude, lng: p.coords.longitude, accuracy: p.coords.accuracy ?? undefined });
+      if (cancelled) return;
+      setUser({ lat: p.coords.latitude, lng: p.coords.longitude, accuracy: p.coords.accuracy ?? undefined });
+      // speed in m/s from the GPS; null / negative when the phone cannot tell, then the last mode stands
+      const v = p.coords.speed;
+      if (v != null && v >= 0) setTravel((cur) => (v >= VEHICLE_MPS ? 'vehicle' : v < WALK_MPS ? 'walk' : cur));
     })
       .then((s) => {
         if (cancelled) s.remove();
@@ -102,17 +122,36 @@ function useLocationCore(opts: LocationOptions, focused: boolean): Located {
       setStatus(perm.granted ? 'granted' : 'denied');
       if (!perm.granted) return null;
       setGranted(true);
-      const p = await Location.getCurrentPositionAsync({ accuracy: Location.Accuracy.Balanced });
-      const fix = { lat: p.coords.latitude, lng: p.coords.longitude, accuracy: p.coords.accuracy ?? undefined };
-      setUser(fix);
-      return fix;
     } catch {
       setStatus('denied');
       return null;
     }
+    // allowed: a fresh fix, else the phone's last known one (GPS switched off, indoors, or slow to lock on)
+    try {
+      const p = (await Location.getCurrentPositionAsync({ accuracy: Location.Accuracy.Balanced })) ?? (await Location.getLastKnownPositionAsync());
+      if (!p) return null;
+      const fix = { lat: p.coords.latitude, lng: p.coords.longitude, accuracy: p.coords.accuracy ?? undefined };
+      setUser(fix);
+      return fix;
+    } catch {
+      const last = await Location.getLastKnownPositionAsync().catch(() => null);
+      if (!last) return null;
+      const fix = { lat: last.coords.latitude, lng: last.coords.longitude, accuracy: last.coords.accuracy ?? undefined };
+      setUser(fix);
+      return fix;
+    }
   }, []);
 
-  return { user, status, request };
+  return { user, status, travel, request };
+}
+
+/** Whether the phone's location service (GPS) is switched on; false when it cannot be read. */
+export async function locationServicesOn(): Promise<boolean> {
+  try {
+    return await Location.hasServicesEnabledAsync();
+  } catch {
+    return false;
+  }
 }
 
 /** The rider's position for a screen: tracking pauses while the screen is not in front (tabs stay mounted behind each other). */

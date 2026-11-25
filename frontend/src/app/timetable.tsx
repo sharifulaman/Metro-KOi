@@ -1,4 +1,3 @@
-import { useRouter } from 'expo-router';
 import { useState } from 'react';
 
 import { ScreenHeader } from '@/components/metro';
@@ -10,11 +9,11 @@ import { useT } from '@/i18n';
 import { fmtClockRange, fmtNum } from '@/lib/fmt';
 import { bandsFor, currentBandIndex, dayTypeOf, dhakaClock, hhmmToSec, resolveDayType } from '@/lib/schedule';
 import type { Direction, ServiceDayType } from '@/models';
+import { goBack } from '@/lib/nav';
 
 /** Timetable (spec §10.7, board 7). Tapping a band plays it on the live map. */
 export default function TimetableScreen() {
   const { t, lang } = useT();
-  const router = useRouter();
   const tt = useTimetable();
   const { first, last } = useStations();
   const now = useNow(30000);
@@ -27,7 +26,7 @@ export default function TimetableScreen() {
 
   return (
     <Screen scroll gap={4}>
-      <ScreenHeader title={t('timetable.title')} onBack={() => router.back()} backLabel={t('common.back')} />
+      <ScreenHeader title={t('timetable.title')} onBack={() => goBack()} backLabel={t('common.back')} />
       <Segmented<ServiceDayType> value={day} onChange={setDay} options={(['sun_thu', 'fri', 'sat'] as const).map((d) => ({ value: d, label: t(`timetable.${d}`) }))} testID="day" />
       <Card padding={3}>
         <Stack direction="row" align="center" justify="between" gap={3}>

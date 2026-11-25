@@ -1,15 +1,14 @@
-import { useRouter } from 'expo-router';
 import { useState } from 'react';
 
 import { HistoryView } from '@/components/metro';
 import { type HistoryFilter, useHistoryView } from '@/features/history/useHistoryView';
 import { useT } from '@/i18n';
 import { useHistory } from '@/store/history';
+import { goBack } from '@/lib/nav';
 
 /** Trip history — local only (design ৮). Shows the design's sample trips until real ones exist. */
 export default function HistoryScreen() {
   const { t, lang } = useT();
-  const router = useRouter();
   const [filter, setFilter] = useState<HistoryFilter>('all');
   const [confirmClear, setConfirmClear] = useState(false);
   const view = useHistoryView(filter, lang, t);
@@ -18,7 +17,7 @@ export default function HistoryScreen() {
     <HistoryView
       title={t('history.title')}
       backLabel={t('common.back')}
-      onBack={() => router.back()}
+      onBack={() => goBack()}
       tripsLabel={t('history.monthTrips')}
       trips={view.summary.trips}
       spendLabel={t('history.monthSpend')}

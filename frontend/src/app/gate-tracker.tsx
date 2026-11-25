@@ -1,4 +1,4 @@
-import { useLocalSearchParams, useRouter } from 'expo-router';
+import { useLocalSearchParams } from 'expo-router';
 import { useState } from 'react';
 
 import { GateCompassView, GateFinderView } from '@/components/metro';
@@ -8,12 +8,12 @@ import { StationMap } from '@/features/stations/StationMap';
 import { stationName } from '@/features/stations/useStations';
 import { useT } from '@/i18n';
 import type { Gate } from '@/models';
+import { goBack } from '@/lib/nav';
 
 /** Exit-gate flow: step 1 picks the station and gate, step 2 is the compass tracker that points at it. */
 export default function GateTrackerScreen() {
   const { station } = useLocalSearchParams<{ station?: string }>();
   const { t, lang } = useT();
-  const router = useRouter();
   const f = useGateFlow(station);
   const [picking, setPicking] = useState(false);
   const [threeD, setThreeD] = useState(false);
@@ -48,7 +48,7 @@ export default function GateTrackerScreen() {
           testID="gate-finder"
           title={t('gateTrack.findTitle')}
           subtitle={t('gateTrack.findSubtitle')}
-          onBack={() => router.back()}
+          onBack={() => goBack()}
           backLabel={header.backLabel}
           stationCaption={t('gateTrack.stationCaption')}
           stationName={f.stationLabel}

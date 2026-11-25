@@ -8,6 +8,7 @@ import { useSettings } from '@/store/settings';
 
 import { StationMap } from './StationMap';
 import { stationAltName, stationName, useStations } from './useStations';
+import { goBack } from '@/lib/nav';
 
 /** Station detail with the design's sample trains (artboard ১৫). Shown while "Sample data" is on. */
 export function StationDemo() {
@@ -53,7 +54,7 @@ export function StationDemo() {
       backLabel={t('common.back')}
       favouriteLabel={t('common.favourite')}
       favourite={favourites.includes(st.id)}
-      onBack={() => router.back()}
+      onBack={() => goBack()}
       onFavourite={() => toggleFavourite(st.id)}
       onJourney={() => router.push('/journey')}
       onView3d={() => router.push(`/station/${st.id}/3d`)}

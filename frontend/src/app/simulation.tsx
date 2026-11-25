@@ -1,10 +1,11 @@
-import { useLocalSearchParams, useRouter } from 'expo-router';
+import { useLocalSearchParams } from 'expo-router';
 
 import { SimulationView } from '@/components/map';
 import { ScreenHeader } from '@/components/metro';
 import { Screen, Stack } from '@/components/ui';
 import { stationName, useStations } from '@/features/stations/useStations';
 import { useT } from '@/i18n';
+import { goBack } from '@/lib/nav';
 
 /**
  * 3D "station to station" simulation (assets/sim/station-to-station.html):
@@ -15,7 +16,6 @@ import { useT } from '@/i18n';
 export default function SimulationScreen() {
   const { from, to } = useLocalSearchParams<{ from?: string; to?: string }>();
   const { t, lang } = useT();
-  const router = useRouter();
   const { list } = useStations();
   const idx = (id: string | undefined, fallback: number) => {
     const i = list.findIndex((s) => s.id === id);
@@ -30,7 +30,7 @@ export default function SimulationScreen() {
         <ScreenHeader
           title={t('sim.title')}
           subtitle={`${stationName(list[a], lang)} → ${stationName(list[b], lang)}`}
-          onBack={() => router.back()}
+          onBack={() => goBack()}
           backLabel={t('common.back')}
         />
       </Stack>

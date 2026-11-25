@@ -1,4 +1,4 @@
-import { useLocalSearchParams, useRouter } from 'expo-router';
+import { useLocalSearchParams } from 'expo-router';
 
 import { EmptyState, ScreenHeader, SegmentProgress, TrainTimeline, type TimelineStop } from '@/components/metro';
 import { Card, Chip, Screen, Stack, StatusBadge, Text } from '@/components/ui';
@@ -7,12 +7,12 @@ import { stationName, useStations } from '@/features/stations/useStations';
 import { useT } from '@/i18n';
 import { fmtClock, fmtEta, fmtEtaAt, fmtNum, fmtSpeed } from '@/lib/fmt';
 import { useSettings } from '@/store/settings';
+import { goBack } from '@/lib/nav';
 
 /** Train detail (spec §10.3, board 3): where the train is and every stop on its run. */
 export default function TrainScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const { t, lang } = useT();
-  const router = useRouter();
   const { byId, first, last } = useStations();
   // "your station" is only a station the rider saved; with none saved, no stop is tagged (never the app's default station)
   const mine = useSettings((s) => s.favourites[0]);
@@ -22,7 +22,7 @@ export default function TrainScreen() {
   if (run.phase === 'unknown' || !run.dir) {
     return (
       <Screen>
-        <ScreenHeader title={t('train.title', { id })} onBack={() => router.back()} backLabel={t('common.back')} />
+        <ScreenHeader title={t('train.title', { id })} onBack={() => goBack()} backLabel={t('common.back')} />
         <EmptyState icon="train" title={t('train.unknown')} />
       </Screen>
     );
@@ -69,7 +69,7 @@ export default function TrainScreen() {
       <ScreenHeader
         title={t('train.title', { id })}
         subtitle={t('train.route', { from: stationName(from, lang), to: stationName(to, lang) })}
-        onBack={() => router.back()}
+        onBack={() => goBack()}
         backLabel={t('common.back')}
         right={<StatusBadge kind={live ? 'live' : 'estimated'} />}
       />

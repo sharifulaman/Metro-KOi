@@ -6,6 +6,7 @@ import { useT } from '@/i18n';
 import { fmtNum } from '@/lib/fmt';
 import { useWallet } from '@/store/wallet';
 import type { CardColor } from '@/theme/tokens';
+import { goBack } from '@/lib/nav';
 
 /** Save a card by hand (name, colour, last 4 digits), or edit one already saved when `id` is given (design ৬). */
 export default function CardManualScreen() {
@@ -38,7 +39,7 @@ export default function CardManualScreen() {
     <ManualCardView
       title={existing ? t('card.editTitle') : t('card.manualTitle')}
       closeLabel={t('common.close')}
-      onClose={() => router.back()}
+      onClose={() => goBack()}
       preview={{ name: name || t('card.defaultCardName'), tail: tail.length === 4 ? fmtNum(tail, 'en') : '0000', typeLabel: t('card.' + cardType), rapidPass: cardType === 'rapid_pass' }}
       nameLabel={t('card.cardNameLabel')}
       name={name}

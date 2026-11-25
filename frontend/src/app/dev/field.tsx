@@ -1,5 +1,4 @@
 import * as Location from 'expo-location';
-import { useRouter } from 'expo-router';
 import { useEffect, useRef, useState } from 'react';
 import { Share } from 'react-native';
 
@@ -12,6 +11,7 @@ import { useT } from '@/i18n';
 import { snapToLine } from '@/lib/lineGeo';
 import { initialRide, stepRide, type RidePhase, type RideState } from '@/lib/rideDetector';
 import { GATES, type Gate } from '@/models';
+import { goBack } from '@/lib/nav';
 
 const LINE_M = line.properties.lengthM;
 /** seconds of fixes averaged for one gate */
@@ -45,7 +45,6 @@ interface RideRow {
  *   to tune its thresholds. Both export JSON through the share sheet.
  */
 export default function FieldToolsScreen() {
-  const router = useRouter();
   const { lang } = useT();
   const { list } = useStations();
   const model = useRunModel();
@@ -114,7 +113,7 @@ export default function FieldToolsScreen() {
 
   return (
     <Screen scroll gap={4}>
-      <ScreenHeader title="Field tools" onBack={() => router.back()} />
+      <ScreenHeader title="Field tools" onBack={() => goBack()} />
       <Segmented<'gates' | 'ride'> value={tool} onChange={setTool} options={[{ value: 'gates', label: 'Gate survey' }, { value: 'ride', label: 'Ride recorder' }]} />
 
       {tool === 'gates' ? (

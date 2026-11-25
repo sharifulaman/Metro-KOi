@@ -5,6 +5,7 @@ import { SavedCardsView } from '@/components/metro';
 import { useT } from '@/i18n';
 import { fmtNum } from '@/lib/fmt';
 import { useWallet } from '@/store/wallet';
+import { goBack } from '@/lib/nav';
 
 /** Manage saved cards (design ৭): see each one's balance, set the default, edit or delete it. */
 export default function CardSavedScreen() {
@@ -39,7 +40,7 @@ export default function CardSavedScreen() {
       confirmText={t('card.deleteAsk')}
       note={t('card.localOnlyNote')}
       newCardLabel={t('card.addNewCard')}
-      onBack={() => router.back()}
+      onBack={() => goBack()}
       onAdd={() => router.push('/card/add')}
       onEdit={(id) => router.push('/card/manual?id=' + id)}
       onDelete={(id) => {

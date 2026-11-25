@@ -1,4 +1,4 @@
-import { useLocalSearchParams, useRouter } from 'expo-router';
+import { useLocalSearchParams } from 'expo-router';
 import { useState } from 'react';
 
 import { GateSelector, RouteSteps, ScreenHeader, StationSection } from '@/components/metro';
@@ -8,12 +8,12 @@ import { stationName, useStations } from '@/features/stations/useStations';
 import { useT } from '@/i18n';
 import { fmtNum } from '@/lib/fmt';
 import type { Gate, GateMode, Platform } from '@/models';
+import { goBack } from '@/lib/nav';
 
 /** Inside the station: gate → platform (spec §18.3, board 14). Also the 3D fallback. */
 export default function InsideRouteScreen() {
   const { id, gate } = useLocalSearchParams<{ id: string; gate?: Gate }>();
   const { t, lang } = useT();
-  const router = useRouter();
   const { byId, first, last } = useStations();
   const { gates } = useStationGates(id);
   const [selected, setSelected] = useState<Gate>(gate ?? 'A');
@@ -25,7 +25,7 @@ export default function InsideRouteScreen() {
   const walk = gates.find((g) => g.gate === selected)?.walkMin;
   return (
     <Screen scroll gap={4}>
-      <ScreenHeader title={t('route.title')} subtitle={stationName(st, lang)} onBack={() => router.back()} backLabel={t('common.back')} />
+      <ScreenHeader title={t('route.title')} subtitle={stationName(st, lang)} onBack={() => goBack()} backLabel={t('common.back')} />
       <StationSection
         gate={selected}
         platform={platform}

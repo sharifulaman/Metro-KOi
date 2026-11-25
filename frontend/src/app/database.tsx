@@ -1,5 +1,4 @@
 import { useQuery } from '@tanstack/react-query';
-import { useRouter } from 'expo-router';
 
 import { ScreenHeader } from '@/components/metro';
 import { Card, IconTile, InfoNote, ListRow, Screen, SectionLabel, Text } from '@/components/ui';
@@ -12,6 +11,7 @@ import { useCard } from '@/store/card';
 import { useHistory } from '@/store/history';
 import { useSettings } from '@/store/settings';
 import { useWallet } from '@/store/wallet';
+import { goBack } from '@/lib/nav';
 
 interface Remote {
   version?: string;
@@ -38,7 +38,6 @@ async function fetchRemote(): Promise<Remote> {
 /** Database: which data lives in the cloud (Supabase) and which stays on this phone. */
 export default function DatabaseScreen() {
   const { t, lang } = useT();
-  const router = useRouter();
   const q = useQuery({ queryKey: ['db-info'], queryFn: fetchRemote, enabled: configured, retry: false });
   const trips = useHistory((s) => s.items.length);
   const cards = useWallet((s) => s.cards.length);
@@ -57,7 +56,7 @@ export default function DatabaseScreen() {
 
   return (
     <Screen scroll gap={4}>
-      <ScreenHeader title={t('db.title')} onBack={() => router.back()} backLabel={t('common.back')} />
+      <ScreenHeader title={t('db.title')} onBack={() => goBack()} backLabel={t('common.back')} />
       <SectionLabel text={t('db.cloud')} />
       <InfoNote icon="info" tone={configured && q.isSuccess ? 'live' : 'neutral'} text={status} />
       <Card padding={3}>

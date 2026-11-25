@@ -17,6 +17,8 @@ export interface MapPayload {
   hints: GoogleMapViewProps['hints'] | null;
   womenLabel: string | null;
   platformSigns: { SB: string; NB: string } | null;
+  /** 2D: the selected station's platform signs, one each side of the track (the 3D scene draws its own) */
+  platforms: { id: 'SB' | 'NB'; label: string; color: string; lat: number; lng: number }[];
   realMap: boolean;
   /** app language: names on the 3D map (streets, landmarks) follow it */
   lang?: string;
@@ -105,6 +107,27 @@ function gateOnModel(g: { id: string; lat: number; lng: number }, gates: GoogleM
   return { lat: fr.lat + ny / M_PER_DEG, lng: fr.lng + ex / (kx * M_PER_DEG) };
 }
 
+/**
+ * Where the 2D map puts the selected station's platform signs: the same spots as the 3D scene,
+ * southbound on the left of the track (towards Motijheel) at the back end, northbound on the right at the front.
+ */
+const PLATFORM_PIN = { along: 30, across: 19 };
+function platformPins(p: GoogleMapViewProps): MapPayload['platforms'] {
+  const st = p.platformSigns && p.selectedStation ? p.stations.find((s) => s.id === p.selectedStation) : undefined;
+  if (!p.platformSigns || !st) return [];
+  const g = geoAt(st.f);
+  const b = (g.bearing * Math.PI) / 180;
+  const kx = Math.cos((g.lat * Math.PI) / 180);
+  const at = (along: number, across: number) => {
+    const east = along * Math.sin(b) + across * Math.cos(b), north = along * Math.cos(b) - across * Math.sin(b);
+    return { lat: g.lat + north / M_PER_DEG, lng: g.lng + east / (kx * M_PER_DEG) };
+  };
+  return [
+    { id: 'SB', label: p.platformSigns.SB, color: '#1F9D63', ...at(-PLATFORM_PIN.along, -PLATFORM_PIN.across) },
+    { id: 'NB', label: p.platformSigns.NB, color: '#2F6FB5', ...at(PLATFORM_PIN.along, PLATFORM_PIN.across) },
+  ];
+}
+
 export function buildPayload(p: GoogleMapViewProps, c: Palette, dark: boolean, reservedBottom: number): MapPayload {
   const near = (p.zoom ?? 1) > 1 && (p.focus != null || p.focusPoint != null);
   const along = geoAt(near && p.focus != null ? p.focus : 0.5);
@@ -171,6 +194,7 @@ export function buildPayload(p: GoogleMapViewProps, c: Palette, dark: boolean, r
     hints: p.hints ?? null,
     womenLabel: p.womenLabel ?? null,
     platformSigns: p.platformSigns ?? null,
+    platforms: platformPins(p),
     realMap: p.realMap !== false,
     route,
     user: p.user ? { lat: p.user.lat, lng: p.user.lng, accuracy: p.user.accuracy ?? 0, heading: p.user.heading ?? null } : null,

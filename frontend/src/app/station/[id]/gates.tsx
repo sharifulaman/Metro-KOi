@@ -7,6 +7,7 @@ import { gateLabels, toGateItems, useStationGates } from '@/features/gates/useSt
 import { stationAltName, stationName, useStations } from '@/features/stations/useStations';
 import { useT } from '@/i18n';
 import type { Gate } from '@/models';
+import { goBack } from '@/lib/nav';
 
 /** Gates A B C D (spec §10.8, board 13). */
 export default function GatesScreen() {
@@ -22,7 +23,7 @@ export default function GatesScreen() {
   const labels = gateLabels(t);
   return (
     <Screen scroll gap={4}>
-      <ScreenHeader title={t('gates.title')} onBack={() => router.back()} backLabel={t('common.back')} />
+      <ScreenHeader title={t('gates.title')} onBack={() => goBack()} backLabel={t('common.back')} />
       <StationHeader compact name={stationName(st, lang)} altName={stationAltName(st, lang)} />
       <GateSelector variant="pins" gates={items} selected={selected} recommended={recommended} onSelect={setSelected} labels={labels} />
       <GateSelector variant="cards" gates={items} selected={selected} recommended={recommended} onSelect={setSelected} labels={labels} />

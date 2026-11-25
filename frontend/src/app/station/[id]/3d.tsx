@@ -1,4 +1,4 @@
-import { useLocalSearchParams, useRouter } from 'expo-router';
+import { useLocalSearchParams } from 'expo-router';
 import { useState } from 'react';
 
 import { GateSelector, RouteSteps, ScreenHeader, StationHeader, StationSection, TrainCard } from '@/components/metro';
@@ -11,6 +11,7 @@ import { stationAltName, stationName, useStations } from '@/features/stations/us
 import { useT } from '@/i18n';
 import { fmtNum } from '@/lib/fmt';
 import type { Gate, GateMode } from '@/models';
+import { goBack } from '@/lib/nav';
 
 type Shot = 'exterior' | 'platform' | 'city' | 'line';
 
@@ -22,7 +23,6 @@ type Shot = 'exterior' | 'platform' | 'city' | 'line';
 export default function Station3DScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const { t, lang } = useT();
-  const router = useRouter();
   const { byId, first, last } = useStations();
   const deps = useDepartures(id, 1);
   const { gates, recommended } = useStationGates(id);
@@ -41,7 +41,7 @@ export default function Station3DScreen() {
   const cardLabels = { atStation: t('train.atStation'), departed: t('train.departed') };
   return (
     <Screen scroll gap={4}>
-      <ScreenHeader title={t('s3d.title')} onBack={() => router.back()} backLabel={t('common.back')} />
+      <ScreenHeader title={t('s3d.title')} onBack={() => goBack()} backLabel={t('common.back')} />
       <Segmented<Shot>
         variant="tabs"
         value={shot}

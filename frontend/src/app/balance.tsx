@@ -8,6 +8,7 @@ import { useHistoryView } from '@/features/history/useHistoryView';
 import { useT } from '@/i18n';
 import { fmtClock, fmtDate, secOfDayFromMs } from '@/lib/fmt';
 import { useCard } from '@/store/card';
+import { goBack } from '@/lib/nav';
 
 /** Balance (spec §10.10, board 10): the last NFC card read, else local history only. */
 export default function BalanceScreen() {
@@ -21,7 +22,7 @@ export default function BalanceScreen() {
   const when = (ms: number) => `${fmtDate(ms, lang)}, ${fmtClock(secOfDayFromMs(ms), lang)}`;
   return (
     <Screen scroll gap={4}>
-      <ScreenHeader title={t('card.balance')} onBack={() => router.back()} backLabel={t('common.back')} />
+      <ScreenHeader title={t('card.balance')} onBack={() => goBack()} backLabel={t('common.back')} />
       {last ? (
         <BalanceCard
           balanceBdt={last.balanceBdt}

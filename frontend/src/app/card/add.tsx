@@ -2,6 +2,7 @@ import { Stack as RouteStack, useRouter } from 'expo-router';
 
 import { AddCardSheet } from '@/components/metro';
 import { useT } from '@/i18n';
+import { goBack } from '@/lib/nav';
 
 /** How to save a card (design ৫): a sheet over the Card page — tap it to the phone, or type a name and last 4 digits. */
 export default function CardAddScreen() {
@@ -21,7 +22,7 @@ export default function CardAddScreen() {
         cancelLabel={t('common.cancel')}
         onScan={() => router.replace('/card/scan')}
         onManual={() => router.replace('/card/manual')}
-        onCancel={() => router.back()}
+        onCancel={() => goBack()}
         testID="add-sheet"
       />
     </>

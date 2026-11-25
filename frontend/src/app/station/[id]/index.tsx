@@ -15,6 +15,7 @@ import { fmtClock, fmtNum } from '@/lib/fmt';
 import { haversineM } from '@/lib/geo';
 import type { Departure, Direction } from '@/models';
 import { useSettings } from '@/store/settings';
+import { goBack } from '@/lib/nav';
 
 /** Station detail (design স্টেশন ৩): 2D map or 3D map header, both directions' next trains, facts, journey. Real timetable data. */
 function StationReal() {
@@ -25,8 +26,8 @@ function StationReal() {
   const favourites = useSettings((s) => s.favourites);
   const toggleFavourite = useSettings((s) => s.toggleFavourite);
   const deps = useDepartures(id, 3);
-  const { gates } = useStationGates(id);
   const { user, status, request } = useScreenLocation({ fast: true });
+  const { gates, recommended } = useStationGates(id, user);
   // "from you": ask for location once, then the distance follows the rider every second
   useEffect(() => {
     if (status === 'unknown') void request();
@@ -35,11 +36,13 @@ function StationReal() {
   const [gatesOn, setGatesOn] = useState(false);
   const [platformsOn, setPlatformsOn] = useState(false);
   const [gate, setGate] = useState<string | undefined>();
+  // 2D gate map works like the gate tracker: heading-up by default, compass to switch north-up
+  const [headingUp, setHeadingUp] = useState(true);
   const st = byId[id];
   if (!st) {
     return (
       <Screen>
-        <EmptyState icon="info" title={t('empty.notFound')} action={{ label: t('common.back'), onPress: () => router.back() }} />
+        <EmptyState icon="info" title={t('empty.notFound')} action={{ label: t('common.back'), onPress: () => goBack() }} />
       </Screen>
     );
   }
@@ -65,38 +68,36 @@ function StationReal() {
     return list.length > 0 ? list : [{ value: '—', caption: t('station.noService'), live: false }];
   };
 
-  // gates on the 3D scene: lettered pins on the station's gate kiosks, each with its landmark
+  // lettered gate pins (2D map or 3D scene), each with its landmark
   const mapGates: MapGate[] = gates.flatMap((g) =>
     g.lat != null && g.lng != null ? [{ id: `${g.stationId}:${g.gate}`, letter: g.gate, label: ((lang === 'bn' ? g.landmarkBn : g.landmarkEn) ?? '').split(' · ')[0], lat: g.lat, lng: g.lng }] : [],
   );
 
+  // the gate the walk line leads to: the one tapped, else the one nearest the rider
+  const shownGate = gate ?? recommended;
+  // gates and platform signs show on whichever map is open (2D or 3D)
+  const threeD = tilt;
+  const gatePin = gatesOn && !threeD ? mapGates.find((g) => g.letter === shownGate) : undefined;
+
   const away = user ? Math.round(haversineM(user.lat, user.lng, st.lat as number, st.lng as number)) : null;
-  const threeD = tilt || gatesOn || platformsOn;
-  const toggle3d = () => {
-    if (gatesOn || platformsOn) {
-      setGatesOn(false);
-      setPlatformsOn(false);
-      setTilt(false);
-    } else setTilt((v) => !v);
-  };
+  const toggle3d = () => setTilt((v) => !v);
 
   return (
     <StationDetailView
       testID="station-detail"
       map={
-        threeD ? (
-          <StationMap
-            stationId={st.id}
-            tilt
-            zoom={16}
-            gates={gatesOn ? mapGates : undefined}
-            selectedGate={gate ? `${st.id}:${gate}` : undefined}
-            onGatePress={(gid) => setGate((cur) => (cur === gid.split(':')[1] ? undefined : gid.split(':')[1]))}
-            platformSigns={platformsOn ? { SB: `${t('common.platform', { n: fmtNum(1, lang) })} · ${t('timetable.SB')}`, NB: `${t('common.platform', { n: fmtNum(2, lang) })} · ${t('timetable.NB')}` } : undefined}
-          />
-        ) : (
-          <StationMap stationId={st.id} />
-        )
+        <StationMap
+          stationId={st.id}
+          tilt={threeD}
+          zoom={threeD ? 16 : gatesOn || platformsOn ? 17.5 : undefined}
+          gates={gatesOn ? mapGates : undefined}
+          selectedGate={gatesOn && shownGate ? `${st.id}:${shownGate}` : undefined}
+          onGatePress={(gid) => setGate(gid.split(':')[1])}
+          walkTo={gatePin ? { lat: gatePin.lat, lng: gatePin.lng } : null}
+          headingUp={gatesOn && !threeD && headingUp}
+          onCompass={gatesOn && !threeD ? () => setHeadingUp((v) => !v) : undefined}
+          platformSigns={platformsOn ? { SB: `${t('common.platform', { n: fmtNum(1, lang) })} · ${t('timetable.SB')}`, NB: `${t('common.platform', { n: fmtNum(2, lang) })} · ${t('timetable.NB')}` } : undefined}
+        />
       }
       tilt={{ active: threeD, label: t(threeD ? 'live.tilt2d' : 'live.tilt3d'), onPress: toggle3d }}
       order={fmtNum(st.order, lang)}
@@ -124,7 +125,7 @@ function StationReal() {
       backLabel={t('common.back')}
       favouriteLabel={t('common.favourite')}
       favourite={favourites.includes(st.id)}
-      onBack={() => router.back()}
+      onBack={() => goBack()}
       onFavourite={() => toggleFavourite(st.id)}
       onJourney={() => router.push('/journey')}
     />

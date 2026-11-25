@@ -1,4 +1,4 @@
-import { useLocalSearchParams, useRouter } from 'expo-router';
+import { useLocalSearchParams } from 'expo-router';
 import { Share } from 'react-native';
 
 import { EmptyState, JourneyDetailView, type JourneyBadge, type JourneyDetailStop } from '@/components/metro';
@@ -8,12 +8,12 @@ import { useRunModel } from '@/features/timetable/useTimetable';
 import { useT } from '@/i18n';
 import { fmtClock, fmtDuration, fmtEta, fmtNum } from '@/lib/fmt';
 import { offsetsFor } from '@/lib/schedule';
+import { goBack } from '@/lib/nav';
 
 /** Journey details (design ১৭): every stop between the two stations with its time, then "I'm boarding this train". */
 export default function JourneyDetailScreen() {
   const p = useLocalSearchParams<{ from: string; to: string; depart: string; train: string; wait: string; badge: string; tomorrow: string }>();
   const { t, lang } = useT();
-  const router = useRouter();
   const { byId } = useStations();
   const model = useRunModel();
   const a = model.stationIds.indexOf(p.from);
@@ -22,7 +22,7 @@ export default function JourneyDetailScreen() {
   if (a < 0 || b < 0 || a === b || !Number.isFinite(depart)) {
     return (
       <Screen>
-        <EmptyState icon="route" title={t('journey.none')} action={{ label: t('common.back'), onPress: () => router.back() }} />
+        <EmptyState icon="route" title={t('journey.none')} action={{ label: t('common.back'), onPress: () => goBack() }} />
       </Screen>
     );
   }
@@ -59,7 +59,7 @@ export default function JourneyDetailScreen() {
       title={t('journey.details')}
       backLabel={t('common.back')}
       shareLabel={t('journey.share')}
-      onBack={() => router.back()}
+      onBack={() => goBack()}
       onShare={() => void Share.share({ message: `${name(p.from)} → ${name(p.to)}: ${t('journey.leaves', { time: fmtClock(depart, lang) })}, ${t('journey.arrives', { time: fmtClock(arrive, lang), dur: fmtDuration(arrive - depart, lang) })}` })}
       route={`${name(p.from)} → ${name(p.to)}`}
       badge={badge}

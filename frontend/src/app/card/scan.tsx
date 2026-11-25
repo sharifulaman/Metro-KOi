@@ -5,6 +5,7 @@ import { ScanView } from '@/components/metro';
 import { useCardScan } from '@/features/card/useCardScan';
 import { useT } from '@/i18n';
 import { useWallet } from '@/store/wallet';
+import { goBack } from '@/lib/nav';
 
 /** Full-screen NFC scan (design ২): starts automatically, then hands off to /card/found on a good read. */
 export default function CardScanScreen() {
@@ -27,7 +28,7 @@ export default function CardScanScreen() {
 
   const cancel = () => {
     scan.cancel();
-    router.back();
+    goBack();
   };
 
   return (

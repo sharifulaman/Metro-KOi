@@ -35,6 +35,8 @@ html,body,#m{margin:0;height:100%;width:100%;overflow:hidden;-webkit-tap-highlig
 .gt .gn{max-width:150px;padding:2px 8px;border-radius:999px;background:var(--surface);color:var(--ink);font-size:11px;font-weight:700;line-height:1.3;text-align:center;box-shadow:0 2px 6px rgba(14,26,22,.25)}
 .gt.sel .gl{width:38px;height:38px;font-size:17px;background:var(--brandDeep)}
 .gt.sel .gn{background:var(--brandDeep);color:#fff}
+.pf{padding:3px 10px;border-radius:999px;color:#fff;border:1.8px solid #fff;font-size:11.5px;font-weight:800;white-space:nowrap;box-shadow:0 2px 8px rgba(14,26,22,.3);pointer-events:none}
+.nomod .pf{display:none}
 .mew{position:relative;width:18px;height:18px}.cone{position:absolute;left:50%;bottom:50%;width:0;height:0;margin-left:-16px;border-left:16px solid transparent;border-right:16px solid transparent;border-bottom:40px solid rgba(26,115,232,.26);transform-origin:50% 100%;pointer-events:none}.me{position:relative;width:18px;height:18px;border-radius:50%;background:#1A73E8;border:3px solid #fff;box-sizing:border-box;box-shadow:0 0 0 1px rgba(14,26,22,.18),0 2px 8px rgba(14,26,22,.4)}
 .tr{display:flex;flex-direction:column;align-items:center}
 .tr .tag{position:absolute;bottom:38px;display:flex;align-items:center;gap:6px;padding:3px 10px;border-radius:999px;background:var(--ink);border:1.5px solid var(--live);color:var(--surface);font-size:11.5px;font-weight:700;white-space:nowrap}
@@ -251,6 +253,20 @@ function syncGates(p){
   Object.keys(gatePins).forEach(function(id){if(!seen[id]){gatePins[id].pin.setMap(null);delete gatePins[id];}});
 }
 
+/* 2D platform signs: one pill each side of the selected station's track */
+var platPins={};
+function syncPlatforms(p){
+  var seen={};
+  (p.platforms||[]).forEach(function(q){
+    seen[q.id]=1;
+    var o=platPins[q.id];
+    if(!o){var el=document.createElement('div');el.className='pin';el.style.zIndex=5;el.innerHTML='<div class="pf"></div>';o=platPins[q.id]={el:el,pin:new Pin(el,q,5)};}
+    var b=o.el.firstChild;b.textContent=q.label;b.style.background=q.color;
+    o.pin.move(q);
+  });
+  Object.keys(platPins).forEach(function(id){if(!seen[id]){platPins[id].pin.setMap(null);delete platPins[id];}});
+}
+
 function syncUser(p){
   if(!p.user){if(me){me.pin.setMap(null);me=null;}if(meRing){meRing.setMap(null);meRing=null;}return;}
   var pos={lat:p.user.lat,lng:p.user.lng};
@@ -342,6 +358,7 @@ function apply(p){
   syncGates(p);
   syncUser(p);
   syncWalk(p);
+  syncPlatforms(p);
   var v=p.view,k=v.mode+'|'+(v.mode==='focus'?v.lat.toFixed(6)+','+v.lng.toFixed(6)+','+v.zoom:'')+'|'+v.top+'|'+v.bottom+'|'+(v.shiftX||0)+'|'+v.key;
   if(k!==viewKey){viewKey=k;setView(v);setTilt(v);placed=true;}else setTilt(v);
   syncHeading(p);

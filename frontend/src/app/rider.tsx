@@ -7,6 +7,7 @@ import { stationName, useStations } from '@/features/stations/useStations';
 import { useT } from '@/i18n';
 import { fmtNum } from '@/lib/fmt';
 import { useRider } from '@/store/rider';
+import { goBack } from '@/lib/nav';
 
 /** Share my ride → explainer → active → thanks (spec §10.5, boards 4–5). */
 export default function RiderScreen() {
@@ -32,7 +33,7 @@ export default function RiderScreen() {
           label={t('rider.done')}
           onPress={() => {
             useRider.getState().reset();
-            router.back();
+            goBack();
           }}
         />
       </Screen>
@@ -79,7 +80,7 @@ export default function RiderScreen() {
         {denied ? <InfoNote tone="danger" icon="gpsOff" text={t('rider.denied')} /> : null}
       </Stack>
       <Button fullWidth icon="train" label={t('rider.yes')} onPress={() => void begin()} testID="rider-yes" />
-      <Button fullWidth variant="ghost" label={t('rider.notNow')} onPress={() => router.back()} />
+      <Button fullWidth variant="ghost" label={t('rider.notNow')} onPress={() => goBack()} />
     </Screen>
   );
 }
